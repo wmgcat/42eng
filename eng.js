@@ -7,9 +7,6 @@ let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {};
 let zoom = 1, grid_size = 32;
 let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
 
-// нужны?
-function mset(val, value) { memory[val] = value || 0; }
-function mget(val) { return memory[val]; }
 function show_error(cvs, clr) { // вывод ошибок:
 	if (errors.length > 0) {
 		if (cvs) {
