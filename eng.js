@@ -1,10 +1,7 @@
 'use strict';
 let stack_errors = [], key = 0, loaded = 0, mloaded = 0, images = {}, audio = {}, current_time = 0,
     render = [], keylocks = {}, grid = {}, pause = false, editor = false, mute = false, current_level = 0, levelMemory = {},
-	levelChange = false, cameraes = [{'x': 0, 'y': 0}], current_camera = 0, zoom = 1, grid_size = 32, is_touch = false, lang = {
-		'type': 'ru',
-		'source': {}
-	},
+	levelChange = false, cameraes = [{'x': 0, 'y': 0}], current_camera = 0, zoom = 1, grid_size = 32, is_touch = false, lang = { 'type': 'ru', 'source': {} },
 	keys = {
 		'up': 1, 'down': 2, 'left': 4, 'right': 8,
 		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
