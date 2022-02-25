@@ -1,30 +1,29 @@
 'use strict';
-let stack_errors = [], key = 0, loaded = 0, mloaded = 0, images = {}, audio = {}, current_time = 0,
-    render = [], keylocks = {}, grid = {}, pause = false, editor = false, mute = false, current_level = 0, levelMemory = {},
-	levelChange = false, cameraes = [{'x': 0, 'y': 0}], current_camera = 0, zoom = 1, grid_size = 32, is_touch = false, lang = { 'type': 'ru', 'source': {} },
-	keys = {
-		'up': 1, 'down': 2, 'left': 4, 'right': 8,
-		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
-		'move': 256, 'hover': 512
-	}, memory = {}, mouse = { 'x': 0, 'y': 0, 'touchlist': []}, gui = [],
-	SETTING = { 'music': 1, 'sound': 1 }, FONTS = {};
+
+let loaded = mloaded = current_time = current_level = current_camera;
+let pause = editor = mute = levelChange = is_touch = false;
+let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
+let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {};
+let zoom = 1, grid_size = 32;
+let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
+
 function mset(val, value) { memory[val] = value || 0; }
 function mget(val) { return memory[val]; }
 function show_error(cvs, clr) { // вывод ошибок:
-	if (stack_errors.length > 0) {
+	if (errors.length > 0) {
 		if (cvs) {
 			cvs.fillStyle = clr || '#fff';
-			stack_errors.forEach(function(e, i) {
+			errors.forEach(function(e, i) {
 				add_gui(function(cvs) {
-					cvs.globalAlpha = 1 - (stack_errors.length - (i + 1)) / stack_errors.length;
+					cvs.globalAlpha = 1 - (errors.length - (i + 1)) / errors.length;
 					cvs.fillText(i + ': ' + e, 6, 16 + 12 * i);
 				});
 			});
 			cvs.globalAlpha = 1;
 		} else {
-			console.log('Найдены ошибки (' + stack_errors.length + '):');
-			stack_errors.forEach(function(e, i) { console.error(i + ': ' + e); });
-			stack_errors = [];
+			console.log('Найдены ошибки (' + errors.length + '):');
+			errors.forEach(function(e, i) { console.error(i + ': ' + e); });
+			errors = [];
 		}
 	}
 }
@@ -90,7 +89,7 @@ let Add = {
 			images[path.join('.')] = img;
 		}
 	},
-	'error': function(msg) { stack_errors[stack_errors.length] = msg; },
+	'error': function(msg) { errors[errors.length] = msg; },
 	'canvas': function(id, upd, loading) {
 		let cvs = document.getElementById(id), node = cvs.parentNode;
 		if (cvs) {
@@ -210,22 +209,26 @@ let Add = {
 	||| clear(control) - очистка значений (без аргументов - полная очистка);
 	||| check(control) - провера значения;
 */
-let Bite = {
+let Byte = {
+	'key': 0, 'list': {
+		'up': 1, 'down': 2, 'left': 4, 'right': 8,
+		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
+		'move': 256, 'hover': 512
+	},
 	'add': function(arr) {
 		for (let i = 0; i < arguments.length; i++)
-			key |= keys[arguments[i]];
+			this.key |= this.list[arguments[i]];
 	},
 	'clear': function(arr) {
 		if (arguments.length > 0)
-			for (let i = 0; i < arguments.length; i++) key &=~ keys[arguments[i]];
-		else key = 0;
+			for (let i = 0; i < arguments.length; i++) this.key &=~ this.list[arguments[i]];
+		else this.key = 0;
 	},
 	'check': function(arr) {
 		for (let i = 0; i < arguments.length; i++)
-			if ((key & keys[arguments[i]]) <= 0) return false;
+			if ((this.key & this.list[arguments[i]]) <= 0) return false;
 		return true;
 	}
-
 };
 /* old: */
 function add(name) {
