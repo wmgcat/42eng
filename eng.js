@@ -7,6 +7,7 @@ let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {};
 let zoom = 1, grid_size = 32;
 let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
 
+// нужны?
 function mset(val, value) { memory[val] = value || 0; }
 function mget(val) { return memory[val]; }
 function show_error(cvs, clr) { // вывод ошибок:
@@ -98,8 +99,8 @@ let Add = {
 					if (e.code.toLowerCase().replace('key', '') == f) {
 						//console.log(e);
 						switch(e.type) {
-							case 'keydown': add(keylocks[f]); break;
-							case 'keyup': clear(keylocks[f]); break;
+							case 'keydown': Byte.add(keylocks[f]); break;
+							case 'keyup': Byte.clear(keylocks[f]); break;
 						}
 						e.preventDefault();
 						e.stopImmediatePropagation();
@@ -114,9 +115,9 @@ let Add = {
 				switch(e.type) {
 					case 'mouseup': case 'touchend':
 						is_touch = false;
-						add('uclick');
+						Byte.add('uclick');
 					break;
-					case 'mousedown': case 'touchstart': add('dclick'); break;
+					case 'mousedown': case 'touchstart': Byte.add('dclick'); break;
 				}
 				if (e.type == 'touchstart') is_touch = true;
 				e.preventDefault();
@@ -153,8 +154,8 @@ let Add = {
 				} else loading(loaded / mloaded, t);
 				try { gui.reverse().forEach(function(e) { e(ctx); }); }
 				catch(err) {console.log(err);}
-				cvs.style.cursor = check('hover') ? 'pointer' : 'default';
-				clear('hover', 'dclick', 'uclick');
+				cvs.style.cursor = Byte.check('hover') ? 'pointer' : 'default';
+				Byte.clear('hover', 'dclick', 'uclick');
 				current_time = t;
 				window.requestAnimationFrame(temp);
 			}
@@ -230,38 +231,6 @@ let Byte = {
 		return true;
 	}
 };
-/* old: */
-function add(name) {
-	let sum = 0;
-	if (arguments.length > 1)
-		for (let i = 0; i < arguments.length; i++) sum += keys[arguments[i]];
-	else sum = keys[name];
-	key |= sum;
-}
-function check(name, n) {
-	if (arguments.length < 2) return ((key & keys[name]) > 0);
-	else {
-		let sum = 0;
-		if (arguments.length > 2)
-			for (let i = 1; i < arguments.length; i++) sum += keys[arguments[i]];
-		else sum = keys[n];
-		switch(name) {
-			case 'and': return (this.key & sum) > 0; break;
-			case 'or':
-				for (let i = 1; i < arguments.length; i++)
-					if ((this.key & this.list[arguments[i]]) > 0) return true;
-			break;
-		}
-		return false;
-	}
-}
-function clear(name) {
-	let sum = 0;
-	if (arguments.length > 1)
-		for (let i = 0; i < arguments.length; i++) sum += keys[arguments[i]];
-	else sum = keys[name];
-	key &=~ sum;
-}
 function merge(col1, col2, val) {
 	let ncol = '#', table = {'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15};
 	for (let i = 1, a, b, ab; i < col1.length; i++) {
@@ -530,16 +499,16 @@ let Graphics = {
 	'gui': {
 		'btn': function(x, y, w, h, col, img) {
 			let hover = false, clicked = false;
-			if (grect(x, y, w, h) && !check('hover')) {
-				add('hover');
+			if (grect(x, y, w, h) && !Byte.check('hover')) {
+				Byte.add('hover');
 				hover = true;
-				if (check('uclick')) {
+				if (Byte.check('uclick')) {
 					clicked = true;
-					clear('uclick');
+					Byte.clear('uclick');
 				}
 			}
 			Graphics.rect(x, y, w, h * .975, merge(col, '#000000', hover * .1));
-			if (!hover || !check('uclick')) Graphics.rect(x, y + h * .95, w, h * .05, merge(col, '#000000', .3 + hover * .1));
+			if (!hover || !Byte.check('uclick')) Graphics.rect(x, y + h * .95, w, h * .05, merge(col, '#000000', .3 + hover * .1));
 			if (img) {
 				if (typeof(img) == 'function') {
 					Graphics.cvs.save();
@@ -571,11 +540,11 @@ let Graphics = {
 				Graphics.rect(memory['window.' + id].x, memory['window.' + id].y - h * .1, w, h * .1, headcol ? headcol : '#470009');
 				Graphics.text(header, memory['window.' + id].x + w * .05, memory['window.' + id].y - w * .05, '#fff', 1, 12);
 				if (grect(memory['window.' + id].x + w * .8, memory['window.' + id].y - h * .1, w * .2, h * .1)) {
-					if (check('uclick') && !check('hover')) {
+					if (Byte.check('uclick') && !Byte.check('hover')) {
 						memory['window.' + id].open =! memory['window.' + id].open;
-						clear('uclick');
+						Byte.clear('uclick');
 					}
-					add('hover');
+					Byte.add('hover');
 				}
 			}
 			if (content != undefined && memory['window.' + id].open) {
