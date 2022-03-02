@@ -1,9 +1,9 @@
 'use strict';
 
-let loaded = mloaded = current_time = current_level = current_camera;
-let pause = editor = mute = levelChange = is_touch = false;
+let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
+let pause = false, editor = false, mute = false, levelChange = false, is_touch = false;
 let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
-let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {};
+let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
 let zoom = 1, grid_size = 32;
 let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
 
@@ -228,6 +228,19 @@ let Byte = {
 		return true;
 	}
 };
+let Eng = {
+	'distance': function(x1, y1, x2, y2) { return Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)); },
+	'direction': function(x1, y1, x2, y2) { return Math.atan2(y2 - y1, x2 - x1); },
+	'sign': function(x) { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.round(x) != 0); },
+	'clamp': function(x, min, max) { return Math.min(Math.max(x, min), max); },
+	'torad': function(x) { return x * Math.PI / 180; },
+	'todeg': function(x) { return x / Math.PI * 180; },
+	'collision': {
+		'rect': function(px, py, x, y, w, h) { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); },
+		'circle': function(px, py, x, y, range) { return distance(px, py, x, y) <= range; }
+	}
+
+};
 function merge(col1, col2, val) {
 	let ncol = '#', table = {'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15};
 	for (let i = 1, a, b, ab; i < col1.length; i++) {
@@ -402,6 +415,13 @@ let Graphics = {
 	'init': function(cvs) {
 		this.cvs = cvs;
 		return copy(this);
+	},
+	'getColor': function(x, y) {
+		try {
+			let dt = this.cvs.getImageData(x, y, 1, 1).data;
+			return '#' + ('000000' + (((dt[0] << 16) | (dt[1] << 8) | dt[2]).toString(16)).slice(-6));
+		}
+		catch(err) { return '#000'; }
 	},
 	'rect': function(x, y, w, h, color, alpha, tp) {
 		if (color) this.cvs[(tp || 'fill') + 'Style'] = color;
@@ -659,18 +679,10 @@ let Level = {
 			if (datapack.levels) {
 				main.levels = {};
 				Object.keys(datapack.levels).forEach(function(e) {
-					main.levels[e] = { 
-						'objects': datapack.levels[e].objects, 
-						'map': datapack.levels[e].map, 
-						'background': datapack.levels[e].background, 
-						'ost': datapack.levels[e].ost,
-						'layerup': datapack.levels[e].layerup,
-						'layerdown': datapack.levels[e].layerdown }
+					main.levels[e] = {};
+					Object.keys(datapack.levels[e]).forEach(function(key) { main.levels[e][key] = datapack.levels[e][key]; });
 				});
-				if (datapack.started) {
-					main.location = datapack.started;
-					main.default = main.location;
-				}
+				if (datapack.started) main.default = main.location = datapack.started;
 			}
 			main.color = datapack.color;
 			if (datapack.textmap) {
@@ -731,7 +743,6 @@ let Level = {
 					playerGoto = sublocation;
 					current_level.load(id, map, true);
 				}
-				//Add.error(id + 'не найден в данной системе!');
 			}
 		}
 	},
