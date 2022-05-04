@@ -16,7 +16,7 @@ let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
 					break;
 				} else arr = arr[path[pos++]];
 			}
-		} else str.replace('%s', arguments[i]);
+		} else { if (str) str = str.replace('%s', arguments[i]); }
 	}
 	return str;
 }}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
@@ -477,7 +477,7 @@ let Graphics = {
 			if (size) this.cvs.font = size + 'px ' + (font || 'Arial');
 			if (alpha != undefined) this.cvs.globalAlpha = alpha;
 			if (color) this.cvs[(tp || 'fill') + 'Style'] = color;
-			this.cvs[(tp || 'fill') + 'Text'](text, x, y);
+			this.cvs[(tp || 'fill') + 'Text'](lang.use(text) || text, x, y);
 		this.cvs.restore();
 	},
 	'len': function(text, size, font) {
