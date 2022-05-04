@@ -1,17 +1,4 @@
 'use strict';
-<<<<<<< HEAD
-let stack_errors = [], key = 0, loaded = 0, mloaded = 0, images = {}, audio = {}, current_time = 0,
-    render = [], keylocks = {}, grid = {}, pause = false, editor = false, mute = false, current_level = 0, levelMemory = {},
-	levelChange = false, cameraes = [{'x': 0, 'y': 0}], current_camera = 0, zoom = 1, grid_size = 32, is_touch = false, lang = { 'type': 'ru', 'source': {} },
-	keys = {
-		'up': 1, 'down': 2, 'left': 4, 'right': 8,
-		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
-		'move': 256, 'hover': 512
-	}, memory = {}, mouse = { 'x': 0, 'y': 0, 'touchlist': []}, gui = [],
-	SETTING = { 'music': 1, 'sound': 1 }, FONTS = {};
-function mset(val, value) { memory[val] = value || 0; }
-function mget(val) { return memory[val]; }
-=======
 
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
 let pause = false, editor = false, mute = false, levelChange = false, is_touch = false;
@@ -21,7 +8,6 @@ let zoom = 1, grid_size = 32;
 let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
 let version = '1.2';
 
->>>>>>> v1.2
 function show_error(cvs, clr) { // вывод ошибок:
 	if (errors.length > 0) {
 		if (cvs) {
@@ -113,13 +99,8 @@ let Add = {
         		Object.keys(keylocks).forEach(function(f) {
 					if (e.code.toLowerCase().replace('key', '') == f) {
 						switch(e.type) {
-<<<<<<< HEAD
-							case 'keydown': Bite.add(keylocks[f]); break;
-							case 'keyup': Bite.clear(keylocks[f]); break;
-=======
 							case 'keydown': Byte.add(keylocks[f]); break;
 							case 'keyup': Byte.clear(keylocks[f]); break;
->>>>>>> v1.2
 						}
 						e.preventDefault();
 						e.stopImmediatePropagation();
@@ -172,15 +153,9 @@ let Add = {
 
 				} else loading(loaded / mloaded, t);
 				try { gui.reverse().forEach(function(e) { e(ctx); }); }
-<<<<<<< HEAD
-				catch(err) {console.log(err);}
-				cvs.style.cursor = Bite.check('hover') ? 'pointer' : 'default';
-				Bite.clear('hover', 'dclick', 'uclick');
-=======
 				catch(err) { console.log(err.message); }
 				cvs.style.cursor = Byte.check('hover') ? 'pointer' : 'default';
 				Byte.clear('hover', 'dclick', 'uclick');
->>>>>>> v1.2
 				current_time = t;
 				window.requestAnimationFrame(temp);
 			}
@@ -256,8 +231,6 @@ let Byte = {
 		return true;
 	}
 };
-<<<<<<< HEAD
-=======
 let Eng = {
 	'distance': function(x1, y1, x2, y2) { return Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)); },
 	'direction': function(x1, y1, x2, y2) { return Math.atan2(y2 - y1, x2 - x1); },
@@ -271,7 +244,6 @@ let Eng = {
 	}
 
 };
->>>>>>> v1.2
 function merge(col1, col2, val) {
 	let ncol = '#', table = {'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15};
 	for (let i = 1, a, b, ab; i < col1.length; i++) {
@@ -547,18 +519,6 @@ let Graphics = {
 	'gui': {
 		'btn': function(x, y, w, h, col, img) {
 			let hover = false, clicked = false;
-<<<<<<< HEAD
-			if (grect(x, y, w, h) && !Bite.check('hover')) {
-				Bite.add('hover');
-				hover = true;
-				if (Bite.check('uclick')) {
-					clicked = true;
-					Bite.clear('uclick');
-				}
-			}
-			Graphics.rect(x, y, w, h * .975, merge(col, '#000000', hover * .1));
-			if (!hover || !Bite.check('uclick')) Graphics.rect(x, y + h * .95, w, h * .05, merge(col, '#000000', .3 + hover * .1));
-=======
 			if (grect(x, y, w, h) && !Byte.check('hover')) {
 				Byte.add('hover');
 				hover = true;
@@ -569,7 +529,6 @@ let Graphics = {
 			}
 			Graphics.rect(x, y, w, h * .975, merge(col, '#000000', hover * .1));
 			if (!hover || !Byte.check('uclick')) Graphics.rect(x, y + h * .95, w, h * .05, merge(col, '#000000', .3 + hover * .1));
->>>>>>> v1.2
 			if (img) {
 				if (typeof(img) == 'function') {
 					Graphics.cvs.save();
@@ -601,19 +560,11 @@ let Graphics = {
 				Graphics.rect(memory['window.' + id].x, memory['window.' + id].y - h * .1, w, h * .1, headcol ? headcol : '#470009');
 				Graphics.text(header, memory['window.' + id].x + w * .05, memory['window.' + id].y - w * .05, '#fff', 1, 12);
 				if (grect(memory['window.' + id].x + w * .8, memory['window.' + id].y - h * .1, w * .2, h * .1)) {
-<<<<<<< HEAD
-					if (Bite.check('uclick') && !Bite.check('hover')) {
-						memory['window.' + id].open =! memory['window.' + id].open;
-						Bite.clear('uclick');
-					}
-					Bite.add('hover');
-=======
 					if (Byte.check('uclick') && !Byte.check('hover')) {
 						memory['window.' + id].open =! memory['window.' + id].open;
 						Byte.clear('uclick');
 					}
 					Byte.add('hover');
->>>>>>> v1.2
 				}
 			}
 			if (content != undefined && memory['window.' + id].open) {
