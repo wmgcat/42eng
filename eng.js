@@ -649,7 +649,7 @@ let Img = {
 	  # ##### #--|   search(obj, obj1..n) - ищет объекты obj;
 	 #         # |   count(obj, obj1..n) - выводит кол-во объектов obj на уровне;
 	#############|   find(obj) - выводит номер объекта из таких же объектов как и он;
-	   |     |
+	   |     |	     type(name, type) - выдает все типы объектов name;
 */
 let Search = {
 	'distance': function(obj, x, y, range, offset) {
@@ -694,10 +694,17 @@ let Search = {
 		return count;
 	},
 	'find': function(obj) {
-		let arr = search(obj.name);
+		let arr = Search.search(obj.name);
 		for (let i = arr.length; i > -1; i--)
 			if (arr[i] == obj) return i;
 		return -1;
+	},
+	'type': function(name, type) {
+		let arr = Search.search(name), narr = [];
+		if (arr) arr.forEach(function(e) {
+			if (e.type == type) narr.push(e);
+		});
+		return narr;
 	}
 };
 /*    __
