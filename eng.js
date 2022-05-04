@@ -6,6 +6,7 @@ let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
 let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
 let zoom = 1, grid_size = 32;
 let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
+let version = '1.2';
 
 function show_error(cvs, clr) { // вывод ошибок:
 	if (errors.length > 0) {
@@ -60,7 +61,7 @@ let Add = {
 			script.src = arguments[i];
 			script.onload = function() { loaded++; }
 			script.onerror = function() { return this.error(arguments[i] + ' not find!'); }
-			document.body.appendChild(script);
+			document.head.appendChild(script);
 		}
 	},
 	'audio': function(source) {
@@ -87,7 +88,10 @@ let Add = {
 			images[path.join('.')] = img;
 		}
 	},
-	'error': function(msg) { errors[errors.length] = msg; },
+	'error': function(msg) {
+		errors[errors.length] = msg;
+		console.error(msg);
+	},
 	'canvas': function(id, upd, loading) {
 		let cvs = document.getElementById(id), node = cvs.parentNode;
 		if (cvs) {
@@ -113,6 +117,7 @@ let Add = {
 					case 'mouseup': case 'touchend':
 						is_touch = false;
 						Byte.add('uclick');
+						cvs.focus();
 					break;
 					case 'mousedown': case 'touchstart': Byte.add('dclick'); break;
 				}
@@ -123,7 +128,6 @@ let Add = {
 			function ready() {
 				window.addEventListener('keydown', keyChecker);
 				window.addEventListener('keyup', keyChecker);
-				console.log('loading!...');
 				cvs.focus();
 			}
 			if (document.readyState == 'loading') document.addEventListener('DOMContentLoaded', ready);
@@ -150,7 +154,7 @@ let Add = {
 
 				} else loading(loaded / mloaded, t);
 				try { gui.reverse().forEach(function(e) { e(ctx); }); }
-				catch(err) {console.log(err);}
+				catch(err) { console.log(err.message); }
 				cvs.style.cursor = Byte.check('hover') ? 'pointer' : 'default';
 				Byte.clear('hover', 'dclick', 'uclick');
 				current_time = t;
@@ -170,7 +174,7 @@ let Add = {
 							obj.ctx.drawImage(tmp, 0, 0);
 						}
 					}
-					catch(err) {}
+					catch(err) { Add.error(err.message); }
 					finally {
 						cvs.width = Math.floor(node.clientWidth);
 						cvs.height = Math.floor(node.clientHeight);
@@ -181,7 +185,7 @@ let Add = {
 				window.onresize = node.onresize = resize;
 				resize();
 			}
-			let description = "\n42engine.js by wmgcat!\nmade with clear javascript.\n ";
+			let description = "\n42eng.js by wmgcat!\nmade in javascript.\n\nversion: " + version;
 			console.log(description);
 			return obj;
 		}
@@ -325,7 +329,7 @@ let Map = {
 	},
 	'get': function(i, j) {
     try { return Math.floor(this.grid[i - this.x][j - this.y]); }
-    catch(err) {}
+    catch(err) { Add.error(err.message); }
   },
 	'path': function(i, j, ni, nj) {
 		let points = [[i, j]], rpoints = [], count = 20;
@@ -578,25 +582,32 @@ let Graphics = {
 let Img = {
 	'init': function(path, left, top, w, h, xoff, yoff, count) {
 		this.path = path, this.image = images[path], this.left = left || 0, this.top = top || 0,
-		this.w = w || this.image.width, this.h = h || this.image.height, this.count = count || 1,
+		this.w = w || (this.image.width || 0), this.h = h || this.image.height, this.count = count || 1,
 		this.xoff = xoff || 0, this.yoff = yoff || 0, this.frame = 0, this.frame_spd = 1;
 		return copy(this);
 	},
 	'draw': function(cvs, x, y, w, h, alpha, xscale, yscale, rotate) {
-		cvs.save();
-			if (alpha != undefined) cvs.globalAlpha = alpha;
-			let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
-			cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
-			if (xscale != undefined || yscale != undefined) cvs.scale(xscale || 1, yscale || 1);
-			if (rotate != undefined) {
-				cvs.translate(nxoff, nyoff);
-				cvs.rotate(rotate / 180 * Math.PI);
-				cvs.translate(-nxoff, -nyoff);
-			}
-			cvs.drawImage(this.image, this.left + this.w * Math.floor(this.frame % (this.image.width / this.w)), this.top + this.h * Math.floor(this.frame / (this.image.width / this.w)), this.w, this.h, 0, 0, w || this.w, h || this.h);
-			cvs.globalAlpha = 1;
-		cvs.restore();
-		this.frame = (this.frame + this.frame_spd) % this.count;
+		try {
+			if (this.image) {
+				cvs.save();
+					if (alpha != undefined) cvs.globalAlpha = alpha;
+					let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
+					cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
+					if (xscale != undefined || yscale != undefined) cvs.scale(xscale || 1, yscale || 1);
+					if (rotate != undefined) {
+						cvs.translate(nxoff, nyoff);
+						cvs.rotate(rotate / 180 * Math.PI);
+						cvs.translate(-nxoff, -nyoff);
+					}
+					cvs.drawImage(this.image, this.left + this.w * Math.floor(this.frame % ((this.image.width || 0) / this.w)), this.top + this.h * Math.floor(this.frame / ((this.image.width || 0) / this.w)), this.w, this.h, 0, 0, w || this.w, h || this.h);
+					cvs.globalAlpha = 1;
+				cvs.restore();
+				this.frame = (this.frame + this.frame_spd) % this.count;
+			} else this.image = images[this.path];
+		} catch(err) {
+			Add.error(this.path + ': ' + err.message + '\ndata: ' + this.image);
+			this.init(this.path, this.left, this.top, this.w, this.h, this.xoff, this.yoff, this.count);
+		}
 	}
 };
 /*

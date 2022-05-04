@@ -28,4 +28,3 @@ function ach_update() {
 		if (arr[i].func()) return arr[i];
 	return false;
 }
-console.log('ach.js loaded');

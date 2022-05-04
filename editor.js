@@ -8,18 +8,18 @@ function Editor(cvs, src, map) {
 	};
 	
 	add_gui(function(cvs) {
-		if (check('dclick') && !check('hover') && !memory.creplace) {
+		if (Byte.check('dclick') && !Byte.check('hover') && !memory.creplace) {
 			memory.save_mx = mouse.x * zoom, memory.save_my = mouse.y * zoom;
 			memory.creplace = true;
 			if (memory.editor.dobj) delete memory.editor.dobj;
-			clear('dclick');
+			Byte.clear('dclick');
 		}
 		if (memory.creplace) {
 			cameraes[current_camera].x += (memory.save_mx - mouse.x * zoom) * .1;
 			cameraes[current_camera].y += (memory.save_my - mouse.y * zoom) * .1;
-			if (check('uclick')) {
+			if (Byte.check('uclick')) {
 				delete memory.creplace;
-				clear('uclick');
+				Byte.clear('uclick');
 			}
 		}
 	});
@@ -29,11 +29,11 @@ function Editor(cvs, src, map) {
 			for (let i = 0, obj; i < memory.lobjects.length; i++) { 
 				obj = memory.lobjects[i];
 				if (obj)
-					if (rect(obj.x, obj.y, grid_size) && !(check('hover') || memory.creplace)) {
-						add('hover');
-						if (check('dclick')) {
+					if (rect(obj.x, obj.y, grid_size) && !(Byte.check('hover') || memory.creplace)) {
+						Byte.add('hover');
+						if (Byte.check('dclick')) {
 							memory.editor.dobj = obj;
-							clear('dclick');
+							Byte.clear('dclick');
 							break;
 						}
 					}
@@ -47,9 +47,9 @@ function Editor(cvs, src, map) {
 					gr.rect(xx, ny, src.width * .25, src.height * .925, '#000', .75);
 					list.forEach(function(e, i) {
 						gr.text(e, xx, ny + (20 + yoffset) * (i + 1), i != list.length - 1 ? '#fff' : '#f00', 1, 18);
-						if (grect(xx, ny + yy + (20 + yoffset) * i, grid_size * 5, 20) && !check('hover')) {
+						if (grect(xx, ny + yy + (20 + yoffset) * i, grid_size * 5, 20) && !Byte.check('hover')) {
 							gr.rect(xx, ny + yy + (20 + yoffset) * i, grid_size * 5, 20 + yy * 2, '#fff', .2);
-							if(check('uclick')) {
+							if(Byte.check('uclick')) {
 								if (i == list.length - 1) {
 									memory.editor.dobj.destroy();
 									delete memory.editor.dobj;
@@ -60,9 +60,9 @@ function Editor(cvs, src, map) {
 										else memory.editor.dobj[e] = q;
 									}
 								}
-								clear('uclick');
+								Byte.clear('uclick');
 							}
-							add('hover');
+							Byte.add('hover');
 						}
 					});
 				});
@@ -90,31 +90,31 @@ function Editor(cvs, src, map) {
 							cvs.textAlign = 'center';
 							gr.text(e.name, xx + msize * .5, yy + msize + offset * 2, memory.editor_obj == e ? '#ff0' : '#fff', 1, 16);
 							cvs.textAlign = 'left';
-							if (grect(xx + left, yy + top, msize, msize) && !check('hover') && !memory.creplace) {
-								add('hover');
-								if (check('dclick')) {
+							if (grect(xx + left, yy + top, msize, msize) && !Byte.check('hover') && !memory.creplace) {
+								Byte.add('hover');
+								if (Byte.check('dclick')) {
 									memory.editor_obj = e;
-									clear('dclick');
+									Byte.clear('dclick');
 								}
 							}
 						}
 					}, '#62ab4a');
 					if (memory.editor.objects.length > 6) {
 						if ((memory.editor_obj_page || 0) < Math.floor(memory.editor.objects.length / 6))
-							if (grect(gr.rect((msize + offset) * 2 + offset * 4, src.height * .075 + offset * 5, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !check('hover') && !memory.creplace) {
-								add('hover');
-								if (check('uclick')) {
+							if (grect(gr.rect((msize + offset) * 2 + offset * 4, src.height * .075 + offset * 5, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !Byte.check('hover') && !memory.creplace) {
+								Byte.add('hover');
+								if (Byte.check('uclick')) {
 									memory.editor_obj_page = (memory.editor_obj_page || 0) + 1;
-									clear('uclick');
+									Byte.clear('uclick');
 								}
 							}
 					}
 					if (memory.editor_obj_page > 0) {
-						if (grect(gr.rect(offset, src.height * .075 + offset * 5, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !check('hover') && !memory.creplace) {
-							add('hover');
-							if (check('uclick')) {
+						if (grect(gr.rect(offset, src.height * .075 + offset * 5, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !Byte.check('hover') && !memory.creplace) {
+							Byte.add('hover');
+							if (Byte.check('uclick')) {
 								memory.editor_obj_page = (memory.editor_obj_page || 0) - 1;
-								clear('uclick');
+								Byte.clear('uclick');
 							}
 						}
 					}
@@ -129,10 +129,10 @@ function Editor(cvs, src, map) {
 							cvs.fillRect(xx - cameraes[current_camera].x, yy - cameraes[current_camera].y, msize, msize);
 						}
 					});
-					if (check('uclick')) {
+					if (Byte.check('uclick')) {
 						Add.object(memory.editor_obj, Math.floor(xx / zoom / grid_size) * grid_size, Math.floor(yy / zoom / grid_size) * grid_size);
 						delete memory.editor_obj;
-						clear('uclick');
+						Byte.clear('uclick');
 					}
 				}
 			break;
@@ -144,32 +144,32 @@ function Editor(cvs, src, map) {
 							let l = Object.keys(images), size = 8;
 							for (let i = (memory.editor_obj_page || 0) * size, e; i < Math.min((memory.editor_obj_page || 0) * size + size, l.length); i++) {
 								gr.text(l[i], 26, (i - size * (memory.editor_obj_page || 0)) * 24, '#fff');
-								if (grect(left + 16, top + (i - size * (memory.editor_obj_page || 0)) * 24, 100, 24) && !check('hover')) {
-									add('hover');
+								if (grect(left + 16, top + (i - size * (memory.editor_obj_page || 0)) * 24, 100, 24) && !Byte.check('hover')) {
+									Byte.add('hover');
 									gr.rect(16, (i - size * (memory.editor_obj_page || 0)) * 24, 100, 24, '#fff', .25);
-									if (check('dclick')) {
+									if (Byte.check('dclick')) {
 										delete memory.select_tile;
 										memory.editor_obj = l[i];
-										clear('dclick');
+										Byte.clear('dclick');
 									}
 								}
 							}
 							if (l.length > size) {
 								if ((memory.editor_obj_page || 0) < Math.floor(l.length / size))
-									if (grect(gr.rect((msize + offset) * 5 + offset * 3, 0, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !check('hover') && !memory.creplace) {
-										add('hover');
-										if (check('uclick')) {
+									if (grect(gr.rect((msize + offset) * 5 + offset * 3, 0, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !Byte.check('hover') && !memory.creplace) {
+										Byte.add('hover');
+										if (Byte.check('uclick')) {
 											memory.editor_obj_page = (memory.editor_obj_page || 0) + 1;
-											clear('uclick');
+											Byte.clear('uclick');
 										}
 									}
 							}
 							if (memory.editor_obj_page > 0) {
-								if (grect(gr.rect(offset, 0, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !check('hover') && !memory.creplace) {
-									add('hover');
-									if (check('uclick')) {
+								if (grect(gr.rect(offset, 0, offset * 2, (msize + offset * 3) * 3 + offset, '#000', .25)) && !Byte.check('hover') && !memory.creplace) {
+									Byte.add('hover');
+									if (Byte.check('uclick')) {
 										memory.editor_obj_page = (memory.editor_obj_page || 0) - 1;
-										clear('uclick');
+										Byte.clear('uclick');
 									}
 								}
 							}
@@ -185,23 +185,23 @@ function Editor(cvs, src, map) {
 								//gr.image(images[memory.editor_obj], 0, 24, images[memory.editor_obj].width * zoom, height);
 							} else height = 0;
 							for (let i = 0, place = ['wall', 'floor', 'clear']; i < 3; i++) {
-								gr.text(place[i], 10, 48 + 24 * i, '#fff');
+								gr.text(place[i], 10, height + 48 + 24 * i, '#fff');
 								if (memory.select_tile && memory.select_tile.type == place[i]) gr.rect(0, 48 + 24 * i, 100, 24, '#ff0', .25);
-								if (grect(left, top + 48 + 24 * i, 100, 24) && !check('hover')) {
-									add('hover');
+								if (grect(left, top + height + 48 + 24 * i, 100, 24) && !Byte.check('hover')) {
+									Byte.add('hover');
 									gr.rect(0, height + 48 + 24 * i, 100, 24, '#fff', .25);
-									if (check('dclick')) {
+									if (Byte.check('dclick')) {
 										if (!memory.select_tile) memory.select_tile = {};
 										if (place[i] != 'clear') memory.select_tile.type = place[i]; else {
 											memory.editor_obj = 'clear';//['clear', nmap.memory['clear']];
 										}
-										clear('dclick');
+										Byte.clear('dclick');
 									}
 								}
 							}
 							switch(memory.editor_obj) {
 								case 'clear':
-									if (check('dclick') && !check('hover')) {
+									if (Byte.check('dclick') && !Byte.check('hover')) {
 										let xx = Math.floor(mouse.x / zoom / grid_size), yy = Math.floor(mouse.y / zoom / grid_size), e = memory.editor_obj;
 										val = CONST['wall'];
 										//if (!nmap.memory[memory.editor_obj + nx + 'x' + ny]) nmap.registry(memory.editor_obj + nx + 'x' + ny, val, Img.init(memory.editor_obj, memory.select_tile.x * grid_size, memory.select_tile.y * grid_size, grid_size, grid_size));
@@ -213,32 +213,32 @@ function Editor(cvs, src, map) {
 									}
 								break;
 								default:
-									if (grect(left, top + 24, w, height) && !check('hover')) {
-										add('hover');
+									if (grect(left, top + 24, w, height) && !Byte.check('hover')) {
+										Byte.add('hover');
 										
 										let nx = Math.floor(((mouse.x - cameraes[current_camera].x) - left) / ceil), ny = Math.floor(((mouse.y - cameraes[current_camera].y) - top) / ceil);
 										gr.rect(nx * ceil, ny * ceil + 24, ceil, ceil, '#f00', 1, 'stroke');
-										if (check('dclick')) {
+										if (Byte.check('dclick')) {
 											if (!memory.select_tile) memory.select_tile = {};
 											memory.select_tile.x = nx, memory.select_tile.y = ny;
 											//memory.select_tile = { 'x': nx, 'y': ny };
 
 											//console.log(memory.editor_obj + nx + 'x' + ny, nx, ny, grid_size, grid_size);
-											clear('dclick');
+											Byte.clear('dclick');
 										}
 									}
-									if (grect(left, top, 100, 24) && !check('hover')) {
-										add('hover');
+									if (grect(left, top, 100, 24) && !Byte.check('hover')) {
+										Byte.add('hover');
 										gr.rect(0, 0, 100, 24, '#fff', .25);
-										if (check('dclick')) {
+										if (Byte.check('dclick')) {
 											delete memory.editor_obj;
-											clear('dclick');
+											Byte.clear('dclick');
 										}
 									}
 									if (memory.select_tile) {
 										gr.rect(memory.select_tile.x * ceil, memory.select_tile.y * ceil + 24, ceil, ceil, '#ff0', 1, 'stroke');
 										let nx = memory.select_tile.x, ny = memory.select_tile.y;
-										if (check('dclick') && !check('hover')) {
+										if (Byte.check('dclick') && !Byte.check('hover')) {
 											let xx = Math.floor(mouse.x / zoom / grid_size), yy = Math.floor(mouse.y / zoom / grid_size), e = memory.editor_obj;
 											let val = 0, keys = Object.keys(nmap.memory), sum = CONST.steps;
 											for (let j = 0; j < keys.length; j++) {
@@ -264,12 +264,12 @@ function Editor(cvs, src, map) {
 					gr.gui.dragWindow('rooms', offset, src.height * .075 + offset * 5, (msize + offset) * 2 + offset * 5, (msize + offset * 3) * 3 + offset, 'rooms', function(left, top) {
 						Object.keys(current_level.levels).forEach(function(e, i) {
 							gr.text(e, 0, 16 + 24 * i, '#fff');
-							if (grect(left, top + 16 + 24 * i, 100, 16) && !check('hover')) {
-								add('hover');
+							if (grect(left, top + 16 + 24 * i, 100, 16) && !Byte.check('hover')) {
+								Byte.add('hover');
 								gr.rect(0, 16 + 24 * i, 100, 16, '#fff', .25);
-								if (check('uclick')) {
+								if (Byte.check('uclick')) {
 									current_level.load(e, nmap);
-									clear('uclick');
+									Byte.clear('uclick');
 								}
 							}
 						});
