@@ -1,4 +1,5 @@
 'use strict';
+<<<<<<< HEAD
 let stack_errors = [], key = 0, loaded = 0, mloaded = 0, images = {}, audio = {}, current_time = 0,
     render = [], keylocks = {}, grid = {}, pause = false, editor = false, mute = false, current_level = 0, levelMemory = {},
 	levelChange = false, cameraes = [{'x': 0, 'y': 0}], current_camera = 0, zoom = 1, grid_size = 32, is_touch = false, lang = { 'type': 'ru', 'source': {} },
@@ -10,21 +11,32 @@ let stack_errors = [], key = 0, loaded = 0, mloaded = 0, images = {}, audio = {}
 	SETTING = { 'music': 1, 'sound': 1 }, FONTS = {};
 function mset(val, value) { memory[val] = value || 0; }
 function mget(val) { return memory[val]; }
+=======
+
+let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
+let pause = false, editor = false, mute = false, levelChange = false, is_touch = false;
+let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
+let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
+let zoom = 1, grid_size = 32;
+let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
+let version = '1.2';
+
+>>>>>>> v1.2
 function show_error(cvs, clr) { // вывод ошибок:
-	if (stack_errors.length > 0) {
+	if (errors.length > 0) {
 		if (cvs) {
 			cvs.fillStyle = clr || '#fff';
-			stack_errors.forEach(function(e, i) {
+			errors.forEach(function(e, i) {
 				add_gui(function(cvs) {
-					cvs.globalAlpha = 1 - (stack_errors.length - (i + 1)) / stack_errors.length;
+					cvs.globalAlpha = 1 - (errors.length - (i + 1)) / errors.length;
 					cvs.fillText(i + ': ' + e, 6, 16 + 12 * i);
 				});
 			});
 			cvs.globalAlpha = 1;
 		} else {
-			console.log('Найдены ошибки (' + stack_errors.length + '):');
-			stack_errors.forEach(function(e, i) { console.error(i + ': ' + e); });
-			stack_errors = [];
+			console.log('Найдены ошибки (' + errors.length + '):');
+			errors.forEach(function(e, i) { console.error(i + ': ' + e); });
+			errors = [];
 		}
 	}
 }
@@ -63,7 +75,7 @@ let Add = {
 			script.src = arguments[i];
 			script.onload = function() { loaded++; }
 			script.onerror = function() { return this.error(arguments[i] + ' not find!'); }
-			document.body.appendChild(script);
+			document.head.appendChild(script);
 		}
 	},
 	'audio': function(source) {
@@ -90,7 +102,10 @@ let Add = {
 			images[path.join('.')] = img;
 		}
 	},
-	'error': function(msg) { stack_errors[stack_errors.length] = msg; },
+	'error': function(msg) {
+		errors[errors.length] = msg;
+		console.error(msg);
+	},
 	'canvas': function(id, upd, loading) {
 		let cvs = document.getElementById(id), node = cvs.parentNode;
 		if (cvs) {
@@ -98,8 +113,13 @@ let Add = {
         		Object.keys(keylocks).forEach(function(f) {
 					if (e.code.toLowerCase().replace('key', '') == f) {
 						switch(e.type) {
+<<<<<<< HEAD
 							case 'keydown': Bite.add(keylocks[f]); break;
 							case 'keyup': Bite.clear(keylocks[f]); break;
+=======
+							case 'keydown': Byte.add(keylocks[f]); break;
+							case 'keyup': Byte.clear(keylocks[f]); break;
+>>>>>>> v1.2
 						}
 						e.preventDefault();
 						e.stopImmediatePropagation();
@@ -114,9 +134,10 @@ let Add = {
 				switch(e.type) {
 					case 'mouseup': case 'touchend':
 						is_touch = false;
-						add('uclick');
+						Byte.add('uclick');
+						cvs.focus();
 					break;
-					case 'mousedown': case 'touchstart': add('dclick'); break;
+					case 'mousedown': case 'touchstart': Byte.add('dclick'); break;
 				}
 				if (e.type == 'touchstart') is_touch = true;
 				e.preventDefault();
@@ -125,7 +146,6 @@ let Add = {
 			function ready() {
 				window.addEventListener('keydown', keyChecker);
 				window.addEventListener('keyup', keyChecker);
-				console.log('loading!...');
 				cvs.focus();
 			}
 			if (document.readyState == 'loading') document.addEventListener('DOMContentLoaded', ready);
@@ -152,9 +172,15 @@ let Add = {
 
 				} else loading(loaded / mloaded, t);
 				try { gui.reverse().forEach(function(e) { e(ctx); }); }
+<<<<<<< HEAD
 				catch(err) {console.log(err);}
 				cvs.style.cursor = Bite.check('hover') ? 'pointer' : 'default';
 				Bite.clear('hover', 'dclick', 'uclick');
+=======
+				catch(err) { console.log(err.message); }
+				cvs.style.cursor = Byte.check('hover') ? 'pointer' : 'default';
+				Byte.clear('hover', 'dclick', 'uclick');
+>>>>>>> v1.2
 				current_time = t;
 				window.requestAnimationFrame(temp);
 			}
@@ -172,7 +198,7 @@ let Add = {
 							obj.ctx.drawImage(tmp, 0, 0);
 						}
 					}
-					catch(err) {}
+					catch(err) { Add.error(err.message); }
 					finally {
 						cvs.width = Math.floor(node.clientWidth);
 						cvs.height = Math.floor(node.clientHeight);
@@ -183,7 +209,7 @@ let Add = {
 				window.onresize = node.onresize = resize;
 				resize();
 			}
-			let description = "\n42engine.js by wmgcat!\nmade with clear javascript.\n ";
+			let description = "\n42eng.js by wmgcat!\nmade in javascript.\n\nversion: " + version;
 			console.log(description);
 			return obj;
 		}
@@ -209,23 +235,43 @@ let Add = {
 	||| clear(control) - очистка значений (без аргументов - полная очистка);
 	||| check(control) - провера значения;
 */
-let Bite = {
+let Byte = {
+	'key': 0, 'list': {
+		'up': 1, 'down': 2, 'left': 4, 'right': 8,
+		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
+		'move': 256, 'hover': 512
+	},
 	'add': function(arr) {
 		for (let i = 0; i < arguments.length; i++)
-			key |= keys[arguments[i]];
+			this.key |= this.list[arguments[i]];
 	},
 	'clear': function(arr) {
 		if (arguments.length > 0)
-			for (let i = 0; i < arguments.length; i++) key &=~ keys[arguments[i]];
-		else key = 0;
+			for (let i = 0; i < arguments.length; i++) this.key &=~ this.list[arguments[i]];
+		else this.key = 0;
 	},
 	'check': function(arr) {
 		for (let i = 0; i < arguments.length; i++)
-			if ((key & keys[arguments[i]]) <= 0) return false;
+			if ((this.key & this.list[arguments[i]]) <= 0) return false;
 		return true;
+	}
+};
+<<<<<<< HEAD
+=======
+let Eng = {
+	'distance': function(x1, y1, x2, y2) { return Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)); },
+	'direction': function(x1, y1, x2, y2) { return Math.atan2(y2 - y1, x2 - x1); },
+	'sign': function(x) { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.round(x) != 0); },
+	'clamp': function(x, min, max) { return Math.min(Math.max(x, min), max); },
+	'torad': function(x) { return x * Math.PI / 180; },
+	'todeg': function(x) { return x / Math.PI * 180; },
+	'collision': {
+		'rect': function(px, py, x, y, w, h) { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); },
+		'circle': function(px, py, x, y, range) { return distance(px, py, x, y) <= range; }
 	}
 
 };
+>>>>>>> v1.2
 function merge(col1, col2, val) {
 	let ncol = '#', table = {'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15};
 	for (let i = 1, a, b, ab; i < col1.length; i++) {
@@ -310,7 +356,7 @@ let Map = {
 	},
 	'get': function(i, j) {
     try { return Math.floor(this.grid[i - this.x][j - this.y]); }
-    catch(err) {}
+    catch(err) { Add.error(err.message); }
   },
 	'path': function(i, j, ni, nj) {
 		let points = [[i, j]], rpoints = [], count = 20;
@@ -400,6 +446,13 @@ let Graphics = {
 	'init': function(cvs) {
 		this.cvs = cvs;
 		return copy(this);
+	},
+	'getColor': function(x, y) {
+		try {
+			let dt = this.cvs.getImageData(x, y, 1, 1).data;
+			return '#' + ('000000' + (((dt[0] << 16) | (dt[1] << 8) | dt[2]).toString(16)).slice(-6));
+		}
+		catch(err) { return '#000'; }
 	},
 	'rect': function(x, y, w, h, color, alpha, tp) {
 		if (color) this.cvs[(tp || 'fill') + 'Style'] = color;
@@ -494,6 +547,7 @@ let Graphics = {
 	'gui': {
 		'btn': function(x, y, w, h, col, img) {
 			let hover = false, clicked = false;
+<<<<<<< HEAD
 			if (grect(x, y, w, h) && !Bite.check('hover')) {
 				Bite.add('hover');
 				hover = true;
@@ -504,6 +558,18 @@ let Graphics = {
 			}
 			Graphics.rect(x, y, w, h * .975, merge(col, '#000000', hover * .1));
 			if (!hover || !Bite.check('uclick')) Graphics.rect(x, y + h * .95, w, h * .05, merge(col, '#000000', .3 + hover * .1));
+=======
+			if (grect(x, y, w, h) && !Byte.check('hover')) {
+				Byte.add('hover');
+				hover = true;
+				if (Byte.check('uclick')) {
+					clicked = true;
+					Byte.clear('uclick');
+				}
+			}
+			Graphics.rect(x, y, w, h * .975, merge(col, '#000000', hover * .1));
+			if (!hover || !Byte.check('uclick')) Graphics.rect(x, y + h * .95, w, h * .05, merge(col, '#000000', .3 + hover * .1));
+>>>>>>> v1.2
 			if (img) {
 				if (typeof(img) == 'function') {
 					Graphics.cvs.save();
@@ -535,11 +601,19 @@ let Graphics = {
 				Graphics.rect(memory['window.' + id].x, memory['window.' + id].y - h * .1, w, h * .1, headcol ? headcol : '#470009');
 				Graphics.text(header, memory['window.' + id].x + w * .05, memory['window.' + id].y - w * .05, '#fff', 1, 12);
 				if (grect(memory['window.' + id].x + w * .8, memory['window.' + id].y - h * .1, w * .2, h * .1)) {
+<<<<<<< HEAD
 					if (Bite.check('uclick') && !Bite.check('hover')) {
 						memory['window.' + id].open =! memory['window.' + id].open;
 						Bite.clear('uclick');
 					}
 					Bite.add('hover');
+=======
+					if (Byte.check('uclick') && !Byte.check('hover')) {
+						memory['window.' + id].open =! memory['window.' + id].open;
+						Byte.clear('uclick');
+					}
+					Byte.add('hover');
+>>>>>>> v1.2
 				}
 			}
 			if (content != undefined && memory['window.' + id].open) {
@@ -556,25 +630,32 @@ let Graphics = {
 let Img = {
 	'init': function(path, left, top, w, h, xoff, yoff, count) {
 		this.path = path, this.image = images[path], this.left = left || 0, this.top = top || 0,
-		this.w = w || this.image.width, this.h = h || this.image.height, this.count = count || 1,
+		this.w = w || (this.image.width || 0), this.h = h || this.image.height, this.count = count || 1,
 		this.xoff = xoff || 0, this.yoff = yoff || 0, this.frame = 0, this.frame_spd = 1;
 		return copy(this);
 	},
 	'draw': function(cvs, x, y, w, h, alpha, xscale, yscale, rotate) {
-		cvs.save();
-			if (alpha != undefined) cvs.globalAlpha = alpha;
-			let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
-			cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
-			if (xscale != undefined || yscale != undefined) cvs.scale(xscale || 1, yscale || 1);
-			if (rotate != undefined) {
-				cvs.translate(nxoff, nyoff);
-				cvs.rotate(rotate / 180 * Math.PI);
-				cvs.translate(-nxoff, -nyoff);
-			}
-			cvs.drawImage(this.image, this.left + this.w * Math.floor(this.frame % (this.image.width / this.w)), this.top + this.h * Math.floor(this.frame / (this.image.width / this.w)), this.w, this.h, 0, 0, w || this.w, h || this.h);
-			cvs.globalAlpha = 1;
-		cvs.restore();
-		this.frame = (this.frame + this.frame_spd) % this.count;
+		try {
+			if (this.image) {
+				cvs.save();
+					if (alpha != undefined) cvs.globalAlpha = alpha;
+					let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
+					cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
+					if (xscale != undefined || yscale != undefined) cvs.scale(xscale || 1, yscale || 1);
+					if (rotate != undefined) {
+						cvs.translate(nxoff, nyoff);
+						cvs.rotate(rotate / 180 * Math.PI);
+						cvs.translate(-nxoff, -nyoff);
+					}
+					cvs.drawImage(this.image, this.left + this.w * Math.floor(this.frame % ((this.image.width || 0) / this.w)), this.top + this.h * Math.floor(this.frame / ((this.image.width || 0) / this.w)), this.w, this.h, 0, 0, w || this.w, h || this.h);
+					cvs.globalAlpha = 1;
+				cvs.restore();
+				this.frame = (this.frame + this.frame_spd) % this.count;
+			} else this.image = images[this.path];
+		} catch(err) {
+			Add.error(this.path + ': ' + err.message + '\ndata: ' + this.image);
+			this.init(this.path, this.left, this.top, this.w, this.h, this.xoff, this.yoff, this.count);
+		}
 	}
 };
 /*
@@ -657,18 +738,10 @@ let Level = {
 			if (datapack.levels) {
 				main.levels = {};
 				Object.keys(datapack.levels).forEach(function(e) {
-					main.levels[e] = { 
-						'objects': datapack.levels[e].objects, 
-						'map': datapack.levels[e].map, 
-						'background': datapack.levels[e].background, 
-						'ost': datapack.levels[e].ost,
-						'layerup': datapack.levels[e].layerup,
-						'layerdown': datapack.levels[e].layerdown }
+					main.levels[e] = {};
+					Object.keys(datapack.levels[e]).forEach(function(key) { main.levels[e][key] = datapack.levels[e][key]; });
 				});
-				if (datapack.started) {
-					main.location = datapack.started;
-					main.default = main.location;
-				}
+				if (datapack.started) main.default = main.location = datapack.started;
 			}
 			main.color = datapack.color;
 			if (datapack.textmap) {
