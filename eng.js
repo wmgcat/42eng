@@ -5,7 +5,21 @@ let pause = false, editor = false, mute = false, levelChange = false, is_touch =
 let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
 let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
 let zoom = 1, grid_size = 32;
-let lang = {'type': 'ru', 'source': {}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
+let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
+	let str = false;
+	for (let i = 0; i < arguments.length; i++) {
+		if (!i) {
+			let path = arguments[i].split('.'), pos = 0, arr = lang.source[lang.type] || {};
+			while(arr[path[pos]]) {
+				if (typeof(arr[path[pos]]) == 'string') {
+					str = arr[path[pos]];
+					break;
+				} else arr = arr[path[pos++]];
+			}
+		} else str.replace('%s', arguments[i]);
+	}
+	return str;
+}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
 let version = '1.2';
 
 function show_error(cvs, clr) { // вывод ошибок:
@@ -47,6 +61,7 @@ function copy(source) {
 		path - путь до файла,
 		short - сокращение языка (ru, en, fr),
 		main - автоматический выбор при загрузке игры (true / false);
+	чтобы использовать перевод нужно использовать метод lang.use(arg0..N);
 	\###=#=##======##=#=###/
 */
 
@@ -903,22 +918,6 @@ function emitter(params, x, y, count, range, gui) {
 }
 // camera work:
 function getWindowSize(canvas) { return {'w': canvas.id.width, 'h': canvas.id.height}; }
-
-function trText() {
-	let str = false;
-	for (let i = 0; i < arguments.length; i++) {
-		if (!i) {
-			let path = arguments[i].split('.'), pos = 0, arr = lang.source[lang.type] || {};
-			while(arr[path[pos]]) {
-				if (typeof(arr[path[pos]]) == 'string') {
-					str = arr[path[pos]];
-					break;
-				} else arr = arr[path[pos++]];
-			}
-		} else str = str.replace('%s', arguments[i]);
-	}
-	return str;
-}
 function globalSave(oData) {
 	let data = {}, k = Object.keys(oData || {});
 	k.forEach(function(e) { data[e] = oData[e]; });
