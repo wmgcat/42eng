@@ -43,8 +43,13 @@ function copy(source) {
 		в update(t) происходит обновление всех объектов и их отрисовка,
 		в loading(loaded, t) экран загрузки;
 	object(name, x, y) - добавление копии игрового объекта на уровень;
+	language(path, short, main) - добавление локализации для игры, где
+		path - путь до файла,
+		short - сокращение языка (ru, en, fr),
+		main - автоматический выбор при загрузке игры (true / false);
 	\###=#=##======##=#=###/
 */
+
 let Add = {
 	'rule': function(char, key) {
 		if (typeof(char) == 'object') { Object.keys(char).forEach(function(k) { keylocks[k] = char[k]; });
@@ -203,6 +208,18 @@ let Add = {
 		if (memory.lobjects) memory.lobjects[memory.lobjects.length] = copy(obj); else memory.lobjects = [copy(obj)];
 		memory.lobjects[memory.lobjects.length - 1].id = '#id' + Date.now();  //(memory.lobjects.length);
 		return memory.lobjects[memory.lobjects.length - 1];
+	},
+	'language': function(path, short, main) {
+		let script = document.createElement('script');
+		script.src = path;
+		mloaded++;
+		script.onload = function() {
+			lang.source[short] = copy(Lang);
+			if (main) lang.type = short;
+			loaded++;
+		}
+		script.onerror = function() { return Add.error(path + ' not find!'); }
+		document.body.appendChild(script);
 	}
 }
 /*
@@ -886,20 +903,7 @@ function emitter(params, x, y, count, range, gui) {
 }
 // camera work:
 function getWindowSize(canvas) { return {'w': canvas.id.width, 'h': canvas.id.height}; }
-// localization:
-function addLocal(path, type, selected) {
-	let script = document.createElement('script');
-	script.src = path;
-	mloaded++;
-	script.onload = function() { 
-		lang.source[type] = copy(Lang);
-		if (selected) lang.type = type;
-		loaded++;
 
-	}
-	script.onerror = function() { return Add.error(path + 'не найден!'); }
-	document.body.appendChild(script);
-}
 function trText() {
 	let str = false;
 	for (let i = 0; i < arguments.length; i++) {
