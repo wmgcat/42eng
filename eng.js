@@ -64,7 +64,6 @@ function copy(source) {
 	чтобы использовать перевод нужно использовать метод lang.use(arg0..N);
 	\###=#=##======##=#=###/
 */
-
 let Add = {
 	'rule': function(char, key) {
 		if (typeof(char) == 'object') { Object.keys(char).forEach(function(k) { keylocks[k] = char[k]; });
@@ -274,7 +273,6 @@ let Eng = {
 		'rect': function(px, py, x, y, w, h) { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); },
 		'circle': function(px, py, x, y, range) { return distance(px, py, x, y) <= range; }
 	}
-
 };
 function merge(col1, col2, val) {
 	let ncol = '#', table = {'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15};
@@ -343,12 +341,12 @@ let Map = {
 		else this.memory[val] = [value, img];
 	},
 	'draw': function(func) {
-		if (func) render[render.length] = { 'obj': {'yr': -1000}, 'func': func };
+		if (func) render[render.length] = { 'obj': { 'yr': -1000 }, 'func': func };
 	},
 	'get': function(i, j) {
-    try { return Math.floor(this.grid[i - this.x][j - this.y]); }
-    catch(err) { Add.error(err.message); }
-  },
+	    try { return Math.floor(this.grid[i - this.x][j - this.y]); }
+	    catch(err) { Add.error(err.message); }
+	},
 	'path': function(i, j, ni, nj) {
 		let points = [[i, j]], rpoints = [], count = 20;
 		while (count) {
@@ -374,63 +372,6 @@ let Map = {
 			if (count-- <= 0) break;
 		}
 		return points.slice(0, points.length);
-	},
-	'render3D': function(x, y, angle, step, gr, width, height, texts) {
-		if (!pause) {
-			let stack = [], col = 60 / width, ids = {}, range = width / 60;
-			for (let i = 60; i > -1; i -= col) { // angle:
-				let n_dir = angle - 60 * .5 + i;
-				for (let d = 0; d < width / height * grid_size * 4; d++) { // distance:
-					let xx = x + Math.cos(n_dir / 180 * Math.PI) * d, yy = y + Math.sin(n_dir / 180 * Math.PI) * d;
-					if (this.grid[Math.floor(xx / grid_size)][Math.floor(yy / grid_size)] != 0) {
-						let h = height * (grid_size / Math.abs(Math.sqrt(Math.pow(xx - x, 2) + Math.pow(yy - y, 2)) * Math.cos((n_dir - angle) / 180 * Math.PI))),
-							xo = 0, yo = 0,
-							offset = distance(xx, yy, Math.floor(xx / grid_size + xo) * grid_size, Math.floor(yy / grid_size + yo) * grid_size);
-						if (offset > (grid_size - 1)) xo = yo = 1;
-						offset = distance(xx, yy, Math.floor(xx / grid_size + xo) * grid_size, Math.floor(yy / grid_size + yo) * grid_size);
-						stack[stack.length + 1] = {
-							'x': i * range, 'y': (height - h) * .5,
-							'left': offset % (grid_size - col),
-							'dist': h, 'ind': this.grid[Math.floor(xx / grid_size)][Math.floor(yy / grid_size)]
-						};
-						break;
-					}
-					for (let j = 0; j < memory.lobjects.length; j++) { // place on object:
-						let ndist = distance(xx, yy, memory.lobjects[j].x + grid_size * .5, memory.lobjects[j].y + grid_size * .5);
-						if (ndist < step) {
-							let h = height * (grid_size / Math.abs(Math.sqrt(Math.pow(xx - x, 2) + Math.pow(yy - y, 2)) * Math.cos((n_dir - angle) / 180 * Math.PI)));
-							if (ids[memory.lobjects[j].id] == undefined) {
-								stack[stack.length + 1] = {
-									'x': i * range, 'y': (height - h) * .5,
-									'dist': h, 'type': 'obj',
-									'obj': memory.lobjects[j],
-									'view': Math.abs((memory.lobjects[j].angle || 0) - n_dir)
-								};
-								ids[memory.lobjects[j].id] = true;
-							}
-						}
-					}
-				}
-			}
-			stack.sort(function(a, b) { return (a.type == 'obj') - (b.type == 'obj'); }).sort(function(a, b) { return a.dist - b.dist; }).forEach(function(e) {
-				if (e.type == 'obj') {
-					if (texts[e.obj.name] != undefined) {
-						if (texts[e.obj.name] != 'none') {
-							let dist = e.view;
-							if (dist > 45 && dist < 135) gr.image(images[texts[e.obj.name]], e.x - grid_size * .5, e.y, e.dist, e.dist, 1, 32, 0, 32, 32);
-							else if (dist > 225 && dist < 315) gr.image(images[texts[e.obj.name]], e.x - grid_size * .5, e.y, e.dist, e.dist, 1, 96, 0, 32, 32);
-							else if (dist >= 135 && dist <= 225) gr.image(images[texts[e.obj.name]], e.x - grid_size * .5, e.y, e.dist, e.dist, 1, 64, 0, 32, 32);
-							else gr.image(images[texts[e.obj.name]], e.x - grid_size * .5, e.y, e.dist, e.dist, 1, 0, 0, 32, 32);
-						}
-					} else gr.rect(e.x - grid_size * .5, e.y, e.dist, e.dist, merge('#f0f', '#000', 1 - e.dist / 50));
-				} else {
-					if (texts[e.ind + ''] != undefined) {
-						gr.image(images[texts[e.ind]], e.x, e.y, range, e.dist, 1, e.left, 0, col, grid_size);
-					}
-					gr.rect(e.x, e.y, range, e.dist, '#000', clamp(1 - e.dist / 300, 0, 1));
-				}
-			});
-		}
 	}
 };
 let Graphics = {
@@ -883,7 +824,7 @@ let Part = {
 	},
 	'destroy': function() {
 		if (memory.lobjects)
-			for (let i = 0; i < memory.lobjects.length; i++) {
+			for (let i = memory.lobjects.length - 1; i >= -1; i--) {
 				if (memory.lobjects[i] == this) {
 					if (this.delete) this.delete();
 					delete memory.lobjects[i];
