@@ -479,6 +479,7 @@ let Graphics = {
 			if (color) this.cvs[(tp || 'fill') + 'Style'] = color;
 			this.cvs[(tp || 'fill') + 'Text'](lang.use(text) || text, x, y);
 		this.cvs.restore();
+		return this.len(text, size, font || 'Arial');
 	},
 	'len': function(text, size, font) {
 		this.cvs.save();
@@ -870,43 +871,43 @@ let Part = {
 		if (params.scale == undefined) pt.scale = 1;
 		if (params.scale_start == undefined) pt.scale_start = pt.scale;
 		if (params.scale_end == undefined) pt.scale_end = pt.scale_start;
+		pt.func = function(cvs) {
+			if (pt.life.check(true)) { // destroy;
+				pt.destroy();
+			} else {
+				if (pt.angle == undefined || pt.angle == -1) {
+					pt.angle = Math.random() * (pt.angle_end - pt.angle_start) - pt.angle_end;
+				}
+				if (pt.alpha == undefined) {
+					pt.alpha = pt.alpha_start || pt.alpha_end || 1;
+					if (pt.alpha_end == undefined) pt.alpha_end = pt.alpha_start || pt.alpha;
+					if (pt.alpha_start == undefined) pt.alpha_start = pt.alpha;
+				}
+				if (pt.scale == undefined) {
+					pt.scale = pt.scale_start || pt.scale_end || 1;
+					
+				}
+				if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale || 0;
+				if (pt.scale_start == undefined) pt.scale_start = pt.scale || 0;
+				pt.x += Math.cos((pt.angle || 0) * Math.PI / 180) * pt.spd;
+				pt.y += Math.sin((pt.angle || 0) * Math.PI / 180) * pt.spd;
+				if (pt.is_life) {
+					pt.image_index.frame_spd = 0;
+					pt.image_index.frame = (pt.image_index.count) * (1 - pt.life.delta());
+					//console.log(obj.image_index.frame)
+				} else {
+					pt.image_index.frame_spd = pt.frame_spd || 0;
+				}
+				pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * (1 - pt.life.delta());
+				pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * (1 - pt.life.delta());
+				pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale);
+			}
+		}
 		return Add.object(pt, x, y);
 	},
 	'draw': function(obj) {
-		function func(cvs) {
-
-			if (obj.life.check(true)) { // destroy;
-				obj.destroy();
-			} else {
-				if (obj.angle == undefined || obj.angle == -1) {
-					obj.angle = Math.random() * (obj.angle_end - obj.angle_start) - obj.angle_end;
-				}
-				if (obj.alpha == undefined) {
-					obj.alpha = obj.alpha_start || obj.alpha_end || 1;
-					if (obj.alpha_end == undefined) obj.alpha_end = obj.alpha_start || obj.alpha;
-					if (obj.alpha_start == undefined) obj.alpha_start = obj.alpha;
-				}
-				if (obj.scale == undefined) {
-					obj.scale = obj.scale_start || obj.scale_end || 1;
-					
-				}
-				if (obj.scale_end == undefined) obj.scale_end = obj.scale_start || obj.scale || 0;
-				if (obj.scale_start == undefined) obj.scale_start = obj.scale || 0;
-				obj.x += Math.cos((obj.angle || 0) * Math.PI / 180) * obj.spd;
-				obj.y += Math.sin((obj.angle || 0) * Math.PI / 180) * obj.spd;
-				if (obj.is_life) {
-					obj.image_index.frame_spd = 0;
-					obj.image_index.frame = (obj.image_index.count) * (1 - obj.life.delta());
-					//console.log(obj.image_index.frame)
-				} else {
-					obj.image_index.frame_spd = obj.frame_spd || 0;
-				}
-				obj.alpha = obj.alpha_start + (obj.alpha_end - obj.alpha_start) * (1 - obj.life.delta());
-				obj.scale = obj.scale_start + (obj.scale_end - obj.scale_start) * (1 - obj.life.delta());
-				obj.image_index.draw(cvs, obj.x, obj.y, undefined, undefined, obj.alpha, obj.scale, obj.scale);
-			}
-		}
-		if (!obj.gui) render[render.length] = { 'obj': this, 'func': func}; else add_gui(function(cvs) { func(obj.gui)} );
+		if (!obj.gui) render[render.length] = { 'obj': this, 'func': obj.func};
+		else add_gui(function(cvs) { obj.func(obj.gui)} );
 	},
 	'destroy': function() {
 		if (memory.lobjects)
