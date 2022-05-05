@@ -20,7 +20,7 @@ let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
 	}
 	return str;
 }}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
-let version = '1.2';
+let version = '1.3';
 
 function show_error(cvs, clr) { // вывод ошибок:
 	if (errors.length > 0) {
@@ -299,19 +299,6 @@ function sign(x) { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.ro
 function bsign(bool) { return bool - !bool; };
 function clamp(x, min, max) { return Math.min(Math.max(x, min), max); }
 function add_gui(func) { gui[gui.length] = func; }
-function sound_play(name, volume, looping) {
-	if (audio[name] && !mute) {
-		audio[name].volume = volume || audio[name].volume;
-		audio[name].play();
-		audio[name].loop = looping || false;
-	}
-}
-function sound_stop(name) {
-	if (audio[name] && !mute) {
-		audio[name].pause();
-		audio[name].currentTime = 0;
-	}
-}
 let Obj = {
 	'init': function(name) {
 		if (arguments.length > 1) for (let i = 0; i < arguments.length; i++) this.init(arguments[i]);
@@ -868,38 +855,23 @@ let Part = {
 			pt.life = Timer.init(pt.life);
 			pt.life.check();
 		}
-		if (params.scale == undefined) pt.scale = 1;
-		if (params.scale_start == undefined) pt.scale_start = pt.scale;
-		if (params.scale_end == undefined) pt.scale_end = pt.scale_start;
+		if (pt.angle == -1 || pt.angle == undefined) pt.angle = Math.random() * ((pt.angle_end || 0) - (pt.angle_start || 0)) - (pt.angle_end || 0);
+		if (pt.alpha == undefined) pt.alpha = pt.alpha_start || pt.alpha_end || 1;
+		if (pt.alpha_end == undefined) pt.alpha_end = pt.alpha_start || pt.alpha;
+		if (pt.alpha_start == undefined) pt.alpha_start = pt.alpha;
+		if (pt.scale == undefined) pt.scale = pt.scale_start || pt.scale_end || 1;
+		if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale;
+		if (pt.scale_start == undefined) pt.scale_start = pt.scale;
 		pt.func = function(cvs) {
-			if (pt.life.check(true)) { // destroy;
-				pt.destroy();
-			} else {
-				if (pt.angle == undefined || pt.angle == -1) {
-					pt.angle = Math.random() * (pt.angle_end - pt.angle_start) - pt.angle_end;
-				}
-				if (pt.alpha == undefined) {
-					pt.alpha = pt.alpha_start || pt.alpha_end || 1;
-					if (pt.alpha_end == undefined) pt.alpha_end = pt.alpha_start || pt.alpha;
-					if (pt.alpha_start == undefined) pt.alpha_start = pt.alpha;
-				}
-				if (pt.scale == undefined) {
-					pt.scale = pt.scale_start || pt.scale_end || 1;
-					
-				}
-				if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale || 0;
-				if (pt.scale_start == undefined) pt.scale_start = pt.scale || 0;
-				pt.x += Math.cos((pt.angle || 0) * Math.PI / 180) * pt.spd;
-				pt.y += Math.sin((pt.angle || 0) * Math.PI / 180) * pt.spd;
-				if (pt.is_life) {
-					pt.image_index.frame_spd = 0;
-					pt.image_index.frame = (pt.image_index.count) * (1 - pt.life.delta());
-					//console.log(obj.image_index.frame)
-				} else {
-					pt.image_index.frame_spd = pt.frame_spd || 0;
-				}
-				pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * (1 - pt.life.delta());
-				pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * (1 - pt.life.delta());
+			if (pt.life.check(true)) pt.destroy();
+			else {
+				let delta = 1 - pt.life.delta();
+				pt.x += Math.cos(Eng.torad(pt.angle)) * (pt.spd || 0);
+				pt.y += Math.sin(Eng.torad(pt.angle)) * (pt.spd || 0);
+				pt.image_index.frame_spd = (pt.frame_spd * !pt.is_life) || 0;
+				if (pt.is_life) pt.image_index.frame = pt.image_index.count * delta;
+				pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * delta;
+				pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
 				pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale);
 			}
 		}
@@ -1009,6 +981,19 @@ function globalLoad(func, ignore, destroy) {
 			});
 		}
 		if (func) func(dt);
+	}
+}
+function sound_play(name, volume, looping) {
+	if (audio[name] && !mute) {
+		audio[name].volume = volume || audio[name].volume;
+		audio[name].play();
+		audio[name].loop = looping || false;
+	}
+}
+function sound_stop(name) {
+	if (audio[name] && !mute) {
+		audio[name].pause();
+		audio[name].currentTime = 0;
 	}
 }
 /* работа с сетью: */
