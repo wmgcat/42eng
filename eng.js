@@ -1,7 +1,7 @@
 'use strict';
 
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
-let pause = false, editor = false, mute = false, levelChange = false, is_touch = false;
+let pause = false, editor = false, mute = false, levelChange = false, is_touch = false, debug = false;
 let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
 let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
 let zoom = 1, grid_size = 32;
@@ -561,8 +561,16 @@ let Img = {
 					}
 					cvs.drawImage(this.image, this.left + this.w * Math.floor(this.frame % ((this.image.width || 0) / this.w)), this.top + this.h * Math.floor(this.frame / ((this.image.width || 0) / this.w)), this.w, this.h, 0, 0, w || this.w, h || this.h);
 					cvs.globalAlpha = 1;
+					if (debug) {
+						cvs.lineWidth = 1;
+						let gr = Graphics.init(cvs), nw = w || this.w, nh = h || this.h;
+						gr.rect(0, 0, nw, nh, '#f00', 1, 'stroke');
+						gr.line(nw * .25, nh * .5, nw * .75, nh * .5, '#f00');
+						gr.line(nw * .5, nh * .25, nw * .5, nh * .75, '#f00');
+					}
 				cvs.restore();
 				this.frame = (this.frame + this.frame_spd) % this.count;
+
 			} else this.image = images[this.path];
 		} catch(err) {
 			Add.error(this.path + ': ' + err.message + '\ndata: ' + this.image);
