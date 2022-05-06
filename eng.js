@@ -605,7 +605,7 @@ let Search = {
 			if (arguments.length > 1) for (let i = 0; i < arguments.length; i++) s = s.concat(Search.id(arguments[i]));
 			else {
 				for (let i = 0; i < memory.lobjects.length; i++)
-					if (memory.lobjects[i].id == id) {
+					if (memory.lobjects[i] && memory.lobjects[i].id == id) {
 						s[s.length] = memory.lobjects[i];
 						break;
 					}
