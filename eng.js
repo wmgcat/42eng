@@ -1,12 +1,155 @@
 'use strict';
 
-let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
-let pause = false, editor = false, mute = false, levelChange = false, is_touch = false, debug = false;
+// hook:
+String.prototype.replaceAll = function(match, replace) {
+  return this.replace(new RegExp(match, 'g'), () => replace);
+}
+
+let cfg = { // основной конфиг:
+	'title': '42engine.js',
+	'grid': 32, 'zoom': 1, 'debug': false,
+	'build': { 'v': '1.5', 'href': '' },
+	'macros': {
+		'up': 1, 'down': 2, 'left': 4, 'right': 8,
+		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
+		'move': 256, 'hover': 512
+	},
+	'setting': {
+		'music': 1, 'sounds': 1,
+		'mute': false, 'user': false,
+		'focus': true, 'listener': 10,
+		'fps': 60
+	},
+	'window': {
+		'fullscreen': true,
+		'width': 800, 'height': 600,
+		'id': 'game'
+	}
+};
+let Eng = { // все методы движка:
+	'id': () => {
+		let a4 = () => { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1); }, separator = '.';
+		return '#id' + a4() + a4() + separator + a4() + a4() + separator + a4() + a4() + separator + a4() + a4();
+	},
+	'math': {
+		'distance': (x1, y1, x2, y2) => { return Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)); },
+		'direction': (x1, y1, x2, y2) => { return Math.atan2(y2 - y1, x2 - x1); },
+		'sign': x => { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.round(x) != 0); },
+		'clamp': (x, min, max) => { return Math.min(Math.max(x, min), max); },
+		'torad': x => { return x * Math.PI / 180; },
+		'todeg': x => { return x / Math.PI * 180; }
+	},
+	'collision': {
+		'rect': (px, py, x, y, w, h) => { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); },
+		'circle': (px, py, x, y, range) => { return Eng.math.distance(px, py, x, y) <= range; },
+		'mouse': {
+			'rect': (x, y, w, h) => { return Eng.collision.rect(mouse.x, mouse.y, x * cfg.zoom, y * cfg.zoom, w * cfg.zoom, (h || w) * cfg.zoom); },
+			'grect': (x, y, w, h) => { return Eng.collision.rect(mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y, x, y, w, h || w); },
+			'circle': (x, y, range) => { return Eng.collision.circle(mouse.x, mouse.y, x * cfg.zoom, y * cfg.zoom, range * cfg.zoom); },
+			'gcircle': (x, y, range) => { return Eng.collision.circle(mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y, x, y, range); }
+		}
+	},
+	'wait': (func, success, error) => {
+		new Promise(func).then(
+			value => success(value),
+			err => error(err.message)
+		).catch(err => { console.log('lol', err); });
+	},
+	'timer': (func, time) => {
+		let t = setInterval(() => {
+			if (func && func()) clearInterval(t);
+		}, time);
+		return t;
+	},
+	'copy': source => {
+		let arr = {};
+		Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
+		return arr;
+	},
+	'emitter': (params, x, y, count, range, gui) => {
+		for (let i = 0; i < count; i++) {
+			let nx = x + Math.random() * range * 2 - range, ny = y + Math.random() * range * 2 - range;
+			if (Eng.collision.rect(nx, ny, cameraes[current_camera].x - cfg.grid, cameraes[current_camera].y - cfg.grid, cfg.window.width + cfg.grid * 2, cfg.window.height + cfg.grid * 2)) {
+				Part.init(params, nx, ny, gui);
+			}
+		}
+	},
+	'focus': value => {
+		//if (window) {
+		switch(value) {
+			case true:
+				cfg.setting.focus = true;
+				window.focus();
+			break;
+			case false:
+				cfg.setting.focus = false;
+				audio.setvolume('music', 0);
+				audio.setvolume('sounds', 0);
+				window.blur();
+			break;
+		}
+		Add.debug('окно ' + (value ? 'в фокусе' : 'не в фокусе'));
+		//}
+	},
+	'console': { // работа с консолью:
+		'release': () => {
+			let img = [
+				`      /\\`,
+				`     /  \\        42eng.js by wmgcat`,
+				`    /    \\       v: ${cfg.build.v}`,
+				`   /......\\      ${cfg.build.href}`,
+				`  < o L o >`
+			];
+			let sum = '';
+			img.forEach(line => { sum += line + '\n'; });
+			console.log(sum);
+		},
+		'show': (cvs, clr) => {
+			if (errors.length > 0) {
+				if (cvs) {
+					cvs.fillStyle = clr || '#fff';
+					errors.forEach(function(e, i) {
+						Add.gui(function(cvs) {
+							cvs.globalAlpha = 1 - (errors.length - (i + 1)) / errors.length;
+							cvs.fillText(i + ': ' + e, 6, 16 + 12 * i);
+						});
+					});
+					cvs.globalAlpha = 1;
+				} else {
+					console.log('Найдены ошибки (' + errors.length + '):');
+					errors.forEach(function(e, i) { console.error(i + ': ' + e); });
+					errors = [];
+				}
+			}
+		}
+	}
+};
+
+var AudioContext = window.AudioContext || window.webkitAudioContext || false;
+
+let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
+let pause = false, editor = false, mute = false, levelChange = false, is_touch = false, cvs_delta = 0;
 let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
-let audio = {}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
-let zoom = 1, grid_size = 32;
+let audio = {
+	'stack': {},
+	'context': AudioContext ? new AudioContext : false,
+	'play': (id, loop) => { if (audio.context && audio.stack && audio.stack[id]) audio.stack[id].play(loop); },
+	'setvolume': (type, volume) => {
+		if (audio.context) {
+      if (!audio[type + '_volume']) audio[type + '_volume'] = audio.context.createGain();
+		  audio[type + '_volume'].gain.value = volume;
+	  }
+  },
+	'listener': [],
+	'stop': id => { if (audio.stack && audio.stack[id]) audio.stack[id].stop(); }
+}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
+if (audio.context)
+  audio.context.onstatechange = () => {
+	  if (audio.context.state === "interrupted") audio.context.resume();
+	  Add.debug('Состояние audio.context', audio.context.state);
+  }
 let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
-	let str = false;
+	let str = arguments['0'];
 	for (let i = 0; i < arguments.length; i++) {
 		if (!i) {
 			let path = arguments[i].split('.'), pos = 0, arr = lang.source[lang.type] || {};
@@ -16,40 +159,15 @@ let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
 					break;
 				} else arr = arr[path[pos++]];
 			}
-		} else { if (str) str = str.replace('%s', arguments[i]); }
+		} else { if (str) str = str.replace('%s', lang.use(arguments[i])); }
 	}
 	return str;
-}}, mouse = {'x': 0, 'y': 0, 'touchlist': []}, SETTING = {'music': 1, 'sound': 1};
-let version = '1.3';
-
-function show_error(cvs, clr) { // вывод ошибок:
-	if (errors.length > 0) {
-		if (cvs) {
-			cvs.fillStyle = clr || '#fff';
-			errors.forEach(function(e, i) {
-				add_gui(function(cvs) {
-					cvs.globalAlpha = 1 - (errors.length - (i + 1)) / errors.length;
-					cvs.fillText(i + ': ' + e, 6, 16 + 12 * i);
-				});
-			});
-			cvs.globalAlpha = 1;
-		} else {
-			console.log('Найдены ошибки (' + errors.length + '):');
-			errors.forEach(function(e, i) { console.error(i + ': ' + e); });
-			errors = [];
-		}
-	}
-}
-function copy(source) {
-	let arr = {};
-	Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
-	return arr;
-}
+}}, mouse = {'x': 0, 'y': 0, 'touch': {'x': 0, 'y': 0}};
 /*
     \0/ ** add content ** \0/
 	rule(char, key || object) - добавление клавиш управления;
 	script(src, 1..n) - добавление скриптов;
-	audio(src, 1..n) - добавление звуков, музыки;
+	audio([type, src] or {src: type, src2: type, srcN: type}) - добавление звуков, музыки;
 	image(src, 1..n) - добавление изображений;
 	error(msg) - создание ошибок;
 	canvas(id, update, loading) - создание холста для игры,
@@ -62,6 +180,8 @@ function copy(source) {
 		short - сокращение языка (ru, en, fr),
 		main - автоматический выбор при загрузке игры (true / false);
 	чтобы использовать перевод нужно использовать метод lang.use(arg0..N);
+	gui(func) - рисует внутри функции поверх игры;
+	debug(args...) - отображает сообщения для дебага ( работает только в debug моде );
 	\###=#=##======##=#=###/
 */
 let Add = {
@@ -83,158 +203,230 @@ let Add = {
 			document.head.appendChild(script);
 		}
 	},
-	'audio': function(source) {
-		for (let i = 0; i < arguments.length; i++) {
+	'audio': function(type='sounds', source) {
+		if (Object.keys(arguments).length > 1) {
+			//if (!audio[type + '_volume']) audio.setvolume(type, 1);
 			mloaded++;
-			let saudio = new Audio(arguments[i]), path = arguments[i].split('/');
+			let path = source.split('/');
 			if (path[0] == '.') path = path.splice(1, path.length - 1);
-			path[path.length - 1] = path[path.length - 1].replace('.wav', '');
-			saudio.volume = .25;
-			saudio.onerror = function() { return Add.error(path + ' not find!'); }
-			saudio.onloadeddata = function() { loaded++; }
-			audio[path.join('.')] = saudio;
+			['.wav', '.ogg', '.mp3'].forEach(assoc => { path[path.length - 1] = path[path.length - 1].replace(assoc, ''); });
+			let req = new XMLHttpRequest();
+			req.open('GET', source, true);
+			req.responseType = 'arraybuffer';
+			req.onload = () => {
+				let sa = req.response;
+				audio.context.decodeAudioData(req.response, buff => {
+					loaded++;
+					if (audio.stack) audio.stack[path.join('.')] = new Sound(buff, type);
+				});
+			}
+			req.onerror = () => {
+				/*let sa = new Audio(source);
+				sa.disableRemotePlayback = true;
+				sa.onerror = err => { return Add.error(source + ' not find!'); }
+				sa.oncanplaythrough = () => { loaded++; }
+				sa.load(); 
+				if (audio.stack) audio.stack[path.join('.')] = new Sound(sa, type);*/
+			}
+			req.send();
+		} else { // добавление несколько файлов в одну команду:
+			if (typeof(type) == 'object') {
+				Object.keys(type).forEach(key => Add.audio(type[key], key));
+			} else Add.error('type audio not find!');
 		}
 	},
 	'image': function(source) {
 		for (let i = 0; i < arguments.length; i++) {
 			mloaded++;
+			let str = arguments[i];
 			let img = new Image(), path = arguments[i].split('/');
 			img.src = arguments[i];
+
 			if (path[0] == '.') path = path.splice(1, path.length - 1);
 			path[path.length - 1] = path[path.length - 1].replace('.png', '').replace('.jpg', '').replace('.gif', '').replace('.jpeg', '');
-			img.onload = function() { loaded++; }
+			img.onload = function() {
+				Add.debug('картинка загружена!', img.src);
+				loaded++;
+			}
 			img.onerror = function() { return Add.error(path + ' not find!'); }
 			images[path.join('.')] = img;
+			if (arguments.length <= 1) return path.join('.');
 		}
 	},
-	'error': function(msg) {
+	'error': msg => {
 		errors[errors.length] = msg;
 		console.error(msg);
 	},
-	'canvas': function(id, upd, loading) {
-		let cvs = document.getElementById(id), node = cvs.parentNode;
-		if (cvs) {
-			function keyChecker(e) {
-        		Object.keys(keylocks).forEach(function(f) {
-					if (e.code.toLowerCase().replace('key', '') == f) {
-						switch(e.type) {
-							case 'keydown': Byte.add(keylocks[f]); break;
-							case 'keyup': Byte.clear(keylocks[f]); break;
-						}
-						e.preventDefault();
-						e.stopImmediatePropagation();
+	'canvas': (init, update, loading) => {
+		let cvs = document.getElementById(cfg.window.id);
+		if (!cvs) {
+			cvs = document.createElement('canvas');
+			let w = cfg.window.width, h = cfg.window.height;
+			if (cfg.window.fullscreen) {
+				w = document.body.clientWidth;
+				h = document.body.clientHeight;
+			}
+			cvs.width = w;
+			cvs.height = h;
+			document.body.appendChild(cvs);
+		}
+		let ctx = cvs.getContext('2d');
+		let keyChecker = e => {
+			Eng.focus(true);
+    		cfg.setting.user = true;
+    		audio.context.resume();
+    		if (e.code.toLowerCase() == 'tab') {
+    			Add.debug(`Нажата ${e.code} клавиша!`);
+    			e.preventDefault();
+				e.stopImmediatePropagation();
+    		}
+    		Object.keys(keylocks).forEach(function(f) {
+				if (e.code.toLowerCase().replace('key', '') == f) {
+					switch(e.type) {
+						case 'keydown': Byte.add(keylocks[f]); break;
+						case 'keyup': Byte.clear(keylocks[f]); break;
 					}
-				});
-			}
-			function mouseChecker(e) {
-				let xoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetX : e.changedTouches[0].clientX,
-					yoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetY : e.changedTouches[0].clientY;
-				mouse.x = cameraes[current_camera].x + xoff;
-				mouse.y = cameraes[current_camera].y + yoff;
-				switch(e.type) {
-					case 'mouseup': case 'touchend':
-						is_touch = false;
-						Byte.add('uclick');
-						cvs.focus();
-					break;
-					case 'mousedown': case 'touchstart': Byte.add('dclick'); break;
+					e.preventDefault();
+					e.stopImmediatePropagation();
 				}
-				if (e.type == 'touchstart') is_touch = true;
-				e.preventDefault();
+			});
+		}, mouseChecker = e => {
+			let xoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetX : e.changedTouches[0].clientX,
+				yoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetY : e.changedTouches[0].clientY;
+			switch(e.type) {
+				case 'mousedown': case 'mouseup': case 'mousemove':
+					mouse.x = cameraes[current_camera].x + xoff;
+					mouse.y = cameraes[current_camera].y + yoff;
+				break;
+				case 'touchstart': case 'touchend': case 'touchmove':
+					mouse.x = cameraes[current_camera].x + xoff;
+					mouse.y = cameraes[current_camera].y + yoff;
+					mouse.touch = {
+						'x': xoff,
+						'y': yoff
+					};
+				break;
 			}
-			cvs.onmousedown = cvs.onmouseup = cvs.onmousemove = cvs.ontouchstart = cvs.ontouchend = cvs.ontouchmove = mouseChecker;
-			function ready() {
-				window.addEventListener('keydown', keyChecker);
-				window.addEventListener('keyup', keyChecker);
-				cvs.focus();
+			switch(e.type) {
+				case 'mouseup': case 'touchend':
+					is_touch = false;
+					Byte.add('uclick');
+					cvs.focus();
+				break;
+				case 'mousedown': case 'touchstart': Byte.add('dclick'); break;
 			}
-			if (document.readyState == 'loading') document.addEventListener('DOMContentLoaded', ready);
-			else ready();
-			let ctx = cvs.getContext('2d');
-			function temp(t) {
+			if (e.type == 'touchstart') is_touch = true;
+			cfg.setting.user = true;
+			audio.context.resume();
+			Eng.focus(true);
+			e.preventDefault();
+		}, ready = () => {
+			addEventListener('keydown', keyChecker, false);
+			addEventListener('keyup', keyChecker, false);
+			Eng.focus(true);
+			//cvs.onkeydown = cvs.onkeyup = keyChecker;
+		}, resize = () => {
+			try {
+				let w = cfg.window.width, h = cfg.window.height;
+				if (cfg.window.fullscreen) {
+					w = document.body.clientWidth, h = document.body.clientHeight;
+					cfg.window.width = w;
+					cfg.window.height = h;
+				}
+				cvs.width = w, cvs.height = h;
+
+				obj.ctx = cvs.getContext('2d');
+				obj.ctx.imageSmoothingEnabled = false;
+			}
+			catch(err) { Add.error(err.message); }
+		}, temp = t => {
+			let now = Date.now(), delta = now - cvs_delta, fps = 1000 / cfg.setting.fps;
+			if (delta > fps) {
 				gui = [];
-				if (loaded >= mloaded) {
+				if (loaded >= mloaded && !is_loaded) is_loaded = true;
+				if (is_loaded) {
 					ctx.save();
 					ctx.fillRect(0, 0, cvs.width, cvs.height);
-					ctx.scale(zoom, zoom);
-					ctx.translate(-cameraes[current_camera].x / zoom, -cameraes[current_camera].y / zoom);
-					upd(t);
-					render.sort(function(a, b) { return (a.obj.yr || a.obj.y) - (b.obj.yr || b.obj.y); }).forEach(function(e) {
+					ctx.scale(cfg.zoom, cfg.zoom);
+					ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+					update(t);
+					render.sort(function(a, b) { return (a.obj.yr || a.obj.y) - (b.obj.yr || b.obj.y); }).forEach(e => {
 						if (e.obj.update && !pause) e.obj.update();
 						if (!e.obj.is_init && e.obj.initialize && !editor) {
 							e.obj.initialize();
 							e.obj.is_init = true;
 						}
 						e.func(ctx);
+						if (e.obj.DELETED) { // удаление удаленных объектов
+							let ind = memory.lobjects.findIndex(nobj => { return nobj.id == e.obj.id; });
+							memory.lobjects.splice(ind, 1);
+						}
 					});
 					ctx.restore();
 					render = [];
-
 				} else loading(loaded / mloaded, t);
-				try { gui.reverse().forEach(function(e) { e(ctx); }); }
-				catch(err) { console.log(err.message); }
+				gui.reverse().forEach(function(e) { e(ctx); });
 				cvs.style.cursor = Byte.check('hover') ? 'pointer' : 'default';
 				Byte.clear('hover', 'dclick', 'uclick');
 				current_time = t;
-				window.requestAnimationFrame(temp);
+				cvs_delta = now - (delta % fps);
 			}
-			let obj = { 'id': cvs, 'cvs': ctx, 'update': temp }
-			if (node) {
-				function resize() {
-					try {
-						let tmp = new Image();
-						tmp.src = cvs.toDataURL('image/png').replace('image/png', 'image/octet-stream');
-						tmp.onload = function() {
-							cvs.width = Math.floor(node.clientWidth);
-							cvs.height = Math.floor(node.clientHeight);
-							obj.ctx = cvs.getContext('2d');
-							obj.ctx.imageSmoothingEnabled = false;
-							obj.ctx.drawImage(tmp, 0, 0);
-						}
-					}
-					catch(err) { Add.error(err.message); }
-					finally {
-						cvs.width = Math.floor(node.clientWidth);
-						cvs.height = Math.floor(node.clientHeight);
-						obj.ctx = cvs.getContext('2d');
-						obj.ctx.imageSmoothingEnabled = false;
-					}
-				}
-				window.onresize = node.onresize = resize;
-				resize();
-			}
-			let description = "\n42eng.js by wmgcat!\nmade in javascript.\n\nversion: " + version;
-			console.log(description);
-			return obj;
+			window.requestAnimationFrame(temp);
 		}
+		window.onmousedown = window.onmouseup = window.onmousemove = cvs.ontouchstart = cvs.ontouchend = cvs.ontouchmove = mouseChecker;
+		ready();
+		if ('mediaSession' in navigator) {
+		  navigator.mediaSession.setActionHandler('play', () => { })
+		  navigator.mediaSession.setActionHandler('pause', () => { })
+		  navigator.mediaSession.setActionHandler('seekbackward', () => { })
+		  navigator.mediaSession.setActionHandler('seekforward', () => { })
+		  navigator.mediaSession.setActionHandler('previoustrack', () => { })
+		  navigator.mediaSession.setActionHandler('nexttrack', () => { })
+		}
+		window.onblur = () => {
+			Add.debug('Окно потеряло фокус!');
+			cfg.setting.focus = false;
+			audio.setvolume('music', 0);
+			audio.setvolume('sounds', 0);
+		}
+		window.onfocus = () => {
+			audio.context.suspend().then(() => {
+				cfg.setting.focus = true;
+				Add.debug('Окно получило фокус');
+			})
+		}
+		let obj = { 'id': cvs, 'cvs': ctx, 'update': temp, 'init': init }
+		window.onresize = document.body.onresize = cvs.onresize = resize;
+		resize();
+		Eng.console.release();
+		if (obj.init) obj.init();
+		return obj;
 	},
-	'object': function(obj, x, y) {
-		if (typeof(obj) == 'string') {
-			if (memory.editor)
-				for (let i = 0; i < memory.editor.objects.length; i++) {
-					if (obj == memory.editor.objects[i].name) {
-						obj = memory.editor.objects[i];
-						break;
-					}
-				}
+	'object': (obj, x=0, y=0) => {
+		if (typeof(obj) == 'string' && memory.editor) {
+			let ind = memory.editor.objects.findIndex(o => { return o.name == obj; });
+			if (ind != -1) obj = memory.editor.objects[ind];
 		}
-		obj.x = x || 0, obj.y = y || 0;
-		if (memory.lobjects) memory.lobjects[memory.lobjects.length] = copy(obj); else memory.lobjects = [copy(obj)];
-		memory.lobjects[memory.lobjects.length - 1].id = '#id' + Date.now();  //(memory.lobjects.length);
+		obj.x = x, obj.y = y;
+		if (!memory.lobjects) memory.lobjects = [];
+		memory.lobjects[memory.lobjects.length] = Eng.copy(obj);
+		memory.lobjects[memory.lobjects.length - 1].id = Eng.id();
 		return memory.lobjects[memory.lobjects.length - 1];
 	},
-	'language': function(path, short, main) {
+	'language': (path, short, main) => {
 		let script = document.createElement('script');
 		script.src = path;
 		mloaded++;
-		script.onload = function() {
-			lang.source[short] = copy(Lang);
+		script.onload = () => {
+			lang.source[short] = Eng.copy(Lang);
 			if (main) lang.type = short;
 			loaded++;
 		}
-		script.onerror = function() { return Add.error(path + ' not find!'); }
+		script.onerror = () => { return Add.error(path + ' not find!'); }
 		document.body.appendChild(script);
-	}
+	},
+	'gui': func => gui.push(func),
+	'debug': function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); }
 }
 /*
 	||| add(control) - добавление значения;
@@ -242,112 +434,61 @@ let Add = {
 	||| check(control) - провера значения;
 */
 let Byte = {
-	'key': 0, 'list': {
-		'up': 1, 'down': 2, 'left': 4, 'right': 8,
-		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
-		'move': 256, 'hover': 512
-	},
+	'key': 0,
 	'add': function(arr) {
 		for (let i = 0; i < arguments.length; i++)
-			this.key |= this.list[arguments[i]];
+			this.key |= cfg.macros[arguments[i]];
 	},
 	'clear': function(arr) {
 		if (arguments.length > 0)
-			for (let i = 0; i < arguments.length; i++) this.key &=~ this.list[arguments[i]];
+			for (let i = 0; i < arguments.length; i++) this.key &=~ cfg.macros[arguments[i]];
 		else this.key = 0;
 	},
 	'check': function(arr) {
 		for (let i = 0; i < arguments.length; i++)
-			if ((this.key & this.list[arguments[i]]) <= 0) return false;
+			if ((this.key & cfg.macros[arguments[i]]) <= 0) return false;
 		return true;
 	}
 };
-let Eng = {
-	'distance': function(x1, y1, x2, y2) { return Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)); },
-	'direction': function(x1, y1, x2, y2) { return Math.atan2(y2 - y1, x2 - x1); },
-	'sign': function(x) { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.round(x) != 0); },
-	'clamp': function(x, min, max) { return Math.min(Math.max(x, min), max); },
-	'torad': function(x) { return x * Math.PI / 180; },
-	'todeg': function(x) { return x / Math.PI * 180; },
-	'collision': {
-		'rect': function(px, py, x, y, w, h) { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); },
-		'circle': function(px, py, x, y, range) { return distance(px, py, x, y) <= range; }
-	}
-};
-function merge(col1, col2, val) {
-	let ncol = '#', table = {'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15};
-	for (let i = 1, a, b, ab; i < col1.length; i++) {
-		a = (table[col1[i]] || col1[i]) - 0, b = (table[col2[i]] || col2[i]) - 0, ab = clamp(Math.abs(Math.floor(a + (b - a) * val)), 0, 15);
-		ncol += Object.keys(table)[ab - 10] || ab;
-	}
-	return ncol;
-}
-function rect(x, y, w, h) { return ((mouse.x >= (x * zoom)) && (mouse.x <= ((x + w) * zoom)) && (mouse.y >= (y * zoom)) && (mouse.y <= ((y + (h || w))) * zoom)); }
-function point_in_rect(px, py, x, y, w, h) { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); }
-function grect(x, y, w, h) {
-	if (arguments.length == 1) {
-		let arg = x;
-		x = arg[0]; y = arg[1]; w = arg[2]; h = arg[3];
-	}
-	return (mouse.x - cameraes[current_camera].x >= x && mouse.x - cameraes[current_camera].x <= x + w && mouse.y - cameraes[current_camera].y >= y && mouse.y - cameraes[current_camera].y <= y + h);
-}
-function distance(x1, y1, x2, y2) { return Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)); }
-function direction(x1, y1, x2, y2) { return Math.atan2(y2 - y1, x2 - x1); }
-function sign(x) { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.round(x) != 0); }
-function bsign(bool) { return bool - !bool; };
-function clamp(x, min, max) { return Math.min(Math.max(x, min), max); }
-function add_gui(func) { gui[gui.length] = func; }
+/* игровые объекты */
 let Obj = {
-	'init': function(name) {
+	'init': function(name='undefined') {
 		if (arguments.length > 1) for (let i = 0; i < arguments.length; i++) this.init(arguments[i]);
 		else {
-			this.x = 0, this.y = 0, this.name = name || 'undefined',
-			this.image_index = 0;
-			let obj = copy(this);
-			if (memory.editor) memory.editor.objects[memory.editor.objects.length] = obj;
-			else memory.editor = { 'objects': [obj] };
+			this.x = this.y = this.image_index = 0, this.name = name;
+			let obj = Eng.copy(this);
+			if (!memory.editor) memory.editor = { 'objects': [] };
+			memory.editor.objects.push(obj);
 			return obj;
 		}
 	},
-	'draw': function(func) { if (func) render[render.length] = { 'obj': this, 'func': func }; },
+	'draw': function(func=()=>{}) { render.push({ 'obj': this, 'func': func }); },
 	'destroy': function() {
-		if (memory.lobjects)
-			for (let i = 0; i < memory.lobjects.length; i++) {
-				if (memory.lobjects[i] == this) {
-					if (this.delete) this.delete();
-					delete memory.lobjects[i];
-					return true;
-				}
-			}
-		return false;
+		this.DELETED = true;
+		if (this.delete) this.delete();
+		return true;
 	}
 };
-let Map = {
-	'init': function(w, h, x, y) {
-		this.grid = [], this.memory = {}, this.w = w, this.h = h,
-		this.x = x || 0, this.y = y || 0, this.yr = -100;
-		for(let i = 0; i < w; i++) {
-			this.grid[i] = [];
-			for(let j = 0; j < h; j++) this.grid[i][j] = 0;
+/* карта */
+class Map {
+	constructor(width=1, height=1, x=0, y=0) {
+		this.w = width, this.h = height, this.x = x,
+		this.y = y, this.yr = -1000, this.memory = {}, this.grid = [];
+		for (let i = 0; i < width; i++) {
+			this.grid.push([]);
+			for (let j = 0; j < height; j++) this.grid[i][j] = 0;
 		}
-		return copy(this);
-	},
-	'set': function(i, j, val) {
-		try { this.grid[i][j] = val || 0; }
-		catch(err) { Add.error(err.message); }
-	},
-	'registry': function(val, value, img) { 
-		if (!img) this.memory[val] = value;
-		else this.memory[val] = [value, img];
-	},
-	'draw': function(func) {
-		if (func) render[render.length] = { 'obj': { 'yr': -1000 }, 'func': func };
-	},
-	'get': function(i, j) {
-	    try { return Math.floor(this.grid[i - this.x][j - this.y]); }
-	    catch(err) { Add.error(err.message); }
-	},
-	'path': function(i, j, ni, nj) {
+	}
+	reg(key, value, img) { this.memory[key] = !img ? value : [value, img]; }
+	set(x, y, value) { this.grid[x][y] = value; }
+	get(x, y) { return Math.floor(this.grid[x][y]); }
+	draw(func) {
+		if (func) render.push({
+			'obj': { 'yr': this.yr },
+			'func': func
+		});
+	}
+	path(i, j, ni, nj) {
 		let points = [[i, j]], rpoints = [], count = 20;
 		while (count) {
 			for (let d = 0; d < 4; d++) {
@@ -360,7 +501,7 @@ let Map = {
 								find = true;
 								break;
 							}
-						if (!find) rpoints[rpoints.length] = [distance(xx, yy, ni, nj), xx, yy];
+						if (!find) rpoints[rpoints.length] = [Eng.math.distance(xx, yy, ni, nj), xx, yy];
 					}
 			}
 			if (rpoints.length > 0) {
@@ -373,178 +514,147 @@ let Map = {
 		}
 		return points.slice(0, points.length);
 	}
-};
-let Graphics = {
-	'init': function(cvs) {
+}
+/*
+##################
+#\               #   Graphics ( графический модуль )
+# \       |      #   rect(x, y, w, h, colour, alpha, type, lw) - рисует прямоугольник;
+#  \    -( )-    #   round(x, y, w, h, range, colour, alpha, type, lw) - рисует прямоугольник с скругленными краями;
+#   \     |     /#   circle(x, y, radius, start, end, colour, alpha, type, lw) - рисует круг;
+#    \         / #   ellipse(x, y, w, h, colour, alpha, type, lw) - рисует элипс;
+#     \     __/  #   text(str, x, y, colour, alpha, size, font, type, align, lw) - рисует текст;
+#      \   /     #   wtext(str, x, y, width, colour, alpha, size, font, type, lw) - рисует текст с переносом по ширине;
+#    ___\_/      #   len(str, size, font) - возвращает длину текста;
+#   /            #   image(img, x, y, w, h) - рисует изображение ( для продвинутого функционала используется Img )
+##################
+*/
+class Graphics {
+	constructor(cvs) {
 		this.cvs = cvs;
-		return copy(this);
-	},
-	'getColor': function(x, y) {
-		try {
-			let dt = this.cvs.getImageData(x, y, 1, 1).data;
-			return '#' + ('000000' + (((dt[0] << 16) | (dt[1] << 8) | dt[2]).toString(16)).slice(-6));
-		}
-		catch(err) { return '#000'; }
-	},
-	'rect': function(x, y, w, h, color, alpha, tp) {
-		if (color) this.cvs[(tp || 'fill') + 'Style'] = color;
-		if (alpha != undefined) this.cvs.globalAlpha = alpha;
-		if (tp) this.cvs[tp + 'Rect'](x, y, w, h); else this.cvs.fillRect(x, y, w, h);
-		if (alpha != undefined) this.cvs.globalAlpha = 1;
-		return [x, y, w, h];
-	},
-	'text': function(text, x, y, color, alpha, size, font, tp, align) {
-		this.cvs.save()
-			if (align) { // change text position:
+		Add.debug('Графический модуль активирован!');
+	}
+	savemodule(func) {
+		let save = {
+			'fillStyle': this.cvs.fillStyle, 'strokeStyle': this.cvs.strokeStyle,
+			'globalAlpha': this.cvs.globalAlpha, 'lineWidth': this.cvs.lineWidth,
+			'font': this.cvs.font
+		 };
+		 func();
+		 Object.keys(save).forEach(key => { this.cvs[key] = save[key]; });
+	}
+	rect(x, y, w, h, colour='#000', alpha, type='fill', lw) {
+		this.savemodule(() => {
+			if (alpha != undefined) this.cvs.globalAlpha = alpha;
+			if (lw != undefined) this.cvs.lineWidth = lw;
+			this.cvs[type + 'Style'] = colour;
+			this.cvs[type + 'Rect'](x, y, w, h);
+		});
+		return { 'x': x, 'y': y, 'w': w, 'h': h };
+	}
+	round(x, y, w, h, range, colour='#000', alpha, type='fill', lw) {
+		this.savemodule(() => {
+			if (alpha != undefined) this.cvs.globalAlpha = alpha;
+			if (lw != undefined) this.cvs.lineWidth = lw;
+			this.cvs[type + 'Style'] = colour;
+			this.cvs.beginPath();
+				this.cvs.lineTo(x, y + range);
+				this.cvs.quadraticCurveTo(x, y, x + range, y);
+				this.cvs.lineTo(x + range, y);
+				this.cvs.lineTo(x + w - range, y);
+				this.cvs.quadraticCurveTo(x + w, y, x + w, y + range);
+				this.cvs.lineTo(x + w, y + h - range);
+				this.cvs.quadraticCurveTo(x + w, y + h, x + w - range, y + h);
+				this.cvs.lineTo(x + w - range, y + h);
+				this.cvs.lineTo(x + range, y + h);
+				this.cvs.quadraticCurveTo(x, y + h, x, y + h - range);
+				this.cvs.lineTo(x, y + h - range);
+				this.cvs.lineTo(x, y + range);
+				this.cvs[type]();
+			this.cvs.closePath();
+		});
+		return { 'x': x, 'y': y, 'w': w, 'h': h };
+	}
+	circle(x, y, radius, start, end, colour='#000', alpha, type='fill', lw) {
+		this.savemodule(() => {
+			if (alpha != undefined) this.cvs.globalAlpha = alpha;
+			if (lw != undefined) this.cvs.lineWidth = lw;
+			this.cvs[type + 'Style'] = colour;
+			this.cvs.beginPath();
+				this.cvs.arc(x, y, radius, start, end);
+				this.cvs[type]();
+			this.cvs.closePath();
+		});
+	}
+	ellipse(x, y, w, h, colour='#000', alpha, type='fill', lw) {
+		this.savemodule(() => {
+			if (alpha != undefined) this.cvs.globalAlpha = alpha;
+			if (lw != undefined) this.cvs.lineWidth = lw;
+			this.cvs[type + 'Style'] = colour;
+			this.cvs.beginPath();
+				this.cvs.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+				this.cvs[type]();
+			this.cvs.closePath();
+		});
+	}
+	text(text, x, y, colour='#000', alpha, size=10, font='Arial', type='fill', align, lw) {
+		this.savemodule(() => {
+			if (alpha != undefined) this.cvs.globalAlpha = alpha;
+			if (lw != undefined) this.cvs.lineWidth = lw;
+			this.cvs[type + 'Style'] = colour;
+			if (align) {
 				let dt = align.split('-');
 				if (dt) {
 					if (dt[0]) this.cvs.textAlign = dt[0];
 					if (dt[1]) this.cvs.textBaseline = dt[1];
 				}
 			}
-			if (size) this.cvs.font = size + 'px ' + (font || 'Arial');
-			if (alpha != undefined) this.cvs.globalAlpha = alpha;
-			if (color) this.cvs[(tp || 'fill') + 'Style'] = color;
-			this.cvs[(tp || 'fill') + 'Text'](lang.use(text) || text, x, y);
-		this.cvs.restore();
-		return this.len(text, size, font || 'Arial');
-	},
-	'len': function(text, size, font) {
-		this.cvs.save();
-			if (size) this.cvs.font = size + 'px ' + (font || 'Arial');
-			let width = this.cvs.measureText(text).width;
-		this.cvs.restore();
-		return width;
-	},
-	'triangle': function(x1, y1, x2, y2, x3, y3, color, alpha) {
-		if (color) this.cvs.fillStyle = color;
-		this.cvs.beginPath();
-		this.cvs.lineTo(x1, y1);
-		this.cvs.lineTo(x2, y2);
-		this.cvs.lineTo(x3, y3);
-		this.cvs.closePath();
-		this.cvs.fill();
-	},
-	'line': function(x, y) {
-		this.cvs.beginPath();
-		if (arguments.length > 2) {
-			for (let i = 0; i < arguments.length; i += 2) this.cvs.lineTo(arguments[i], arguments[i + 1]);
-		} else this.cvs.lineTo(x, y);
-		this.cvs.closePath();
-		this.cvs.stroke();
-	},
-	'circle': function(x, y, range, a, b, color, alpha, tp) {
-		if (color) this.cvs[(tp || 'fill') + 'Style'] = color;
-		if (alpha != undefined) this.cvs.globalAlpha = alpha;
-		this.cvs.beginPath();
-		this.cvs.arc(x, y, range, a, b);
-		this.cvs.closePath();
-		this.cvs[tp || 'fill']();
-		if (alpha != undefined) this.cvs.globalAlpha = 1;
-	},
-	'round': function(x, y, w, h, range, color, alpha, tp) {
-		if (alpha != undefined) this.cvs.globalAlpha = alpha;
-		if (color) this.cvs.fillStyle = color;
-		this.cvs.beginPath();
-			this.cvs.rect(x + range, y, w - range * 2, h);
-			this.cvs.rect(x, y + range, w, h - range * 2);
-			this.cvs.lineTo(x, y + range);
-			this.cvs.lineTo(x + range, y);
-			this.cvs.lineTo(x + w - range, y);
-			this.cvs.lineTo(x + w, y + range);
-			this.cvs.lineTo(x + w, y + h - range);
-			this.cvs.lineTo(x + w - range, y + h);
-			this.cvs.lineTo(x + range, y + h);
-			this.cvs.lineTo(x, y + h - range);
-			this.cvs.moveTo(x, y + range);
-			this.cvs.quadraticCurveTo(x, y, x + range, y);
-			this.cvs.moveTo(x + w - range, y);
-			this.cvs.quadraticCurveTo(x + w, y, x + w, y + range);
-			this.cvs.moveTo(x + w, y + h - range);
-			this.cvs.quadraticCurveTo(x + w, y + h, x + w - range, y + h);
-			this.cvs.moveTo(x, y + h - range);
-			this.cvs.quadraticCurveTo(x, y + h, x + range, y + h);
-			if (tp) this.cvs[tp](); else this.cvs.fill();
-		this.cvs.closePath();
-		if (alpha != undefined) this.cvs.globalAlpha = 1;
-		return [x, y, w, h];
-	},
-	'image': function(img, x, y, w, h, alpha, left, top, ws, hs) { // старый метод для рисовки изображений.
-		this.cvs.save();
-			if (alpha != undefined) this.cvs.globalAlpha = alpha;
-			let src = img, nleft = left || 0, ntop = top || 0, wi = ws || src.width, hi = hs || src.height;
-			this.cvs.drawImage(src, nleft, ntop, wi, hi, x, y, w || src.width, h || src.height);
-			if (alpha != undefined) this.cvs.globalAlpha = 1;
-		this.cvs.restore();
-	},
-	'gui': {
-		'btn': function(x, y, w, h, col, img) {
-			let hover = false, clicked = false;
-			if (grect(x, y, w, h) && !Byte.check('hover')) {
-				Byte.add('hover');
-				hover = true;
-				if (Byte.check('uclick')) {
-					clicked = true;
-					Byte.clear('uclick');
-				}
-			}
-			Graphics.rect(x, y, w, h * .975, merge(col, '#000000', hover * .1));
-			if (!hover || !Byte.check('uclick')) Graphics.rect(x, y + h * .95, w, h * .05, merge(col, '#000000', .3 + hover * .1));
-			if (img) {
-				if (typeof(img) == 'function') {
-					Graphics.cvs.save();
-					Graphics.cvs.translate(x, y);
-					img(Graphics.cvs, hover, clicked);
-					Graphics.cvs.restore();
-				} else img.draw(Graphics.cvs, x + (w - img.w) * .5, y + (h - img.h) * .5, w, h);
-			}
-			return clicked;
-		},
-		'stick': function(x, y, range, val) {
-			Graphics.circle(x, y, range - 8, 0, Math.PI * 2, '#470009', .2);
-			Graphics.cvs.lineWidth = 8;
-			Graphics.circle(x, y, range, 0, Math.PI * 2, '#470009', .25, 'stroke');
-			let dist = clamp(distance(val.x, val.y, mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y), -range, range),
-				dir = direction(val.x, val.y, mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y);
-			Graphics.circle(x + dist * Math.cos(dir), y + dist * Math.sin(dir), Math.max(range * .5 * (dist / range), range * .35), 0, Math.PI * 2, '#470009', .2);
-			Graphics.cvs.lineWidth = 1;
-			return [dir, dist / range];
-		},
-		'dragWindow': function(id, x, y, w, h, header, content, headcol) {
-			if (!memory['window.' + id]) { // initialize window data:
-				memory['window.' + id] = {
-					'open': true,
-					'x': x, 'y': y
-				};
-			}
-			if (header != undefined) {
-				Graphics.rect(memory['window.' + id].x, memory['window.' + id].y - h * .1, w, h * .1, headcol ? headcol : '#470009');
-				Graphics.text(header, memory['window.' + id].x + w * .05, memory['window.' + id].y - w * .05, '#fff', 1, 12);
-				if (grect(memory['window.' + id].x + w * .8, memory['window.' + id].y - h * .1, w * .2, h * .1)) {
-					if (Byte.check('uclick') && !Byte.check('hover')) {
-						memory['window.' + id].open =! memory['window.' + id].open;
-						Byte.clear('uclick');
-					}
-					Byte.add('hover');
-				}
-			}
-			if (content != undefined && memory['window.' + id].open) {
-				Graphics.rect(memory['window.' + id].x, memory['window.' + id].y, w, h, '#330115', .8);
-				Graphics.cvs.save();
-				Graphics.cvs.translate(memory['window.' + id].x, memory['window.' + id].y);
-				content(memory['window.' + id].x, memory['window.' + id].y, w, h);
-				Graphics.cvs.restore();
-			}
-
-		}
+			this.cvs.font = `${size}px ${font}`;
+			this.cvs[type + 'Text'](lang.use(text) || text, x, y);
+		});
+		return this.len(text, size, font);
 	}
-};
+	wtext(text, x, y, width, colour='#000', alpha, size=10, font='Arial', type='fill', align, lw) {
+		let pos = 0, nstr = '', spaces = [];
+		if (typeof(text) == 'object') { assoc = text[1], text = (lang.use(text[0]) || text[0]); }
+		else text = lang.use(text) || text;
+		while (pos < text.length) {
+			nstr += text[pos++];
+			let w = this.len(nstr, size, font);
+			if (w >= width * .675) {
+				spaces.push([pos, w]);
+				nstr = '';
+			}
+		}
+		if (nstr != '') spaces.push([text.length, this.len(nstr, size, font)]);
+		let yy = y;
+		if (align) {
+			let dt = align.split('-');
+			switch(dt[1]) {
+				case 'middle': yy = y - (spaces.length * size) * .5; break;
+				case 'bottom': yy = y - (spaces.length * size); break;
+			}	
+		}
+		for (let i = 0, offset = 0; i < spaces.length; i++) {
+			gr.text(text.slice(offset, spaces[i][0]), x, y + i * size, colour, alpha, size, font, type, align, lw);
+			offset = spaces[i][0];
+		}
+		return { w: spaces[0][1], h: spaces.length * size };
+	}
+	len(text, size=10, font='Arial') {
+		let savefont = this.cvs.font;
+			this.cvs.font = size + 'px ' + (font || 'Arial');
+			let width = this.cvs.measureText(lang.use(text) || text).width;
+		this.cvs.font = savefont;
+		return width;
+	}
+	image(img, x, y, w, h) { if (img) this.cvs.drawImage(img, x, y, w, h); }
+}
 let Img = {
 	'init': function(path, left, top, w, h, xoff, yoff, count) {
 		this.path = path, this.image = images[path], this.left = left || 0, this.top = top || 0,
 		this.w = w || (this.image.width || 0), this.h = h || this.image.height, this.count = count || 1,
 		this.xoff = xoff || 0, this.yoff = yoff || 0, this.frame = 0, this.frame_spd = 1;
-		return copy(this);
+		return Eng.copy(this);
 	},
 	'draw': function(cvs, x, y, w, h, alpha, xscale, yscale, rotate) {
 		try {
@@ -561,21 +671,11 @@ let Img = {
 					}
 					cvs.drawImage(this.image, this.left + this.w * Math.floor(this.frame % ((this.image.width || 0) / this.w)), this.top + this.h * Math.floor(this.frame / ((this.image.width || 0) / this.w)), this.w, this.h, 0, 0, w || this.w, h || this.h);
 					cvs.globalAlpha = 1;
-					if (debug) {
-						cvs.lineWidth = 1;
-						let gr = Graphics.init(cvs), nw = w || this.w, nh = h || this.h;
-						gr.rect(0, 0, nw, nh, '#f00', 1, 'stroke');
-						gr.line(nw * .25, nh * .5, nw * .75, nh * .5, '#f00');
-						gr.line(nw * .5, nh * .25, nw * .5, nh * .75, '#f00');
-					}
 				cvs.restore();
 				this.frame = (this.frame + this.frame_spd) % this.count;
 
 			} else this.image = images[this.path];
-		} catch(err) {
-			Add.error(this.path + ': ' + err.message + '\ndata: ' + this.image);
-			this.init(this.path, this.left, this.top, this.w, this.h, this.xoff, this.yoff, this.count);
-		}
+		} catch(err) { this.init(this.path, this.left, this.top, this.w, this.h, this.xoff, this.yoff, this.count); }
 	}
 };
 /*
@@ -585,17 +685,16 @@ let Img = {
 	   #  #  #   |   id(id, id1..n) - ищет объекты по ID;
 	  # ##### #--|   search(obj, obj1..n) - ищет объекты obj;
 	 #         # |   count(obj, obj1..n) - выводит кол-во объектов obj на уровне;
-	#############|   find(obj) - выводит номер объекта из таких же объектов как и он;
-	   |     |	     type(name, type) - выдает все типы объектов name;
+	   |     |	     key(name, key, value) - выдает все объекты с именем name в которых есть переменная равная value;
 */
 let Search = {
 	'distance': function(obj, x, y, range, offset) {
 		let s = [];
 		if (typeof(obj) == 'object') obj.forEach(function(e) { s = s.concat(Search.search(e)); }); else s = Search.search(obj);
-		s.sort(function(a, b) { return distance(x, y, a.x + (offset || 0), a.y + (offset || 0)) - distance(x, y, b.x + (offset || 0), b.y + (offset || 0)); });
+		s.sort(function(a, b) { return Eng.math.distance(x, y, a.x + (offset || 0), a.y + (offset || 0)) - Eng.math.distance(x, y, b.x + (offset || 0), b.y + (offset || 0)); });
 		if (range != undefined)
 			for (let i = 0; i < s.length; i++) {
-				if (distance(x, y, s[i].x + (offset || 0), s[i].y + (offset || 0)) >= range) return s.splice(0, i);
+				if (Eng.math.distance(x, y, s[i].x + (offset || 0), s[i].y + (offset || 0)) >= range) return s.splice(0, i);
 			}
 		return s;
 	},
@@ -604,12 +703,10 @@ let Search = {
 		if (memory.lobjects)
 			if (arguments.length > 1) for (let i = 0; i < arguments.length; i++) s = s.concat(Search.id(arguments[i]));
 			else {
-				for (let i = 0; i < memory.lobjects.length; i++)
-					if (memory.lobjects[i] && memory.lobjects[i].id == id) {
-						s[s.length] = memory.lobjects[i];
-						break;
-					}
+				let ind = memory.lobjects.findIndex(obj => { return obj.id == id; });
+				if (ind != -1) s.push(memory.lobjects[ind]);
 			}
+		
 		if (s.length > 1) return s;
 		else if (s.length == 1) return s[0];
 		else return false;
@@ -620,7 +717,7 @@ let Search = {
 			for (let i = 0; i < arguments.length; i++) {
 				let arg = arguments[i];
 				memory.lobjects.forEach(function(e) {
-					if (e.name == arg) s[s.length] = e;
+					if ((e.name == arg) || (arg == 'all')) s.push(e);
 				});
 			}
 		return s;
@@ -630,16 +727,10 @@ let Search = {
 		for (let i = 0; i < arguments.length; i++) count += Search.search(arguments[i]).length;
 		return count;
 	},
-	'find': function(obj) {
-		let arr = Search.search(obj.name);
-		for (let i = arr.length; i > -1; i--)
-			if (arr[i] == obj) return i;
-		return -1;
-	},
-	'type': function(name, type) {
+	'key': (name, key, value) => {
 		let arr = Search.search(name), narr = [];
-		if (arr) arr.forEach(function(e) {
-			if (e.type == type) narr.push(e);
+		if (arr) arr.forEach(obj => {
+			if (obj[key] && obj[key] == value) narr.push(obj);
 		});
 		return narr;
 	}
@@ -660,7 +751,7 @@ let Level = {
 		mloaded++;
 		let script = document.createElement('script');
 		script.src = src;
-		let main = copy(this);
+		let main = Eng.copy(this);
 		script.onload = function() {
 			if (datapack.levels) {
 				main.levels = {};
@@ -673,11 +764,11 @@ let Level = {
 			main.color = datapack.color;
 			if (datapack.textmap) {
 				main.textmap = datapack.textmap;
-				if (run) for (let i = 0; i < main.textmap.length; i++) map.registry(main.textmap[i][0], main.textmap[i][1], Img.init(main.textmap[i][2], main.textmap[i][3], main.textmap[i][4], grid_size, grid_size));
+				if (run) for (let i = 0; i < main.textmap.length; i++) map.registry(main.textmap[i][0], main.textmap[i][1], Img.init(main.textmap[i][2], main.textmap[i][3], main.textmap[i][4], cfg.grid, cfg.grid));
 			}
 			if (datapack.ost) main.ost = datapack.ost;
 			if (run) main.load(main.location || main.levels[Object.keys(main.levels)[0]], map);
-			levelMemory[src] = copy(main);
+			levelMemory[src] = Eng.copy(main);
 			loaded++;
 		}
 		script.onerror = function() { return Add.error(src + ' не найден!'); }
@@ -687,12 +778,13 @@ let Level = {
 		if (this.levels[id]) {
 			if (!changemap && !saved) this.save();
 			this.location = id;
-			memory.lobjects = [], levelChange = true;
+			memory.lobjects = [], levelChange = true, memory.saveobjects = [];
 			this.levels[id].objects.forEach(function(e) {
 				if (e != null) {
 					let obj = Add.object(Obj, e.x, e.y);
 					Object.keys(e).forEach(function(f) { obj[f] = e[f]; });
 					obj.loadedevent = true;
+					memory.saveobjects.push(Eng.copy(obj));
 				}
 			});
 			function copymap(map) {
@@ -720,12 +812,12 @@ let Level = {
 				current_level.location = current_level.default;
 				current_level = levelMemory[id];
 				map.memory = {};
-				if (current_level.textmap) for (let i = 0; i < current_level.textmap.length; i++) map.registry(current_level.textmap[i][0], current_level.textmap[i][1], Img.init(current_level.textmap[i][2], current_level.textmap[i][3], current_level.textmap[i][4], grid_size, grid_size));
+				if (current_level.textmap) for (let i = 0; i < current_level.textmap.length; i++) map.registry(current_level.textmap[i][0], current_level.textmap[i][1], Img.init(current_level.textmap[i][2], current_level.textmap[i][3], current_level.textmap[i][4], cfg.grid, cfg.grid));
 				current_level.load(sublocation || current_level.location, map, true);
 			} else {
 				if (this.levels[id]) {
 					map.memory = {};
-					if (current_level.textmap) for (let i = 0; i < current_level.textmap.length; i++) map.registry(current_level.textmap[i][0], current_level.textmap[i][1], Img.init(current_level.textmap[i][2], current_level.textmap[i][3], current_level.textmap[i][4], grid_size, grid_size));
+					if (current_level.textmap) for (let i = 0; i < current_level.textmap.length; i++) map.registry(current_level.textmap[i][0], current_level.textmap[i][1], Img.init(current_level.textmap[i][2], current_level.textmap[i][3], current_level.textmap[i][4], cfg.grid, cfg.grid));
 					playerGoto = sublocation;
 					current_level.load(id, map, true);
 				}
@@ -753,25 +845,69 @@ let Level = {
 		}
 	}
 };
-let Timer = {
-	'init': function(value) {
-		this.start = 0, this.max = value * 30;
-		return copy(this);
-	},
-	'check': function(loop) {
-		if (this.start <= 0) {
-			this.start = Date.now();
-		} else {
-			if (((this.start + this.max) - Date.now()) <= 0) {
-				if (!loop) this.start = 0;
-				return true;
-			}
+/*
+	//======\\		>> Таймеры >> || >> || >>
+   ||    |   ||		— init(seconds, multi=1000) - Запускает таймер (по умолчанию в секундах);
+   ||    |   ||		— check(loop) - Проверяет расстояние между временем. (с loop сбрасывает счетчик);
+   ||.  _0  .||		- delta() - показывает расстояние между временем от 0 до 1;
+   ||    .   ||		— reset(x=0) - сбрасывает счетчик в положение x;
+    \\======//		— count() — возвращает кол-во пройденных циклов
+*/
+class Timer {
+	constructor(x, multi=1000) { 
+		this.max = x * multi, this.save_max = x, this.point = 0;
+		this.reset();
+	}
+	check(loop) {
+		if ((this.point - Date.now()) <= 0) {
+			if (!loop) this.reset();
+			return true;
 		}
 		return false;
-	},
-	'set': function(value) { this.max = value * 30; },
-	'get': function() { return this.max / 30; },
-	'delta': function() { return clamp(Math.max((this.start + this.max) - Date.now(), 0) / this.max, 0, 1); }
+	}
+	delta() { return Eng.math.clamp(Math.max(this.point - Date.now(), 0) / this.max, 0, 1); }
+	count() { return Math.floor(Math.abs(this.point - Date.now()) / this.max); }
+	reset(x=0) { 
+		if (x == 0) this.point = Date.now() + this.max;
+		else this.point = x; 
+	}
+}
+/*
+  ====_______
+     =======|		* _ * \\ Звуки и Музыка // * _ *
+    ____   ||		
+       ====||		play(loop) - воспроизведение музыки, с возможностью зацикливания;
+           ||		stop() - останавливает воспроизведение музыки;
+           ||__
+           ||===\
+           ||===|
+           ||===/
+*/
+class Sound {
+	constructor(sa, type) {
+		this.audio = sa, this.type = type, this.index = -1;
+	}
+	play(loop) {
+		if (audio.context && !cfg.setting.mute && cfg.setting.user) {
+			if (audio.listener.length <= cfg.setting.listener) {
+				audio.listener.push(audio.context.createBufferSource());
+				this.index = audio.listener[audio.listener.length - 1];
+				this.index.buffer = this.audio;
+				this.index.connect(audio[this.type + '_volume']).connect(audio.context.destination);
+				if (this.index.start) this.index.start(audio.context.currentTime);
+				this.index.onended = () => { this.stop(); }
+				this.index.loop = loop;
+			}
+		}
+	}
+	stop() { 
+		if (audio.context && this.index != -1) {
+			if (this.index.stop) this.index.stop();
+			let ind = audio.listener.findIndex(e => { return e == this.index; });
+			if (ind != -1) audio.listener = audio.listener.splice(ind, 1);
+			this.index = -1;
+		}
+	}
 }
 /* 
 	^   система частиц:
@@ -787,8 +923,8 @@ let Timer = {
 */
 let Part = {
 	'init': function(params, x, y, gui) {
-		let pt = copy(this);
-		pt.name = '$part', pt.unsave = true, pt.id = Math.random() * 9999999, pt.gui = gui;
+		let npt = { 'name': '$part', 'unsave': true, 'gui': gui };
+		let pt = Add.object(npt, x, y);
 		let keys = Object.keys(params);
 		for (let i = 0; i < keys.length; i++) {
 			if (keys[i] == 'image_index') {
@@ -801,7 +937,7 @@ let Part = {
 			} else pt[keys[i]] = params[keys[i]];
 		}
 		if (pt.life) {
-			pt.life = Timer.init(pt.life);
+			pt.life = new Timer(pt.life);
 			pt.life.check();
 		}
 		if (pt.angle == -1 || pt.angle == undefined) pt.angle = Math.random() * ((pt.angle_end || 0) - (pt.angle_start || 0)) - (pt.angle_end || 0);
@@ -812,137 +948,43 @@ let Part = {
 		if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale;
 		if (pt.scale_start == undefined) pt.scale_start = pt.scale;
 		pt.func = function(cvs) {
-			if (pt.life.check(true)) pt.destroy();
-			else {
-				let delta = 1 - pt.life.delta();
-				pt.x += Math.cos(Eng.torad(pt.angle)) * (pt.spd || 0);
-				pt.y += Math.sin(Eng.torad(pt.angle)) * (pt.spd || 0);
-				pt.image_index.frame_spd = (pt.frame_spd * !pt.is_life) || 0;
-				if (pt.is_life) pt.image_index.frame = pt.image_index.count * delta;
-				pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * delta;
-				pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
-				pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale);
-			}
-		}
-		return Add.object(pt, x, y);
-	},
-	'draw': function(obj) {
-		if (!obj.gui) render[render.length] = { 'obj': this, 'func': obj.func};
-		else add_gui(function(cvs) { obj.func(obj.gui)} );
-	},
-	'destroy': function() {
-		if (memory.lobjects)
-			for (let i = memory.lobjects.length - 1; i >= -1; i--) {
-				if (memory.lobjects[i] == this) {
-					if (this.delete) this.delete();
-					delete memory.lobjects[i];
-					return true;
-				}
-			}
-		return false;
-	}
-}
-function emitter(params, x, y, count, range, gui) {
-	for (let i = 0; i < count; i++) Part.init(params, x + Math.random() * (range * 2) - range, y + Math.random() * (range * 2) - range, gui);
-}
-// camera work:
-function getWindowSize(canvas) { return {'w': canvas.id.width, 'h': canvas.id.height}; }
-function globalSave(oData) {
-	let data = {}, k = Object.keys(oData || {});
-	k.forEach(function(e) { data[e] = oData[e]; });
-	current_level.save();
-	data.levels = {};
-	Object.keys(levelMemory).forEach(function(e) {
-		data.levels[e] = {}
-		Object.keys(levelMemory[e]).forEach(function(j) {
-			if (typeof(levelMemory[e][j]) != 'function')
-				data.levels[e][j] = levelMemory[e][j];
-		});
-	});
-	//data.levels = levelMemory;
-	data.lobjects = memory.lobjects;
-	//console.log(current_level);
-	Object.keys(levelMemory).forEach(function(e) {
-		if (e == current_level.path) {
-			data.current_level = [e, current_level.location];
-			//console.log(e);
-		}
-	});
-	//data.current_level = current_level.location;
-	function circlularReplace() {
-		const seen = new WeakSet();
-		return function(key, value) {
-			if (typeof(value) == 'object' && value !== null) {
-				if (seen.has(value)) return;
-				seen.add(value);
-			}
-			return value;
-		}
-	}
-	localStorage.setItem('saver', JSON.stringify(data, circlularReplace()));
-}
-function globalLoad(func, ignore, destroy) {
-	let dt = JSON.parse(localStorage.getItem('saver'));
-	if (dt) {
-		if (dt.levels) {
-			Object.keys(dt.levels).forEach(function(e) {
-				Object.keys(dt.levels[e]).forEach(function(f) {
-					levelMemory[e][f] = dt.levels[e][f];
-					if (f == 'levels') {
-						console.log(levelMemory[e][f], dt.levels[e][f]);
-						//console.log(levelMemory[e][f]);
-						Object.keys(levelMemory[e][f]).forEach(function(g) {
-							if (levelMemory[e][f][g].objects) {
-								//console.log(levelMemory[e][f][g].objects);
-								levelMemory[e][f][g].objects.forEach(function(k) {
-									if (k && typeof(k.image_index) != 'string') delete k.image_index;
-								});
-							}	
-						});
+			if (pt.life) {
+				if (pt.life.check(true)) pt.destroy();
+				else {
+					if (pt) {
+						let delta = 1 - pt.life.delta();
+						pt.x += Math.cos(Eng.math.torad(pt.angle)) * (pt.spd || 0);
+						pt.y += Math.sin(Eng.math.torad(pt.angle)) * (pt.spd || 0);
+						pt.image_index.frame_spd = (pt.frame_spd * !pt.is_life) || 0;
+						if (pt.is_life) pt.image_index.frame = pt.image_index.count * delta;
+						pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * delta;
+						pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
+						pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale, pt.angle);
 					}
-				});
-			});
-			current_level.load(dt.current_level[0] + "|" + dt.current_level[1], nmap, true, true);
-
-			dt.lobjects.forEach(function(e) {
-				if (e) {
-					let f = Search.id(e.id);
-					if (!f) f = Add.object(e.name, e.x, e.y);
-					//if (e.name == 'trigger') console.log(f, e);
-					Object.keys(e).forEach(function(j) {
-						let accept = true;
-						for (let i = 0; i < (ignore || []).length; i++) {
-							if (ignore[i] == j) {
-								accept = false;
-								break;
-							}
-						}
-						for (let i = 0; i < (destroy || []).length; i++) {
-							if (destroy[i] == j) {
-								delete f[j];
-								accept = false;
-								break;
-							}
-						}
-						if (accept) f[j] = e[j];
-					});
 				}
-			});
+			} else {
+				if (pt.image_index.frame >= pt.image_index.count - pt.frame_spd) pt.destroy();
+				if (pt) {
+					let delta = 1 - (pt.image_index.frame / pt.image_index.count);
+					pt.x += Math.cos(Eng.math.torad(pt.angle)) * (pt.spd || 0);
+					pt.y += Math.sin(Eng.math.torad(pt.angle)) * (pt.spd || 0);
+					pt.image_index.frame_spd = pt.frame_spd;
+					pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * delta;
+					pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
+					pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale, pt.angle);
+				}
+			}
 		}
-		if (func) func(dt);
-	}
-}
-function sound_play(name, volume, looping) {
-	if (audio[name] && !mute) {
-		audio[name].volume = volume || audio[name].volume;
-		audio[name].play();
-		audio[name].loop = looping || false;
-	}
-}
-function sound_stop(name) {
-	if (audio[name] && !mute) {
-		audio[name].pause();
-		audio[name].currentTime = 0;
+		pt.draw = function() {
+			if (!pt.gui) render[render.length] = { 'obj': pt, 'func': pt.func};
+			else add_gui(function(cvs) { pt.func(pt.gui)} );
+		}
+		pt.destroy = function() {
+			pt.DELETED = true;
+			if (pt.delete) pt.delete();
+			return true;
+		}
+		return pt;
 	}
 }
 /* работа с сетью: */
