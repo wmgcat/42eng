@@ -129,7 +129,7 @@ var AudioContext = window.AudioContext || window.webkitAudioContext || false;
 
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
 let pause = false, editor = false, mute = false, levelChange = false, is_touch = false, cvs_delta = 0;
-let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}];
+let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let audio = {
 	'stack': {},
 	'context': AudioContext ? new AudioContext : false,

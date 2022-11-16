@@ -1,30 +1,24 @@
-﻿memory.ach = {};
-function add_ach(name, description, frame, accept) {
-	let id = '#id' + Object.keys(memory.ach).length;
-	memory.ach[id] = {
-		'name': name || 'undefined',
-		'description': description || 'no text',
-		'finish': false,
-		'frame': frame,
-		'func': function() {
-			if (accept(memory.ach[id]) && !this.finish)
-				this.finish =! this.finish;
-			return this.finish;
-		}
-	};
-	return id;
-}
-function ach_get() {
-	let arr = [], nmem = Object.keys(memory.ach);
-	for (let i = 0; i < nmem.length; i++) {
-		if (memory.ach[nmem[i]].finish) continue;
-		arr[arr.length] = memory.ach[nmem[i]];
-	}
-	return arr;
-}
-function ach_update() {
-	let arr = ach_get();
-	for (let i = 0; i < arr.length; i++)
-		if (arr[i].func()) return arr[i];
-	return false;
+﻿modules.arch = {
+  title: 'achievements', v: '1.1', stack: {},
+  add: (id, func) => { // add new achievement:
+    modules.arch.stack[id] = {
+      func: () => {
+        if (func && !modules.arch.stack[id].finish) {
+          if (func()) {
+            modules.arch.stack[id].finish = true;
+            return true;
+          }
+        }
+        return false;
+      },
+      finish: false
+    }
+  },
+  update: () => { // check all achievements status and get finished:
+    let arr = [];
+    Object.keys(modules.arch.stack).forEach(id => {
+      if (modules.arch.stack[id].func()) arr.push(id);
+    });
+    return arr;
+  }
 }
