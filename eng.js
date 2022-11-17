@@ -31,24 +31,6 @@ let Eng = { // все методы движка:
 		let a4 = () => { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1); }, separator = '.';
 		return '#id' + a4() + a4() + separator + a4() + a4() + separator + a4() + a4() + separator + a4() + a4();
 	},
-	'math': {
-		'distance': (x1, y1, x2, y2) => { return Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)); },
-		'direction': (x1, y1, x2, y2) => { return Math.atan2(y2 - y1, x2 - x1); },
-		'sign': x => { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.round(x) != 0); },
-		'clamp': (x, min, max) => { return Math.min(Math.max(x, min), max); },
-		'torad': x => { return x * Math.PI / 180; },
-		'todeg': x => { return x / Math.PI * 180; }
-	},
-	'collision': {
-		'rect': (px, py, x, y, w, h) => { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); },
-		'circle': (px, py, x, y, range) => { return Eng.math.distance(px, py, x, y) <= range; },
-		'mouse': {
-			'rect': (x, y, w, h) => { return Eng.collision.rect(mouse.x, mouse.y, x * cfg.zoom, y * cfg.zoom, w * cfg.zoom, (h || w) * cfg.zoom); },
-			'grect': (x, y, w, h) => { return Eng.collision.rect(mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y, x, y, w, h || w); },
-			'circle': (x, y, range) => { return Eng.collision.circle(mouse.x, mouse.y, x * cfg.zoom, y * cfg.zoom, range * cfg.zoom); },
-			'gcircle': (x, y, range) => { return Eng.collision.circle(mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y, x, y, range); }
-		}
-	},
 	'wait': (func, success, error) => {
 		new Promise(func).then(
 			value => success(value),
