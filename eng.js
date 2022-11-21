@@ -664,33 +664,7 @@ let Level = {
 		}
 	}
 };
-/*
-	//======\\		>> Таймеры >> || >> || >>
-   ||    |   ||		— init(seconds, multi=1000) - Запускает таймер (по умолчанию в секундах);
-   ||    |   ||		— check(loop) - Проверяет расстояние между временем. (с loop сбрасывает счетчик);
-   ||.  _0  .||		- delta() - показывает расстояние между временем от 0 до 1;
-   ||    .   ||		— reset(x=0) - сбрасывает счетчик в положение x;
-    \\======//		— count() — возвращает кол-во пройденных циклов
-*/
-class Timer {
-	constructor(x, multi=1000) { 
-		this.max = x * multi, this.save_max = x, this.point = 0;
-		this.reset();
-	}
-	check(loop) {
-		if ((this.point - Date.now()) <= 0) {
-			if (!loop) this.reset();
-			return true;
-		}
-		return false;
-	}
-	delta() { return Eng.math.clamp(Math.max(this.point - Date.now(), 0) / this.max, 0, 1); }
-	count() { return Math.floor(Math.abs(this.point - Date.now()) / this.max); }
-	reset(x=0) { 
-		if (x == 0) this.point = Date.now() + this.max;
-		else this.point = x; 
-	}
-}
+
 /*
   ====_______
      =======|		* _ * \\ Звуки и Музыка // * _ *
