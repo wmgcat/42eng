@@ -408,7 +408,28 @@ let Add = {
 		document.body.appendChild(script);
 	},
 	'gui': func => gui.push(func),
-	'debug': function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); }
+	debug: function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); },
+  module: function(path) {
+    let new_path = path == '--custom';
+    for (let i = 0; i < arguments.length; i++) {
+      if (arguments[i] == '--custom') continue;
+      mloaded++;
+      let script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = new_path ? arguments[i] : `./modules/${arguments[i]}.js`;
+      script.onload = () => {
+        let source = arguments[i].split('.js')[0].split('/').slice(-1)[0];
+        loaded++;
+        window[source] = modules[source];
+        this.debug(`added ${source} module!`);
+      }
+      script.onerror = () => {
+        if (new_path) return this.error(arguments[i] + ' not find!');
+        else this.module('--custom', arguments[i]);
+      }
+      document.head.appendChild(script);
+    }
+  }
 }
 /*
 	||| add(control) - добавление значения;
