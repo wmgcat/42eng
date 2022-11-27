@@ -6,9 +6,9 @@ String.prototype.replaceAll = function(match, replace) {
 }
 
 let cfg = { // основной конфиг:
-	'title': '42engine.js',
+	'title': '42eng.js',
 	'grid': 32, 'zoom': 1, 'debug': false,
-	'build': { 'v': '1.5', 'href': '' },
+	'build': { 'v': '1.6', 'href': '' },
 	'macros': {
 		'up': 1, 'down': 2, 'left': 4, 'right': 8,
 		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
@@ -56,8 +56,7 @@ let Eng = { // все методы движка:
 			}
 		}
 	},
-	'focus': value => {
-		//if (window) {
+	focus: value => {
 		switch(value) {
 			case true:
 				cfg.setting.focus = true;
@@ -70,8 +69,6 @@ let Eng = { // все методы движка:
 				window.blur();
 			break;
 		}
-		Add.debug('окно ' + (value ? 'в фокусе' : 'не в фокусе'));
-		//}
 	},
 	'console': { // работа с консолью:
 		'release': () => {
@@ -239,7 +236,7 @@ let Add = {
 		errors[errors.length] = msg;
 		console.error(msg);
 	},
-	'canvas': (init, update, loading) => {
+	canvas: (gameinit, update, loading) => {
 		let cvs = document.getElementById(cfg.window.id);
 		if (!cvs) {
 			cvs = document.createElement('canvas');
@@ -258,9 +255,8 @@ let Add = {
     		cfg.setting.user = true;
     		audio.context.resume();
     		if (e.code.toLowerCase() == 'tab') {
-    			Add.debug(`Нажата ${e.code} клавиша!`);
     			e.preventDefault();
-				e.stopImmediatePropagation();
+				  e.stopImmediatePropagation();
     		}
     		Object.keys(keylocks).forEach(function(f) {
 				if (e.code.toLowerCase().replace('key', '') == f) {
@@ -273,8 +269,8 @@ let Add = {
 				}
 			});
 		}, mouseChecker = e => {
-			let xoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetX : e.changedTouches[0].clientX,
-				yoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetY : e.changedTouches[0].clientY;
+      let xoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetX : e.changedTouches[0].clientX,
+			    yoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetY : e.changedTouches[0].clientY;
 			switch(e.type) {
 				case 'mousedown': case 'mouseup': case 'mousemove':
 					mouse.x = cameraes[current_camera].x + xoff;
@@ -283,10 +279,7 @@ let Add = {
 				case 'touchstart': case 'touchend': case 'touchmove':
 					mouse.x = cameraes[current_camera].x + xoff;
 					mouse.y = cameraes[current_camera].y + yoff;
-					mouse.touch = {
-						'x': xoff,
-						'y': yoff
-					};
+					mouse.touch = { x: xoff, y: yoff };
 				break;
 			}
 			switch(e.type) {
@@ -306,7 +299,6 @@ let Add = {
 			addEventListener('keydown', keyChecker, false);
 			addEventListener('keyup', keyChecker, false);
 			Eng.focus(true);
-			//cvs.onkeydown = cvs.onkeyup = keyChecker;
 		}, resize = () => {
 			try {
 				let w = cfg.window.width, h = cfg.window.height;
@@ -316,7 +308,6 @@ let Add = {
 					cfg.window.height = h;
 				}
 				cvs.width = w, cvs.height = h;
-
 				obj.ctx = cvs.getContext('2d');
 				obj.ctx.imageSmoothingEnabled = false;
 			}
@@ -325,13 +316,16 @@ let Add = {
 			let now = Date.now(), delta = now - cvs_delta, fps = 1000 / cfg.setting.fps;
 			if (delta > fps) {
 				gui = [];
-				if (loaded >= mloaded && !is_loaded) is_loaded = true;
-				if (is_loaded) {
+				if (loaded >= mloaded && !is_loaded) {
+          if (gameinit) gameinit();
+          is_loaded = true;
+        }
+        if (is_loaded) {
 					ctx.save();
 					ctx.fillRect(0, 0, cvs.width, cvs.height);
 					ctx.scale(cfg.zoom, cfg.zoom);
 					ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
-					update(t);
+          update(t);
 					render.sort(function(a, b) { return (a.obj.yr || a.obj.y) - (b.obj.yr || b.obj.y); }).forEach(e => {
 						if (e.obj.update && !pause) e.obj.update();
 						if (!e.obj.is_init && e.obj.initialize && !editor) {
@@ -366,22 +360,15 @@ let Add = {
 		  navigator.mediaSession.setActionHandler('nexttrack', () => { })
 		}
 		window.onblur = () => {
-			Add.debug('Окно потеряло фокус!');
 			cfg.setting.focus = false;
 			audio.setvolume('music', 0);
 			audio.setvolume('sounds', 0);
 		}
-		window.onfocus = () => {
-			audio.context.suspend().then(() => {
-				cfg.setting.focus = true;
-				Add.debug('Окно получило фокус');
-			})
-		}
-		let obj = { 'id': cvs, 'cvs': ctx, 'update': temp, 'init': init }
+		window.onfocus = () => { audio.context.suspend().then(() => { cfg.setting.focus = true; }); }
+		let obj = { id: cvs, cvs: ctx, update: temp, init: gameinit }
 		window.onresize = document.body.onresize = cvs.onresize = resize;
 		resize();
 		Eng.console.release();
-		if (obj.init) obj.init();
 		return obj;
 	},
 	'object': (obj, x=0, y=0) => {
