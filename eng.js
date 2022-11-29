@@ -6,24 +6,24 @@ String.prototype.replaceAll = function(match, replace) {
 }
 
 let cfg = { // основной конфиг:
-	'title': '42eng.js',
-	'grid': 32, 'zoom': 1, 'debug': false,
-	'build': { 'v': '1.6', 'href': '' },
-	'macros': {
-		'up': 1, 'down': 2, 'left': 4, 'right': 8,
-		'active': 16, 'mode': 32, 'dclick': 64, 'uclick': 128,
-		'move': 256, 'hover': 512
+	title: '42eng.js',
+	grid: 32, zoom: 1, debug: false,
+	build: { v: 1.6, href: '' },
+	macros: {
+		up: 1, down: 2, left: 4, right: 8,
+		active: 16, mode: 32, dclick: 64, uclick: 128,
+		move: 256, hover: 512
 	},
-	'setting': {
-		'music': 1, 'sounds': 1,
-		'mute': false, 'user': false,
-		'focus': true, 'listener': 10,
-		'fps': 60
+	setting: {
+		music: 1, sounds: 1,
+		mute: false, user: false,
+		focus: true, listener: 10,
+		fps: 60
 	},
-	'window': {
-		'fullscreen': true,
-		'width': 800, 'height': 600,
-		'id': 'game'
+	window: {
+		fullscreen: true,
+		width: 800, height: 600,
+		id: 'game'
 	}
 };
 let Eng = { // все методы движка:
@@ -125,7 +125,6 @@ let audio = {
 if (audio.context)
   audio.context.onstatechange = () => {
 	  if (audio.context.state === "interrupted") audio.context.resume();
-	  Add.debug('Состояние audio.context', audio.context.state);
   }
 let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
 	let str = arguments['0'];
@@ -708,83 +707,5 @@ class Sound {
 			if (ind != -1) audio.listener = audio.listener.splice(ind, 1);
 			this.index = -1;
 		}
-	}
-}
-/* 
-	^   система частиц:
-   / \	life - период жизни;
-   | |  angle_(start/end) - угол перемещения;
-   | |	alpha_(start/end) - прозрачность;
-   | |	spd - скорость частицы;
-   | |	image_index - спрайт для частицы;
-   | |		-- методы: --
- 0==^==0 init(params, x, y) - загрузка параметров частицы;
-    |	 draw() - отрисовка частицы, заносится в основной буффер;
-    0	 destroy() - удаляет частицу из стека;
-*/
-let Part = {
-	'init': function(params, x, y, gui) {
-		let npt = { 'name': '$part', 'unsave': true, 'gui': gui };
-		let pt = Add.object(npt, x, y);
-		let keys = Object.keys(params);
-		for (let i = 0; i < keys.length; i++) {
-			if (keys[i] == 'image_index') {
-				pt.image_index = Img.init(params[keys[i]].path, params[keys[i]].left, params[keys[i]].top, params[keys[i]].w, params[keys[i]].h, params[keys[i]].xoff, params[keys[i]].yoff, params[keys[i]].count);
-				if (params.image_index && params.frame_spd) {
-					pt.image_index.frame_spd = pt.frame_spd;
-					if (params.is_randomize) pt.image_index.frame = Math.floor(Math.random() * pt.image_index.count);
-					else if (params.frame) pt.image_index.frame = params.frame;
-				}
-			} else pt[keys[i]] = params[keys[i]];
-		}
-		if (pt.life) {
-			pt.life = new Timer(pt.life);
-			pt.life.check();
-		}
-		if (pt.angle == -1 || pt.angle == undefined) pt.angle = Math.random() * ((pt.angle_end || 0) - (pt.angle_start || 0)) - (pt.angle_end || 0);
-		if (pt.alpha == undefined) pt.alpha = pt.alpha_start || pt.alpha_end || 1;
-		if (pt.alpha_end == undefined) pt.alpha_end = pt.alpha_start || pt.alpha;
-		if (pt.alpha_start == undefined) pt.alpha_start = pt.alpha;
-		if (pt.scale == undefined) pt.scale = pt.scale_start || pt.scale_end || 1;
-		if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale;
-		if (pt.scale_start == undefined) pt.scale_start = pt.scale;
-		pt.func = function(cvs) {
-			if (pt.life) {
-				if (pt.life.check(true)) pt.destroy();
-				else {
-					if (pt) {
-						let delta = 1 - pt.life.delta();
-						pt.x += Math.cos(Eng.math.torad(pt.angle)) * (pt.spd || 0);
-						pt.y += Math.sin(Eng.math.torad(pt.angle)) * (pt.spd || 0);
-						pt.image_index.frame_spd = (pt.frame_spd * !pt.is_life) || 0;
-						if (pt.is_life) pt.image_index.frame = pt.image_index.count * delta;
-						pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * delta;
-						pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
-						pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale, pt.angle);
-					}
-				}
-			} else {
-				if (pt.image_index.frame >= pt.image_index.count - pt.frame_spd) pt.destroy();
-				if (pt) {
-					let delta = 1 - (pt.image_index.frame / pt.image_index.count);
-					pt.x += Math.cos(Eng.math.torad(pt.angle)) * (pt.spd || 0);
-					pt.y += Math.sin(Eng.math.torad(pt.angle)) * (pt.spd || 0);
-					pt.image_index.frame_spd = pt.frame_spd;
-					pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * delta;
-					pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
-					pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale, pt.angle);
-				}
-			}
-		}
-		pt.draw = function() {
-			if (!pt.gui) render[render.length] = { 'obj': pt, 'func': pt.func};
-			else add_gui(function(cvs) { pt.func(pt.gui)} );
-		}
-		pt.destroy = function() {
-			pt.DELETED = true;
-			if (pt.delete) pt.delete();
-			return true;
-		}
-		return pt;
 	}
 }

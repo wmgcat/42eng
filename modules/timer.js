@@ -1,19 +1,24 @@
-class Timer {
-	constructor(x, multi=1000) { 
-		this.max = x * multi, this.save_max = x, this.point = 0;
-		this.reset();
-	}
-	check(loop) {
-		if ((this.point - Date.now()) <= 0) {
-			if (!loop) this.reset();
-			return true;
-		}
-		return false;
-	}
-	delta() { return Eng.math.clamp(Math.max(this.point - Date.now(), 0) / this.max, 0, 1); }
-	count() { return Math.floor(Math.abs(this.point - Date.now()) / this.max); }
-	reset(x=0) { 
-		if (x == 0) this.point = Date.now() + this.max;
-		else this.point = x; 
-	}
+modules.timer = {
+  title: 'timer', v: '1.0',
+  init: (x, multi=1000) => {
+    let obj = {
+      max: x * multi, save_max: x,
+      point: 0,
+      check: loop => {
+        if ((obj.point - Date.now()) <= 0) {
+          if (!loop) obj.reset();
+          return true;
+        }
+        return false;
+      },
+      delta: () => { return math.clamp(Math.max(obj.point - Date.now(), 0) / obj.max, 0, 1); },
+      count: () => { return ~~(Math.abs(obj.point - Date.now()) / obj.max); },
+      reset: (x=0) => {
+        if (x == 0) obj.point = Date.now() + obj.max;
+        else obj.point = x;
+      }
+    };
+    obj.reset();
+    return obj;
+  }
 }
