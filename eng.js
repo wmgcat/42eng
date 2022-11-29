@@ -213,24 +213,6 @@ let Add = {
 			} else Add.error('type audio not find!');
 		}
 	},
-	'image': function(source) {
-		for (let i = 0; i < arguments.length; i++) {
-			mloaded++;
-			let str = arguments[i];
-			let img = new Image(), path = arguments[i].split('/');
-			img.src = arguments[i];
-
-			if (path[0] == '.') path = path.splice(1, path.length - 1);
-			path[path.length - 1] = path[path.length - 1].replace('.png', '').replace('.jpg', '').replace('.gif', '').replace('.jpeg', '');
-			img.onload = function() {
-				Add.debug('картинка загружена!', img.src);
-				loaded++;
-			}
-			img.onerror = function() { return Add.error(path + ' not find!'); }
-			images[path.join('.')] = img;
-			if (arguments.length <= 1) return path.join('.');
-		}
-	},
 	'error': msg => {
 		errors[errors.length] = msg;
 		console.error(msg);
