@@ -504,63 +504,6 @@ class Map {
 		return points.slice(0, points.length);
 	}
 }
-/*
-		  #      _
-		 # #    |_|  поиск по объектам:
-		#####    |   distance(obj, x, y, range) - ищет объекты obj в точке x,y на дистанции range;
-	   #  #  #   |   id(id, id1..n) - ищет объекты по ID;
-	  # ##### #--|   search(obj, obj1..n) - ищет объекты obj;
-	 #         # |   count(obj, obj1..n) - выводит кол-во объектов obj на уровне;
-	   |     |	     key(name, key, value) - выдает все объекты с именем name в которых есть переменная равная value;
-*/
-let Search = {
-	'distance': function(obj, x, y, range, offset) {
-		let s = [];
-		if (typeof(obj) == 'object') obj.forEach(function(e) { s = s.concat(Search.search(e)); }); else s = Search.search(obj);
-		s.sort(function(a, b) { return Eng.math.distance(x, y, a.x + (offset || 0), a.y + (offset || 0)) - Eng.math.distance(x, y, b.x + (offset || 0), b.y + (offset || 0)); });
-		if (range != undefined)
-			for (let i = 0; i < s.length; i++) {
-				if (Eng.math.distance(x, y, s[i].x + (offset || 0), s[i].y + (offset || 0)) >= range) return s.splice(0, i);
-			}
-		return s;
-	},
-	'id': function(id) {
-		let s = [];
-		if (memory.lobjects)
-			if (arguments.length > 1) for (let i = 0; i < arguments.length; i++) s = s.concat(Search.id(arguments[i]));
-			else {
-				let ind = memory.lobjects.findIndex(obj => { return obj.id == id; });
-				if (ind != -1) s.push(memory.lobjects[ind]);
-			}
-		
-		if (s.length > 1) return s;
-		else if (s.length == 1) return s[0];
-		else return false;
-	},
-	'search': function(obj) {
-		let s = [];
-		if (memory.lobjects)
-			for (let i = 0; i < arguments.length; i++) {
-				let arg = arguments[i];
-				memory.lobjects.forEach(function(e) {
-					if ((e.name == arg) || (arg == 'all')) s.push(e);
-				});
-			}
-		return s;
-	},
-	'count': function(obj) {
-		let count = 0;
-		for (let i = 0; i < arguments.length; i++) count += Search.search(arguments[i]).length;
-		return count;
-	},
-	'key': (name, key, value) => {
-		let arr = Search.search(name), narr = [];
-		if (arr) arr.forEach(obj => {
-			if (obj[key] && obj[key] == value) narr.push(obj);
-		});
-		return narr;
-	}
-};
 /*    __
      _||_      
      |^^|      уровни:
