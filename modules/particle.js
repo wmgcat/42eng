@@ -49,16 +49,16 @@ modules.particle = {
         pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
         pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale, pt.angle);
       }	
-		}
-		pt.draw = () => {
-			if (!pt.gui) render[render.length] = { 'obj': pt, 'func': pt.func};
-			else Add.gui(cvs => { pt.func(pt.gui)} );
-		}
-		pt.destroy = () => {
-			pt.DELETED = true;
-			if (pt.delete) pt.delete();
-			return true;
-		}
+    }
+    pt.draw = () => {
+      if (!pt.gui) render[render.length] = { 'obj': pt, 'func': pt.func};
+      else Add.gui(cvs => { pt.func(pt.gui)} );
+    }
+    pt.destroy = () => {
+      pt.DELETED = true;
+      if (pt.delete) pt.delete();
+      return true;
+    }
     return pt;
   }
 }
