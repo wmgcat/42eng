@@ -48,14 +48,6 @@ let Eng = { // все методы движка:
 		Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
 		return arr;
 	},
-	'emitter': (params, x, y, count, range, gui) => {
-		for (let i = 0; i < count; i++) {
-			let nx = x + Math.random() * range * 2 - range, ny = y + Math.random() * range * 2 - range;
-			if (Eng.collision.rect(nx, ny, cameraes[current_camera].x - cfg.grid, cameraes[current_camera].y - cfg.grid, cfg.window.width + cfg.grid * 2, cfg.window.height + cfg.grid * 2)) {
-				Part.init(params, nx, ny, gui);
-			}
-		}
-	},
 	focus: value => {
 		switch(value) {
 			case true:

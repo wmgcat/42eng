@@ -62,3 +62,10 @@ modules.particle = {
     return pt;
   }
 }
+
+Add.emitter = (params, x, y, count, range, gui) => {
+  for (let i = 0; i < count; i++) {
+    let nx = x + Math.random() * range * 2 - range, ny = y + Math.random() * range * 2 - range;
+    if (collision.rect(nx, ny, cameraes[current_camera].x - cfg.grid, cameraes[current_camera].y - cfg.grid, cfg.window.width + cfg.grid * 2, cfg.window.height + cfg.grid * 2)) modules.particle.create(params, nx, ny, gui);
+  }
+}
