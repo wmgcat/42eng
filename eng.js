@@ -9,11 +9,6 @@ let cfg = { // основной конфиг:
 	title: '42eng.js',
 	grid: 32, zoom: 1, debug: false,
 	build: { v: 1.6, href: '' },
-	macros: {
-		up: 1, down: 2, left: 4, right: 8,
-		active: 16, mode: 32, dclick: 64, uclick: 128,
-		move: 256, hover: 512
-	},
 	setting: {
 		music: 1, sounds: 1,
 		mute: false, user: false,
@@ -391,28 +386,6 @@ let Add = {
     }
   }
 }
-/*
-	||| add(control) - добавление значения;
-	||| clear(control) - очистка значений (без аргументов - полная очистка);
-	||| check(control) - провера значения;
-*/
-let Byte = {
-	'key': 0,
-	'add': function(arr) {
-		for (let i = 0; i < arguments.length; i++)
-			this.key |= cfg.macros[arguments[i]];
-	},
-	'clear': function(arr) {
-		if (arguments.length > 0)
-			for (let i = 0; i < arguments.length; i++) this.key &=~ cfg.macros[arguments[i]];
-		else this.key = 0;
-	},
-	'check': function(arr) {
-		for (let i = 0; i < arguments.length; i++)
-			if ((this.key & cfg.macros[arguments[i]]) <= 0) return false;
-		return true;
-	}
-};
 /* игровые объекты */
 let Obj = {
 	'init': function(name='undefined') {
