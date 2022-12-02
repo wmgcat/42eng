@@ -1,6 +1,6 @@
 modules.timer = {
   title: 'timer', v: '1.0',
-  init: (x, multi=1000) => {
+  create: (x, multi=1000) => {
     let obj = {
       max: x * multi, save_max: x,
       point: 0,

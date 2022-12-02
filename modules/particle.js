@@ -21,7 +21,7 @@ modules.particle = {
             pt.image_index.frame = ~~(Math.random() * pt.image_index.count);
         break;
         case 'life':
-          pt.life = timer.init(params[key]);
+          pt.life = timer.create(params[key]);
           pt.life.check(); 
         break;
       }
