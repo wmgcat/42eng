@@ -19,7 +19,8 @@ modules.image = {
             cvs.rotate(rotate / 180 * Math.PI);
             cvs.translate(-nxoff, -nyoff);
           }
-          cvs.drawImage(this.image, this.left + this.w * Math.floor(this.frame % ((this.image.width || 0) / this.w)), this.top + this.h * Math.floor(this.frame / ((this.image.width || 0) / this.w)), this.w, this.h, 0, 0, w || this.w, h || this.h);
+          let left = (this.left + this.w * ~~this.frame) % this.image.width, top = this.top + ~~((this.left + this.w * ~~this.frame) / this.image.width) * this.h;
+          cvs.drawImage(this.image, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
           cvs.globalAlpha = 1;
         cvs.restore();
         this.frame = (this.frame + this.frame_spd) % this.count;

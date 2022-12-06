@@ -170,7 +170,6 @@ let Add = {
 	},
 	'audio': function(type='sounds', source) {
 		if (Object.keys(arguments).length > 1) {
-			//if (!audio[type + '_volume']) audio.setvolume(type, 1);
 			mloaded++;
 			let path = source.split('/');
 			if (path[0] == '.') path = path.splice(1, path.length - 1);
@@ -229,8 +228,8 @@ let Add = {
     		Object.keys(keylocks).forEach(function(f) {
 				if (e.code.toLowerCase().replace('key', '') == f) {
 					switch(e.type) {
-						case 'keydown': Byte.add(keylocks[f]); break;
-						case 'keyup': Byte.clear(keylocks[f]); break;
+						case 'keydown': byte.add(keylocks[f]); break;
+						case 'keyup': byte.clear(keylocks[f]); break;
 					}
 					e.preventDefault();
 					e.stopImmediatePropagation();
@@ -253,10 +252,10 @@ let Add = {
 			switch(e.type) {
 				case 'mouseup': case 'touchend':
 					is_touch = false;
-					Byte.add('uclick');
+					byte.add('uclick');
 					cvs.focus();
 				break;
-				case 'mousedown': case 'touchstart': Byte.add('dclick'); break;
+				case 'mousedown': case 'touchstart': byte.add('dclick'); break;
 			}
 			if (e.type == 'touchstart') is_touch = true;
 			cfg.setting.user = true;
@@ -310,9 +309,11 @@ let Add = {
 					render = [];
 				} else loading(loaded / mloaded, t);
 				gui.reverse().forEach(function(e) { e(ctx); });
-				cvs.style.cursor = Byte.check('hover') ? 'pointer' : 'default';
-				Byte.clear('hover', 'dclick', 'uclick');
-				current_time = t;
+				if (modules.byte) {
+          cvs.style.cursor = byte.check('hover') ? 'pointer' : 'default';
+				  byte.clear('hover', 'dclick', 'uclick');
+				}
+        current_time = t;
 				cvs_delta = now - (delta % fps);
 			}
 			window.requestAnimationFrame(temp);
