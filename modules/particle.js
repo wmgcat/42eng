@@ -1,5 +1,17 @@
 let templateParticle = new Obj('$part');
 
+templateParticle.update = function() {
+  let delta = 1;
+  if (this.life) delta -= this.life.delta();
+  else delta -= this.image_index.frame / this.image_index.count;
+  this.x += Math.cos(math.torad(this.angle)) * (this.spd || 0);
+  this.y += Math.sin(math.torad(this.angle)) * (this.spd || 0);
+  this.scale = this.scale_start + (this.scale_end - this.scale_start) * delta;
+  this.alpha = this.alpha_start + (this.alpha_end - this.alpha_start) * delta;
+  if ((this.life && this.life.check(true)) || (!this.life && this.image_index.frame >= (this.image_index.count - this.image_index.frame_spd))) this.destroy();
+}
+templateParticle.draw = function(cvs) { this.image_index.draw(cvs, this.x, this.y, undefined, undefined, this.alpha, this.scale, this.scale, this.angle); }
+
 modules.particle = {
   title: 'particle', v: '1.0',
   create: (params, x, y, gui) => {
@@ -32,34 +44,8 @@ modules.particle = {
     if (pt.alpha_start == undefined) pt.alpha_start = pt.alpha;
     if (pt.scale == undefined) pt.scale = pt.scale_start || pt.scale_end || 1;
     if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale;
-    if (pt.scale_start == undefined) pt.scale_start = pt.scale;
-    pt.update = cvs => {
-      let is_update = true;
-      if ((pt.life && pt.life.check(true)) || (!pt.life && pt.image_index.frame >= (pt.image_index.count - pt.image_index.frame_spd))) {
-        is_update = false;
-        pt.destroy();
-      }
-      if (is_update) {
-        let delta = 1;
-        if (pt.life) delta -= pt.life.delta();
-        else delta -= pt.image_index.frame / pt.image_index.count; 
-        pt.x += Math.cos(math.torad(pt.angle)) * (pt.spd || 0);
-        pt.y += Math.sin(math.torad(pt.angle)) * (pt.spd || 0);
-        pt.scale = pt.scale_start + (pt.scale_end - pt.scale_start) * delta;
-        pt.alpha = pt.alpha_start + (pt.alpha_end - pt.alpha_start) * delta;
-      }	
-    }
-    pt.draw = function(cvs) {
-      pt.image_index.draw(cvs, pt.x, pt.y, undefined, undefined, pt.alpha, pt.scale, pt.scale, pt.angle);
-    }
-    /*pt.draw = () => {
-      if (!pt.gui) render[render.length] = { 'obj': pt, 'func': pt.func};
-      else Add.gui(cvs => { pt.func(pt.gui)} );
-    }*/
+    if (pt.scale_start == undefined) pt.scale_start = pt.scale;  
     return pt;
-  },
-  update: () => {
-    //search.search('$part').forEach(obj => { obj.draw(); });
   }
 }
 
