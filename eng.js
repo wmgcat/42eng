@@ -5,60 +5,40 @@ String.prototype.replaceAll = function(match, replace) {
   return this.replace(new RegExp(match, 'g'), () => replace);
 }
 
-let cfg = { // основной конфиг:
+let cfg = { // main config:
 	title: '42eng.js',
 	grid: 32, zoom: 1, debug: false,
-	build: { v: 1.6, href: '' },
-	setting: {
-		music: 1, sounds: 1,
-		mute: false, user: false,
-		focus: true, listener: 10,
-		fps: 60
-	},
+	build: { v: 1.6, href: '' },	
 	window: {
 		fullscreen: true,
 		width: 800, height: 600,
 		id: 'game'
 	}
 };
-let Eng = { // все методы движка:
-	'id': () => {
+let Eng = {
+	id: () => {
 		let a4 = () => { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1); }, separator = '.';
 		return '#id' + a4() + a4() + separator + a4() + a4() + separator + a4() + a4() + separator + a4() + a4();
 	},
-	'wait': (func, success, error) => {
+	wait: (func, success, error) => {
 		new Promise(func).then(
 			value => success(value),
 			err => error(err.message)
-		).catch(err => { console.log('lol', err); });
+		).catch(err => {});
 	},
-	'timer': (func, time) => {
+	timer: (func, time) => {
 		let t = setInterval(() => {
 			if (func && func()) clearInterval(t);
 		}, time);
 		return t;
 	},
-	'copy': source => {
+	copy: source => {
 		let arr = {};
 		Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
 		return arr;
 	},
-	focus: value => {
-		switch(value) {
-			case true:
-				cfg.setting.focus = true;
-				window.focus();
-			break;
-			case false:
-				cfg.setting.focus = false;
-				audio.setvolume('music', 0);
-				audio.setvolume('sounds', 0);
-				window.blur();
-			break;
-		}
-	},
-	'console': { // работа с консолью:
-		'release': () => {
+	console: {
+		release: () => {
 			let img = [
 				`      /\\`,
 				`     /  \\        42eng.js by wmgcat`,
@@ -70,7 +50,7 @@ let Eng = { // все методы движка:
 			img.forEach(line => { sum += line + '\n'; });
 			console.log(sum);
 		},
-		'show': (cvs, clr) => {
+		show: (cvs, clr) => {
 			if (errors.length > 0) {
 				if (cvs) {
 					cvs.fillStyle = clr || '#fff';
@@ -91,28 +71,11 @@ let Eng = { // все методы движка:
 	}
 };
 
-var AudioContext = window.AudioContext || window.webkitAudioContext || false;
-
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
-let pause = false, editor = false, mute = false, levelChange = false, is_touch = false, cvs_delta = 0;
+let pause = false, editor = false, levelChange = false, is_touch = false, cvs_delta = 0;
 let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
-let audio = {
-	'stack': {},
-	'context': AudioContext ? new AudioContext : false,
-	'play': (id, loop) => { if (audio.context && audio.stack && audio.stack[id]) audio.stack[id].play(loop); },
-	'setvolume': (type, volume) => {
-		if (audio.context) {
-      if (!audio[type + '_volume']) audio[type + '_volume'] = audio.context.createGain();
-		  audio[type + '_volume'].gain.value = volume;
-	  }
-  },
-	'listener': [],
-	'stop': id => { if (audio.stack && audio.stack[id]) audio.stack[id].stop(); }
-}, keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
-if (audio.context)
-  audio.context.onstatechange = () => {
-	  if (audio.context.state === "interrupted") audio.context.resume();
-  }
+let keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
+
 let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
 	let str = arguments['0'];
 	for (let i = 0; i < arguments.length; i++) {
@@ -132,7 +95,6 @@ let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
     \0/ ** add content ** \0/
 	rule(char, key || object) - добавление клавиш управления;
 	script(src, 1..n) - добавление скриптов;
-	audio([type, src] or {src: type, src2: type, srcN: type}) - добавление звуков, музыки;
 	image(src, 1..n) - добавление изображений;
 	error(msg) - создание ошибок;
 	canvas(id, update, loading) - создание холста для игры,
@@ -150,14 +112,14 @@ let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
 	\###=#=##======##=#=###/
 */
 let Add = {
-	'rule': function(char, key) {
+	rule: function(char, key) {
 		if (typeof(char) == 'object') { Object.keys(char).forEach(function(k) { keylocks[k] = char[k]; });
 		} else {
 			if (arguments.length > 2) for (let i = 0; i < arguments.length; i += 2) keylocks[arguments[i]] = arguments[i + 1];
 			else keylocks[char] = key;
 		}
 	},
-	'script': function(source) {
+	script: function(source) {
 		for (let i = 0; i < arguments.length; i++) {
 			mloaded++;
 			let script = document.createElement('script');
@@ -168,39 +130,7 @@ let Add = {
 			document.head.appendChild(script);
 		}
 	},
-	'audio': function(type='sounds', source) {
-		if (Object.keys(arguments).length > 1) {
-			//if (!audio[type + '_volume']) audio.setvolume(type, 1);
-			mloaded++;
-			let path = source.split('/');
-			if (path[0] == '.') path = path.splice(1, path.length - 1);
-			['.wav', '.ogg', '.mp3'].forEach(assoc => { path[path.length - 1] = path[path.length - 1].replace(assoc, ''); });
-			let req = new XMLHttpRequest();
-			req.open('GET', source, true);
-			req.responseType = 'arraybuffer';
-			req.onload = () => {
-				let sa = req.response;
-				audio.context.decodeAudioData(req.response, buff => {
-					loaded++;
-					if (audio.stack) audio.stack[path.join('.')] = new Sound(buff, type);
-				});
-			}
-			req.onerror = () => {
-				/*let sa = new Audio(source);
-				sa.disableRemotePlayback = true;
-				sa.onerror = err => { return Add.error(source + ' not find!'); }
-				sa.oncanplaythrough = () => { loaded++; }
-				sa.load(); 
-				if (audio.stack) audio.stack[path.join('.')] = new Sound(sa, type);*/
-			}
-			req.send();
-		} else { // добавление несколько файлов в одну команду:
-			if (typeof(type) == 'object') {
-				Object.keys(type).forEach(key => Add.audio(type[key], key));
-			} else Add.error('type audio not find!');
-		}
-	},
-	'error': msg => {
+	error: msg => {
 		errors[errors.length] = msg;
 		console.error(msg);
 	},
@@ -259,14 +189,16 @@ let Add = {
 				case 'mousedown': case 'touchstart': byte.add('dclick'); break;
 			}
 			if (e.type == 'touchstart') is_touch = true;
-			cfg.setting.user = true;
-			audio.context.resume();
-			Eng.focus(true);
-			e.preventDefault();
+			if (modules.audio) {
+        cfg.setting.user = true;
+			  modules.audio.context.resume();
+			  Eng.focus(true);
+			}
+      e.preventDefault();
 		}, ready = () => {
 			addEventListener('keydown', keyChecker, false);
 			addEventListener('keyup', keyChecker, false);
-			Eng.focus(true);
+			if (modules.audio) Eng.focus(true);
 		}, resize = () => {
 			try {
 				let w = cfg.window.width, h = cfg.window.height;
@@ -281,47 +213,34 @@ let Add = {
 			}
 			catch(err) { Add.error(err.message); }
 		}, temp = t => {
-			let now = Date.now(), delta = now - cvs_delta, fps = 1000 / cfg.setting.fps;
-			if (delta > fps) {
-				gui = [];
-				if (loaded >= mloaded && !is_loaded) {
-          if (gameinit) gameinit();
-          is_loaded = true;
-        }
-        if (is_loaded) {
-					ctx.save();
-					ctx.fillRect(0, 0, cvs.width, cvs.height);
-					ctx.scale(cfg.zoom, cfg.zoom);
-					ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
-          update(t);
-					Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y)).forEach(id => {
-            let obj = objects[id];
-            if (!obj.is_create && obj.create && !editor) {
-              obj.create();
-              obj.is_create = true;
-            }
-            if (obj.update && !pause) obj.update();
-            if (obj.draw) obj.draw(ctx);
-          });
-          /*render.sort(function(a, b) { return (a.obj.yr || a.obj.y) - (b.obj.yr || b.obj.y); }).forEach(e => {
-						if (e.obj.update && !pause) e.obj.update();
-						if (!e.obj.is_create && e.obj.create && !editor) {
-							e.obj.create();
-							e.obj.is_create = true;
-						}
-						//e.func(ctx);
-					});*/
-					ctx.restore();
-					//render = [];
-				} else loading(loaded / mloaded, t);
-				gui.reverse().forEach(function(e) { e(ctx); });
-				if (modules.byte) {
-          cvs.style.cursor = byte.check('hover') ? 'pointer' : 'default';
-				  byte.clear('hover', 'dclick', 'uclick');
-				}
-        current_time = t;
-				cvs_delta = now - (delta % fps);
-			}
+      gui = [];
+      if (loaded >= mloaded && !is_loaded) {
+        if (gameinit) gameinit();
+        is_loaded = true;
+      }
+      if (is_loaded) {
+        ctx.save();
+        ctx.fillRect(0, 0, cvs.width, cvs.height);
+        ctx.scale(cfg.zoom, cfg.zoom);
+        ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+        update(current_time);
+        Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y)).forEach(id => {
+          let obj = objects[id];
+          if (!obj.is_create && obj.create && !editor) {
+            obj.create();
+            obj.is_create = true;
+          }
+          if (obj.update && !pause) obj.update();
+          if (obj.draw) obj.draw(ctx);
+        });
+        ctx.restore();
+      } else loading(loaded / mloaded, current_time);
+      gui.reverse().forEach(function(e) { e(ctx); });
+      if (modules.byte) {
+        cvs.style.cursor = byte.check('hover') ? 'pointer' : 'default';
+        byte.clear('hover', 'dclick', 'uclick');
+      }
+      current_time = t;	
 			window.requestAnimationFrame(temp);
 		}
 		window.onmousedown = window.onmouseup = window.onmousemove = cvs.ontouchstart = cvs.ontouchend = cvs.ontouchmove = mouseChecker;
@@ -333,14 +252,8 @@ let Add = {
 		  navigator.mediaSession.setActionHandler('seekforward', () => { })
 		  navigator.mediaSession.setActionHandler('previoustrack', () => { })
 		  navigator.mediaSession.setActionHandler('nexttrack', () => { })
-		}
-		window.onblur = () => {
-			cfg.setting.focus = false;
-			audio.setvolume('music', 0);
-			audio.setvolume('sounds', 0);
-		}
-		window.onfocus = () => { audio.context.suspend().then(() => { cfg.setting.focus = true; }); }
-		let obj = { id: cvs, cvs: ctx, update: temp, init: gameinit }
+		} 
+    let obj = { id: cvs, cvs: ctx, update: temp, init: gameinit }
 		window.onresize = document.body.onresize = cvs.onresize = resize;
 		resize();
 		Eng.console.release();
@@ -355,7 +268,7 @@ let Add = {
     objects[id].id = id;
     return objects[id];
 	},
-	'language': (path, short, main) => {
+	language: (path, short, main) => {
 		let script = document.createElement('script');
 		script.src = path;
 		mloaded++;
@@ -367,7 +280,7 @@ let Add = {
 		script.onerror = () => { return Add.error(path + ' not find!'); }
 		document.body.appendChild(script);
 	},
-	'gui': func => gui.push(func),
+	gui: func => gui.push(func),
 	debug: function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); },
   module: function(path) {
     let new_path = path == '--custom';
@@ -580,41 +493,3 @@ let Level = {
 		}
 	}
 };
-
-/*
-  ====_______
-     =======|		* _ * \\ Звуки и Музыка // * _ *
-    ____   ||		
-       ====||		play(loop) - воспроизведение музыки, с возможностью зацикливания;
-           ||		stop() - останавливает воспроизведение музыки;
-           ||__
-           ||===\
-           ||===|
-           ||===/
-*/
-class Sound {
-	constructor(sa, type) {
-		this.audio = sa, this.type = type, this.index = -1;
-	}
-	play(loop) {
-		if (audio.context && !cfg.setting.mute && cfg.setting.user) {
-			if (audio.listener.length <= cfg.setting.listener) {
-				audio.listener.push(audio.context.createBufferSource());
-				this.index = audio.listener[audio.listener.length - 1];
-				this.index.buffer = this.audio;
-				this.index.connect(audio[this.type + '_volume']).connect(audio.context.destination);
-				if (this.index.start) this.index.start(audio.context.currentTime);
-				this.index.onended = () => { this.stop(); }
-				this.index.loop = loop;
-			}
-		}
-	}
-	stop() { 
-		if (audio.context && this.index != -1) {
-			if (this.index.stop) this.index.stop();
-			let ind = audio.listener.findIndex(e => { return e == this.index; });
-			if (ind != -1) audio.listener = audio.listener.splice(ind, 1);
-			this.index = -1;
-		}
-	}
-}
