@@ -95,7 +95,7 @@ var AudioContext = window.AudioContext || window.webkitAudioContext || false;
 
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
 let pause = false, editor = false, mute = false, levelChange = false, is_touch = false, cvs_delta = 0;
-let stack = [], errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
+let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let audio = {
 	'stack': {},
 	'context': AudioContext ? new AudioContext : false,
@@ -108,7 +108,7 @@ let audio = {
   },
 	'listener': [],
 	'stop': id => { if (audio.stack && audio.stack[id]) audio.stack[id].stop(); }
-}, keylocks = {}, grid = {}, levelMemory = {}, objects = {}, images = {};
+}, keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
 if (audio.context)
   audio.context.onstatechange = () => {
 	  if (audio.context.state === "interrupted") audio.context.resume();
@@ -294,20 +294,25 @@ let Add = {
 					ctx.scale(cfg.zoom, cfg.zoom);
 					ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
           update(t);
-					render.sort(function(a, b) { return (a.obj.yr || a.obj.y) - (b.obj.yr || b.obj.y); }).forEach(e => {
+					Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y)).forEach(id => {
+            let obj = objects[id];
+            if (!obj.is_create && obj.create && !editor) {
+              obj.create();
+              obj.is_create = true;
+            }
+            if (obj.update && !pause) obj.update();
+            if (obj.draw) obj.draw(ctx);
+          });
+          /*render.sort(function(a, b) { return (a.obj.yr || a.obj.y) - (b.obj.yr || b.obj.y); }).forEach(e => {
 						if (e.obj.update && !pause) e.obj.update();
-						if (!e.obj.is_init && e.obj.initialize && !editor) {
-							e.obj.initialize();
-							e.obj.is_init = true;
+						if (!e.obj.is_create && e.obj.create && !editor) {
+							e.obj.create();
+							e.obj.is_create = true;
 						}
-						e.func(ctx);
-						if (e.obj.DELETED) { // удаление удаленных объектов
-							let id = stack.findIndex(obj => obj.id == e.obj.id);
-              if (id != -1) stack.splice(id, 1);
-						}
-					});
+						//e.func(ctx);
+					});*/
 					ctx.restore();
-					render = [];
+					//render = [];
 				} else loading(loaded / mloaded, t);
 				gui.reverse().forEach(function(e) { e(ctx); });
 				if (modules.byte) {
@@ -341,23 +346,14 @@ let Add = {
 		Eng.console.release();
 		return obj;
 	},
-	'object': (obj, x=0, y=0) => {
-    if (typeof(obj) == 'string') obj = objects[obj];
-		obj = Eng.copy(obj);
-    obj.x = x;
-    obj.y = y;
-    obj.id = Eng.id();
-    stack.push(obj);
-    return stack[stack.length - 1];
-    /*if (typeof(obj) == 'string' && memory.editor) {
-			let ind = memory.editor.objects.findIndex(o => { return o.name == obj; });
-			if (ind != -1) obj = memory.editor.objects[ind];
-		}
-		obj.x = x, obj.y = y;
-		if (!memory.lobjects) memory.lobjects = [];
-		memory.lobjects[memory.lobjects.length] = Eng.copy(obj);
-		memory.lobjects[memory.lobjects.length - 1].id = Eng.id();
-		return memory.lobjects[memory.lobjects.length - 1];*/
+	object: (obj, x=0, y=0) => {
+    if (typeof(obj) == 'string') obj = templates[obj];
+		let id = Eng.id(); 
+    objects[id] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
+    objects[id].x = x;
+    objects[id].y = y;
+    objects[id].id = id;
+    return objects[id];
 	},
 	'language': (path, short, main) => {
 		let script = document.createElement('script');
@@ -396,7 +392,19 @@ let Add = {
   }
 }
 
-let Obj = {
+class Obj {
+  constructor(name='undefined') {
+    this.name = name;
+    this.x = this.y = this.image_index = 0;
+    templates[name] = this;
+  }
+  destroy() {
+    if (this.delete) objects[this.id].delete();
+    delete objects[this.id];
+    return true;
+  }
+}
+/*let Obj = {
 	create: function(name='undefined') {
     if (arguments.length > 1) {
       for (let i = 0; i < arguments.length; i++) this.create(arguments[i]);
@@ -404,17 +412,18 @@ let Obj = {
       let temp = Eng.copy(this);
       temp.name = name;
       temp.x = temp.y = temp.image_index = 0;
-      objects[name] = temp;
-      return objects[name];
+      templates[name] = temp;
+      return templates[name];
     }
   },
-	draw: function(func=()=>{}) { render.push({ 'obj': this, 'func': func }); },
-	destroy: function() {
-		this.DELETED = true;
-		if (this.delete) this.delete();
-		return true;
-	}
-};
+  render: function() {
+    render.push({
+      obj: this,
+      draw: this.draw
+    });
+  }
+	//draw: function(func=()=>{}) { render.push({ 'obj': this, 'func': func }); }	
+};*/
 /* карта */
 class Map {
 	constructor(width=1, height=1, x=0, y=0) {

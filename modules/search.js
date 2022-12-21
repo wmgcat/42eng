@@ -18,8 +18,8 @@ modules.search = {
       for (let i = 0; i < arguments.length; i++)
         s = s.concat(modules.search.id(arguments[i]));
     } else {
-      let ind = stack.findIndex(obj => (obj.id == id));
-      if (ind != -1) s.push(stack[ind]);
+      let nid = objects[id];
+      if (nid) s.push(nid);
     }
     if (s.length > 1) return s;
     else if (s.length == 1) return s[0];
@@ -27,12 +27,11 @@ modules.search = {
   },
   search: function(obj) {
     let s = [];
-    for (let i = 0; i < arguments.length; i++) {
-      let arg = arguments[i];
-      stack.forEach(e => {
-        if ((e.name == arg) || (arg == 'all')) s.push(e);
-      });
-    }
+    Object.keys(objects).forEach(id => {
+      for (let i = 0; i < arguments.length; i++) {
+        if (arguments[i] == 'all' || objects[id].name == arguments[i]) s.push(objects[id]);
+      }
+    });
     return s;
   },
   count: function(obj) {
