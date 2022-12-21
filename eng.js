@@ -95,7 +95,7 @@ var AudioContext = window.AudioContext || window.webkitAudioContext || false;
 
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
 let pause = false, editor = false, mute = false, levelChange = false, is_touch = false, cvs_delta = 0;
-let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
+let stack = [], errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let audio = {
 	'stack': {},
 	'context': AudioContext ? new AudioContext : false,
@@ -108,7 +108,7 @@ let audio = {
   },
 	'listener': [],
 	'stop': id => { if (audio.stack && audio.stack[id]) audio.stack[id].stop(); }
-}, keylocks = {}, grid = {}, levelMemory = {}, memory = {}, images = {};
+}, keylocks = {}, grid = {}, levelMemory = {}, objects = {}, images = {};
 if (audio.context)
   audio.context.onstatechange = () => {
 	  if (audio.context.state === "interrupted") audio.context.resume();
@@ -170,6 +170,7 @@ let Add = {
 	},
 	'audio': function(type='sounds', source) {
 		if (Object.keys(arguments).length > 1) {
+			//if (!audio[type + '_volume']) audio.setvolume(type, 1);
 			mloaded++;
 			let path = source.split('/');
 			if (path[0] == '.') path = path.splice(1, path.length - 1);
@@ -301,8 +302,8 @@ let Add = {
 						}
 						e.func(ctx);
 						if (e.obj.DELETED) { // удаление удаленных объектов
-							let ind = memory.lobjects.findIndex(nobj => { return nobj.id == e.obj.id; });
-							memory.lobjects.splice(ind, 1);
+							let id = stack.findIndex(obj => obj.id == e.obj.id);
+              if (id != -1) stack.splice(id, 1);
 						}
 					});
 					ctx.restore();
@@ -341,7 +342,14 @@ let Add = {
 		return obj;
 	},
 	'object': (obj, x=0, y=0) => {
-		if (typeof(obj) == 'string' && memory.editor) {
+    if (typeof(obj) == 'string') obj = objects[obj];
+		obj = Eng.copy(obj);
+    obj.x = x;
+    obj.y = y;
+    obj.id = Eng.id();
+    stack.push(obj);
+    return stack[stack.length - 1];
+    /*if (typeof(obj) == 'string' && memory.editor) {
 			let ind = memory.editor.objects.findIndex(o => { return o.name == obj; });
 			if (ind != -1) obj = memory.editor.objects[ind];
 		}
@@ -349,7 +357,7 @@ let Add = {
 		if (!memory.lobjects) memory.lobjects = [];
 		memory.lobjects[memory.lobjects.length] = Eng.copy(obj);
 		memory.lobjects[memory.lobjects.length - 1].id = Eng.id();
-		return memory.lobjects[memory.lobjects.length - 1];
+		return memory.lobjects[memory.lobjects.length - 1];*/
 	},
 	'language': (path, short, main) => {
 		let script = document.createElement('script');
@@ -387,20 +395,21 @@ let Add = {
     }
   }
 }
-/* игровые объекты */
+
 let Obj = {
-	'init': function(name='undefined') {
-		if (arguments.length > 1) for (let i = 0; i < arguments.length; i++) this.init(arguments[i]);
-		else {
-			this.x = this.y = this.image_index = 0, this.name = name;
-			let obj = Eng.copy(this);
-			if (!memory.editor) memory.editor = { 'objects': [] };
-			memory.editor.objects.push(obj);
-			return obj;
-		}
-	},
-	'draw': function(func=()=>{}) { render.push({ 'obj': this, 'func': func }); },
-	'destroy': function() {
+	create: function(name='undefined') {
+    if (arguments.length > 1) {
+      for (let i = 0; i < arguments.length; i++) this.create(arguments[i]);
+    } else {
+      let temp = Eng.copy(this);
+      temp.name = name;
+      temp.x = temp.y = temp.image_index = 0;
+      objects[name] = temp;
+      return objects[name];
+    }
+  },
+	draw: function(func=()=>{}) { render.push({ 'obj': this, 'func': func }); },
+	destroy: function() {
 		this.DELETED = true;
 		if (this.delete) this.delete();
 		return true;

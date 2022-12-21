@@ -3,7 +3,7 @@ modules.search = {
   distance: (obj, x, y, dist, offset) => {
     let s = [];
     if (typeof(obj) == 'object')
-      obj.forEach(e => { s = s.concat(modules.search.search(e)); }
+      obj.forEach(e => { s = s.concat(modules.search.search(e)); });
     else s = modules.search.search(obj);
     s.sort((a, b) => { math.distance(x, y, a.x + (offset || 0), a.y + (offset || 0)) - math.distance(x, y, b.x + (offset || 0), b.y + (offset || 0));  });
     if (dist)
@@ -14,27 +14,25 @@ modules.search = {
   },
   id: function(id) {
     let s = [];
-    if (memory.lobjects)
-      if (arguments.length > 1) {
-        for (let i = 0; i < arguments.length; i++)
-          s = s.concat(modules.search.id(arguments[i]));
-      } else {
-        let ind = memory.lobjects.findIndex(obj => (obj.id == id));
-        if (ind != -1) s.push(memory.lobjects[ind]);
-      }
+    if (arguments.length > 1) {
+      for (let i = 0; i < arguments.length; i++)
+        s = s.concat(modules.search.id(arguments[i]));
+    } else {
+      let ind = stack.findIndex(obj => (obj.id == id));
+      if (ind != -1) s.push(stack[ind]);
+    }
     if (s.length > 1) return s;
     else if (s.length == 1) return s[0];
     else return false;
   },
   search: function(obj) {
     let s = [];
-    if (memory.lobjects)
-      for (let i = 0; i < arguments.length; i++) {
-        let arg = arguments[i];
-        memory.lobjects.forEach(e => {
-          if ((e.name == arg) || (arg == 'all')) s.push(e);
-        });
-      }
+    for (let i = 0; i < arguments.length; i++) {
+      let arg = arguments[i];
+      stack.forEach(e => {
+        if ((e.name == arg) || (arg == 'all')) s.push(e);
+      });
+    }
     return s;
   },
   count: function(obj) {
