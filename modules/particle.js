@@ -10,7 +10,7 @@ templateParticle.update = function() {
   this.alpha = this.alpha_start + (this.alpha_end - this.alpha_start) * delta;
   if ((this.life && this.life.check(true)) || (!this.life && this.image_index.frame >= (this.image_index.count - this.image_index.frame_spd))) this.destroy();
 }
-templateParticle.draw = function(cvs) { this.image_index.draw(cvs, this.x, this.y, undefined, undefined, this.alpha, this.scale, this.scale, this.angle); }
+templateParticle.draw = function(cvs) { if (this.scale > 0) this.image_index.draw(cvs, this.x, this.y, undefined, undefined, this.alpha, this.scale, this.scale, this.angle); }
 
 modules.particle = {
   title: 'particle', v: '1.0',

@@ -5,5 +5,7 @@ modules.math = {
   sign: x => { return ((Math.round(x) > 0) - (Math.round(x) < 0)) * (Math.round(x) != 0); },
   clamp: (x, min, max) => { return Math.min(Math.max(x, min), max); },
   torad: x => { return x * Math.PI / 180; },
-  todeg: x => { return x / Math.PI * 180; }
-}
+  todeg: x => { return x / Math.PI * 180; },
+  log: (x, y) => { return Math.log(y) / Math.log(x); },
+  lerp: (a, b, t) => { return a + t * (b - a); }
+};

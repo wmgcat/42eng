@@ -317,26 +317,7 @@ class Obj {
     return true;
   }
 }
-/*let Obj = {
-	create: function(name='undefined') {
-    if (arguments.length > 1) {
-      for (let i = 0; i < arguments.length; i++) this.create(arguments[i]);
-    } else {
-      let temp = Eng.copy(this);
-      temp.name = name;
-      temp.x = temp.y = temp.image_index = 0;
-      templates[name] = temp;
-      return templates[name];
-    }
-  },
-  render: function() {
-    render.push({
-      obj: this,
-      draw: this.draw
-    });
-  }
-	//draw: function(func=()=>{}) { render.push({ 'obj': this, 'func': func }); }	
-};*/
+
 /* карта */
 class Map {
 	constructor(width=1, height=1, x=0, y=0) {
