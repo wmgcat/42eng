@@ -5,7 +5,7 @@ modules.search = {
     if (typeof(obj) == 'object')
       obj.forEach(e => { s = s.concat(modules.search.search(e)); });
     else s = modules.search.search(obj);
-    s.sort((a, b) => { math.distance(x, y, a.x + (offset || 0), a.y + (offset || 0)) - math.distance(x, y, b.x + (offset || 0), b.y + (offset || 0));  });
+    s.sort((a, b) => { return math.distance(x, y, a.x + (offset || 0), a.y + (offset || 0)) - math.distance(x, y, b.x + (offset || 0), b.y + (offset || 0));  });
     if (dist)
       for (let i = 0; i < s.length; i++)
         if (math.distance(x, y, s[i].x + (offset || 0), s[i].y + (offset || 0)) >= dist)
