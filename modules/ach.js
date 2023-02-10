@@ -1,11 +1,11 @@
 ﻿modules.ach = {
   title: 'achievements', v: '1.1', stack: {},
   add: (id, func) => { // add new achievement:
-    arch.stack[id] = {
+    ach.stack[id] = {
       func: () => {
-        if (func && !arch.stack[id].finish) {
+        if (func && !ach.stack[id].finish) {
           if (func()) {
-            arch.stack[id].finish = true;
+            ach.stack[id].finish = true;
             return true;
           }
         }
@@ -16,8 +16,8 @@
   },
   update: () => { // check all achievements status and get finished:
     let arr = [];
-    Object.keys(arch.stack).forEach(id => {
-      if (arch.stack[id].func()) arr.push(id);
+    Object.keys(ach.stack).forEach(id => {
+      if (ach.stack[id].func()) arr.push(id);
     });
     return arr;
   }
