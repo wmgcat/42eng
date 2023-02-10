@@ -13,7 +13,8 @@ let cfg = {
   window: {
     width: 800, height: 600,
     fullscreen: true, id: 'game'
-  }
+  },
+  modulepath: './modules/'
 };
 
 
@@ -308,7 +309,7 @@ let Add = {
       mloaded++;
       let script = document.createElement('script');
       script.type = 'text/javascript';
-      script.src = new_path ? arguments[i] : `./modules/${arguments[i]}.js`;
+      script.src = new_path ? arguments[i] : `${cfg.modulepath}${arguments[i]}.js`;
       script.onload = () => {
         let source = arguments[i].split('.js')[0].split('/').slice(-1)[0];
         loaded++;
