@@ -17,17 +17,6 @@ let cfg = {
   modulepath: './modules/'
 };
 
-
-/*let cfg = { // main config:
-	title: '42eng.js',
-	grid: 32, zoom: 1, debug: false,
-	build: { v: 1.6, href: '' },	
-	window: {
-		fullscreen: true,
-		width: 800, height: 600,
-		id: 'game'
-	}
-};*/
 let Eng = {
 	id: () => {
 		let a4 = () => { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1); }, separator = '.';
