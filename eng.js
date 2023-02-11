@@ -78,41 +78,8 @@ let pause = false, editor = false, levelChange = false, is_touch = false, cvs_de
 let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
 
-let lang = {'type': '', 'source': {}, 'use': function() { // translate lang:
-	let str = arguments['0'];
-	for (let i = 0; i < arguments.length; i++) {
-		if (!i) {
-			let path = arguments[i].split('.'), pos = 0, arr = lang.source[lang.type] || {};
-			while(arr[path[pos]]) {
-				if (typeof(arr[path[pos]]) == 'string') {
-					str = arr[path[pos]];
-					break;
-				} else arr = arr[path[pos++]];
-			}
-		} else { if (str) str = str.replace('%s', lang.use(arguments[i])); }
-	}
-	return str;
-}}, mouse = {'x': 0, 'y': 0, 'touch': {'x': 0, 'y': 0}};
-/*
-    \0/ ** add content ** \0/
-	rule(char, key || object) - добавление клавиш управления;
-	script(src, 1..n) - добавление скриптов;
-	image(src, 1..n) - добавление изображений;
-	error(msg) - создание ошибок;
-	canvas(id, update, loading) - создание холста для игры,
-		поиск canvas по id,
-		в update(t) происходит обновление всех объектов и их отрисовка,
-		в loading(loaded, t) экран загрузки;
-	object(name, x, y) - добавление копии игрового объекта на уровень;
-	language(path, short, main) - добавление локализации для игры, где
-		path - путь до файла,
-		short - сокращение языка (ru, en, fr),
-		main - автоматический выбор при загрузке игры (true / false);
-	чтобы использовать перевод нужно использовать метод lang.use(arg0..N);
-	gui(func) - рисует внутри функции поверх игры;
-	debug(args...) - отображает сообщения для дебага ( работает только в debug моде );
-	\###=#=##======##=#=###/
-*/
+let mouse = {'x': 0, 'y': 0, 'touch': {'x': 0, 'y': 0}};
+
 let Add = {
 	rule: function(char, key) {
 		if (typeof(char) == 'object') { Object.keys(char).forEach(function(k) { keylocks[k] = char[k]; });
@@ -277,40 +244,28 @@ let Add = {
     objects[id].id = id;
     return objects[id];
 	},
-	language: (path, short, main) => {
-		let script = document.createElement('script');
-		script.src = path;
-		mloaded++;
-		script.onload = () => {
-			lang.source[short] = Eng.copy(Lang);
-			if (main) lang.type = short;
-			loaded++;
-		}
-		script.onerror = () => { return Add.error(path + ' not find!'); }
-		document.body.appendChild(script);
-	},
 	gui: func => gui.push(func),
 	debug: function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); },
-  module: function(path) {
-    let new_path = path == '--custom';
-    for (let i = 0; i < arguments.length; i++) {
-      if (arguments[i] == '--custom') continue;
-      mloaded++;
-      let script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = new_path ? arguments[i] : `${cfg.modulepath}${arguments[i]}.js`;
-      script.onload = () => {
-        let source = arguments[i].split('.js')[0].split('/').slice(-1)[0];
-        loaded++;
-        window[source] = modules[source];
-        this.debug(`added ${source} module!`);
+  module: async function() {
+    try {
+      for (let i = 0; i < arguments.length; i++) {
+        mloaded++;
+        let name = arguments[i], script = document.createElement('script'), promise = new Promise((res, rej) => {
+          script.onload = function() {
+            let source = name.split('.js')[0].split('/').slice(-1)[0];
+            loaded++;
+            window[source] = modules[source];
+            Add.debug(`added: ${source} module!`);
+            res(true);
+          }
+          script.onerror = function() { rej(name); }
+        });
+        script.type = 'text/javascript';
+        script.src = `${cfg.modulepath}${name}.js`;
+        document.head.appendChild(script);
+        await promise;
       }
-      script.onerror = () => {
-        if (new_path) return this.error(arguments[i] + ' not find!');
-        else this.module('--custom', arguments[i]);
-      }
-      document.head.appendChild(script);
-    }
+    } catch(err) { return this.error(err); }
   }
 }
 
