@@ -5,7 +5,7 @@ Add.font = async (name, path) => { // load fonts:
     let state = await src.load();
     return true;
   }
-  catch(err) { Add.error(err); }
+  catch(err) { Add.error(err, ERROR.NOFILE); }
 }
 modules.graphics = {
   title: 'graphics', v: '1.0',

@@ -12,7 +12,7 @@ let cfg = {
   title: '42eng.js', debug: false,
   build: {
     v: 1.7,
-    href: ''
+    href: 'github.com/wmgcat/42eng'
   },
   grid: 32, zoom: 1,
   window: {
@@ -46,6 +46,8 @@ let Eng = {
   }
 };
 
+
+
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
@@ -76,9 +78,9 @@ let Add = {
         document.head.appendChild(script);
         await promise;
       }
-    } catch(err) { return this.error(err); }
+    } catch(err) { return this.error(err, ERROR.NOFILE); }
 	},
-	error: (msg, code=0) => { console.log('ERROR!', msg, ERROR[code]); },
+	error: (msg, code=0) => { console.log('ERROR!', msg, code); },
 	canvas: (gameinit, update, loading) => {
 		let cvs = document.getElementById(cfg.window.id);
 		if (!cvs) {
@@ -234,7 +236,7 @@ let Add = {
         document.head.appendChild(script);
         await promise;
       }
-    } catch(err) { return this.error(err); }
+    } catch(err) { return this.error(err, ERROR.NOFILE); }
   }
 }
 

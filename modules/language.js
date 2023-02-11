@@ -33,5 +33,5 @@ Add.language = async function(path, short, is_first=false) {
     });
     script.src = path;
     document.body.appendChild(script);
-  } catch(err) { Add.error(`language: ${err} not find!`); }
+  } catch(err) { Add.error(err, ERROR.NOFILE); }
 }

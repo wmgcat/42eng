@@ -22,7 +22,7 @@ modules.particle = {
         default: pt[key] = params[key]; break;
         case 'image': {
           let img = params[key];
-          pt.image_index = image.init(img.path, img.left, img.top, img.w, img.h, img.xoff, img.yoff, img.count);
+          pt.image_index = image.create(img.path, img.left, img.top, img.w, img.h, img.xoff, img.yoff, img.count);
         } break;
         case 'frame_spd': case 'frame':
           if (pt.image_index)
