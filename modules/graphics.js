@@ -79,7 +79,7 @@ modules.graphics = {
   len: (str, size=10, font='Arial') => {
     let savefont = modules.graphics.cvs.font;
     modules.graphics.cvs.font = size + 'px ' + (font || 'Arial');
-    let width = modules.graphics.cvs.measureText(lang.use(str) || str).width;
+    let width = modules.graphics.cvs.measureText(modules.language ? modules.language.use(str) : str).width;
     modules.graphics.cvs.font = savefont;
     return width;
   },
@@ -96,14 +96,14 @@ modules.graphics = {
         }
       }
       modules.graphics.cvs.font = `${size}px ${font}`;
-      modules.graphics.cvs[type + 'Text'](lang.use(str) || str, x, y);
+      modules.graphics.cvs[type + 'Text'](modules.language ? modules.language.use(str) : str, x, y);
     });
     return modules.graphics.len(str, size, font);
   },
   wtext: (str, x, y, width, colour='#000', alpha, size=10, font='Arial', type='fill', align, lw) => {
     let pos = 0, nstr = '', spaces = [];
     if (typeof(str) == 'object') { assoc = str[1], str = (lang.use(str[0]) || str[0]); }
-    else str = lang.use(str) || str;
+    else str = modules.language ? modules.language.use(str) : str;
     while (pos < str.length) {
       nstr += str[pos++];
       let w = modules.graphics.len(nstr, size, font);
