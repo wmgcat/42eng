@@ -1,6 +1,11 @@
 // hook:
+
 String.prototype.replaceAll = function(match, replace) {
   return this.replace(new RegExp(match, 'g'), () => replace);
+}
+
+const ERROR = { 
+  NOFILE: 1, NOSUPPORT: 2 
 }
 
 let cfg = {
@@ -22,62 +27,29 @@ let Eng = {
 		let a4 = () => { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1); }, separator = '.';
 		return '#id' + a4() + a4() + separator + a4() + a4() + separator + a4() + a4() + separator + a4() + a4();
 	},
-	wait: (func, success, error) => {
-		new Promise(func).then(
-			value => success(value),
-			err => error(err.message)
-		).catch(err => {});
-	},
-	timer: (func, time) => {
-		let t = setInterval(() => {
-			if (func && func()) clearInterval(t);
-		}, time);
-		return t;
-	},
 	copy: source => {
 		let arr = {};
 		Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
 		return arr;
 	},
-	console: {
-		release: () => {
-			let img = [
-				`      /\\`,
-				`     /  \\        42eng.js by wmgcat`,
-				`    /    \\       v: ${cfg.build.v}`,
-				`   /......\\      ${cfg.build.href}`,
-				`  < o L o >`
-			];
-			let sum = '';
-			img.forEach(line => { sum += line + '\n'; });
-			console.log(sum);
-		},
-		show: (cvs, clr) => {
-			if (errors.length > 0) {
-				if (cvs) {
-					cvs.fillStyle = clr || '#fff';
-					errors.forEach(function(e, i) {
-						Add.gui(function(cvs) {
-							cvs.globalAlpha = 1 - (errors.length - (i + 1)) / errors.length;
-							cvs.fillText(i + ': ' + e, 6, 16 + 12 * i);
-						});
-					});
-					cvs.globalAlpha = 1;
-				} else {
-					console.log('Найдены ошибки (' + errors.length + '):');
-					errors.forEach(function(e, i) { console.error(i + ': ' + e); });
-					errors = [];
-				}
-			}
-		}
-	}
+	console: () => {
+    let img = [
+      `      /\\`,
+      `     /  \\        42eng.js by wmgcat`,
+      `    /    \\       v: ${cfg.build.v}`,
+      `   /......\\      ${cfg.build.href}`,
+      `  < o L o >`
+    ];
+    let sum = '';
+    img.forEach(line => { sum += line + '\n'; });
+    console.log(sum);
+  }
 };
 
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
-let pause = false, editor = false, levelChange = false, is_touch = false, cvs_delta = 0;
-let errors = [], render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
+let pause = false, editor = false, levelChange = false, is_touch = false;
+let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
-
 let mouse = {'x': 0, 'y': 0, 'touch': {'x': 0, 'y': 0}};
 
 let Add = {
@@ -106,10 +78,7 @@ let Add = {
       }
     } catch(err) { return this.error(err); }
 	},
-	error: msg => {
-		errors[errors.length] = msg;
-		console.error(msg);
-	},
+	error: (msg, code=0) => { console.log('ERROR!', msg, ERROR[code]); },
 	canvas: (gameinit, update, loading) => {
 		let cvs = document.getElementById(cfg.window.id);
 		if (!cvs) {
@@ -232,7 +201,7 @@ let Add = {
     let obj = { id: cvs, cvs: ctx, update: temp, init: gameinit }
 		window.onresize = document.body.onresize = cvs.onresize = resize;
 		resize();
-		Eng.console.release();
+		Eng.console();
 		return obj;
 	},
 	object: (obj, x=0, y=0) => {

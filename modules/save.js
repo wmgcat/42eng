@@ -7,7 +7,7 @@ modules.save = {
     }
     // local saving:
     for (key in data) {
-      let dt = typeof(data[key]) == 'Object' ? JSON.stringify(data[key]) : data[key]; 
+      let dt = typeof(data[key]) == 'object' ? JSON.stringify(data[key]) : data[key]; 
       localStorage.setItem(key, dt);
       Add.debug(`saving ${key} data: `, dt);
     }
