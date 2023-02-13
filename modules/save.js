@@ -21,5 +21,11 @@ modules.save = {
       Add.debug(`loading ${key} data: `, localStorage.getItem(key));
       return localStorage.getItem(key);
     }
+  },
+  check: key => {
+    if (localStorage.getItem(key)) return true;
+  },
+  clear: async (key, is_cloud=false) => {
+    localStorage.removeItem(key);
   }
 }

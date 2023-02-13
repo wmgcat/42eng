@@ -78,24 +78,29 @@ modules.yandex = {
     },
     reward: async function() {
       let state = 0;
-      if (modules.audio) Eng.focus(false);
-      Add.debug('focus out!');
-      let promise = new Promise((res, req) => {
-        let mode = 0;
-        modules.yandex.main.adv.showRewardedVideo({
-          callbacks: {
-            onRewarded: () => { mode = 1; },
-            onClose: () => {
-              if (!mode) mode = 2;
-              if (modules.audio) Eng.focus(true);
-              Add.debug('focus in!');
-              res(mode);
-            },
-            onError: () => { mode = 3; }
-          }
+      try {
+        if (modules.audio) Eng.focus(false);
+        Add.debug('focus out!');
+        let promise = new Promise((res, req) => {
+          let mode = 0;
+          modules.yandex.main.adv.showRewardedVideo({
+            callbacks: {
+              onRewarded: () => { mode = 1; },
+              onClose: () => {
+                if (!mode) mode = 2;
+                if (modules.audio) Eng.focus(true);
+                Add.debug('focus in!');
+                res(mode);
+              },
+              onError: () => { req(3); }
+            }
+          });
         });
-      });
-      state = await promise;
+        state = await promise;
+      } catch(err) {
+        Add.error(err);
+        state = -1;
+      }
       return Promise.resolve(state);
     },
     banner: {

@@ -46,8 +46,6 @@ let Eng = {
   }
 };
 
-
-
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
@@ -206,9 +204,9 @@ let Add = {
 		Eng.console();
 		return obj;
 	},
-	object: (obj, x=0, y=0) => {
+	object: (obj, x=0, y=0, nid=false) => {
     if (typeof(obj) == 'string') obj = templates[obj];
-		let id = Eng.id(); 
+		let id = nid || Eng.id(); 
     objects[id] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
     objects[id].x = x;
     objects[id].y = y;
