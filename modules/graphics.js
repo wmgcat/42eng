@@ -112,7 +112,9 @@ modules.graphics = {
         nstr = '';
       }
     }
-    if (nstr != '') spaces.push([text.length, modules.graphics.len(nstr, size, font)]);
+    let point = 0;
+    if (spaces.length > 0) point = spaces[spaces.length - 1][0] + spaces[spaces.length - 1][1];
+    if (nstr != '') spaces.push([point, modules.graphics.len(nstr, size, font)]);
     let yy = y;
     if (align) {
       let dt = align.split('-');
@@ -122,7 +124,7 @@ modules.graphics = {
       }
     }
     for (let i = 0, offset = 0; i < spaces.length; i++) {
-      modules.graphics.text(text.slice(offset, spaces[i][0]), x, y + i * size, colour, alpha, size, font, type, align, lw);
+      modules.graphics.text(str.slice(offset, spaces[i][0]), x, y + i * size, colour, alpha, size, font, type, align, lw);
       offset = spaces[i][0];
     }
     return { w: spaces[0][1], h: spaces.length * size };
