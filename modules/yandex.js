@@ -4,6 +4,11 @@ modules.yandex = {
     let ya = await YaGames.init();
     modules.yandex.main = ya;
     Add.debug(`${modules.yandex.title} module init!`);
+    modules.yandex.main.getStorage().then(safeStorage => Object.defineProperty(window, 'localStorage', { get: () => safeStorage }))
+    .then(() => {
+      localStorage.setItem('_safeStorage', 'safeStorage is working');
+      Add.debug(localStorage.getItem('_safeStorage'));
+    });
     return true;
   },
   profile: {

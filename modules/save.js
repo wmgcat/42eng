@@ -1,10 +1,7 @@
 modules.save = {
   title: 'save', v: '1.0',
   save: async (data) => {
-    let obj = {
-      '__savetime': Date.now()
-    };
-    // local saving:
+    let obj = { '__savetime': Date.now() };
     for (key in data) {
       let dt = typeof(data[key]) == 'object' ? JSON.stringify(data[key]) : data[key]; 
       obj[key] = dt;
@@ -14,16 +11,16 @@ modules.save = {
     localStorage.setItem('__savetime', obj.__savetime);
     return obj;
   },
-  load: async (key, is_cloud=false) => {
-    if (localStorage.getItem(key)) {
+  load: key => {
+    if (modules.save.check(key)) {
       Add.debug(`loading ${key} data: `, localStorage.getItem(key));
       return localStorage.getItem(key);
     }
+    return false;
   },
   check: key => {
     if (localStorage.getItem(key)) return true;
+    return false;
   },
-  clear: async (key, is_cloud=false) => {
-    localStorage.removeItem(key);
-  }
+  clear: key => { localStorage.removeItem(key); }
 }
