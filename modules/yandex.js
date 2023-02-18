@@ -21,9 +21,12 @@ modules.yandex = {
       });
       return Promise.resolve(data);
     },
-    getData: async function() {
+    getData: async function(args) {
       let data = {}, pl = await modules.yandex.profile.player();
-      if (pl) data = await pl.getData();
+      if (pl) {
+        if (args) args = [args];
+        data = await pl.getData(args);
+      }
       return Promise.resolve(data);
     },
     setData: async function(data) {
@@ -34,13 +37,26 @@ modules.yandex = {
       return Promise.resolve(state);
     },
     auth: async function() {
-      let pl = await modules.yandex.profile.player(), is_auth = pl.getMode() !== 'lite';
+      let is_auth = await modules.yandex.profile.getAuth();
+      if (!is_auth) {
+        try {
+          await modules.yandex.main.auth.openAuthDialog();
+          is_auth = 1;
+        }
+        catch(err) { is_auth = 2; }
+      }
+      return is_auth;
+      /*let pl = await modules.yandex.profile.player(), is_auth = pl.getMode() !== 'lite';
       if (!is_auth) {
         await modules.yandex.main.auth.openAuthDialog().then(() => {
           is_auth = 1;
         }).catch(() => { is_auth = 2 });
       }
-      return Promise.resolve(is_auth);
+      return Promise.resolve(is_auth);*/
+    },
+    getAuth: async function() {
+      let pl = await modules.yandex.profile.player();
+      return pl.getMode() !== 'lite';
     }
   },
   adv: {
