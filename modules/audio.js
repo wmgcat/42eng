@@ -52,12 +52,14 @@ Eng.focus = value => {
   switch(value) {
     case true:
       cfg.setting.focus = true;
+      audio.volume('music', cfg.setting.music);
+      audio.volume('sounds', cfg.setting.sounds);
       window.focus();
     break;
     case false:
       cfg.setting.focus = false;
-      audio.setvolume('music', 0);
-      audio.setvolume('sounds', 0);
+      audio.volume('music', 0);
+      audio.volume('sounds', 0);
       window.blur();
     break;
   }
@@ -65,10 +67,14 @@ Eng.focus = value => {
 
 window.onblur = () => {
   cfg.setting.focus = false;
-  modules.audio.setvolume('music', 0);
-  modules.audio.setvolume('sounds', 0);
+  modules.audio.volume('music', 0);
+  modules.audio.volume('sounds', 0);
 }
-window.onfocus = () => { modules.audio.context.suspend().then(() => { cfg.setting.focus = true; }); }
+window.onfocus = () => { modules.audio.context.suspend().then(() => {
+  cfg.setting.focus = true;
+  audio.volume('music', cfg.setting.music);
+  audio.volume('sounds', cfg.setting.sounds);
+}); }
 
 class Sound {
 	constructor(sa, type) {

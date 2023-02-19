@@ -101,32 +101,25 @@ modules.graphics = {
     return modules.graphics.len(str, size, font);
   },
   wtext: (str, x, y, width, colour='#000', alpha, size=10, font='Arial', type='fill', align, lw) => {
-    let pos = 0, nstr = '', spaces = [];
-    if (typeof(str) == 'object') { assoc = str[1], str = (lang.use(str[0]) || str[0]); }
-    else str = modules.language ? modules.language.use(str) : str;
-    while (pos < str.length) {
-      nstr += str[pos++];
-      let w = modules.graphics.len(nstr, size, font);
-      if (w >= width * .675) {
-        spaces.push([pos, w]);
-        nstr = '';
+    if (typeof(str) == 'object') { str = (lang.use(str[0]) || str[0], str[1]); }
+    else str = modules.language ? modules.language.use(str) : str; 
+    let sstr = str.split(' '), lines = [], save_i = 0;
+    for (let i = 0; i < sstr.length; i++) {
+      let substr = sstr.slice(save_i, i).join(' ')
+      if (modules.graphics.len(substr, size, font) >= width) {
+        lines.push(substr);
+        save_i = i;
       }
     }
-    let point = 0;
-    if (spaces.length > 0) point = spaces[spaces.length - 1][0] + spaces[spaces.length - 1][1];
-    if (nstr != '') spaces.push([point, modules.graphics.len(nstr, size, font)]);
+    if (save_i < sstr.length) lines.push(sstr.slice(save_i).join(' '));
     let yy = y;
     if (align) {
       let dt = align.split('-');
       switch(dt[1]) {
-        case 'middle': yy = y - (spaces.length * size) * .5; break;
-        case 'bottom': yy = y - (spaces.length * size); break;
+        case 'middle': yy = y - (lines.length * size) * .5; break;
+        case 'bottom': yy = y - (lines.length * size); break;
       }
     }
-    for (let i = 0, offset = 0; i < spaces.length; i++) {
-      modules.graphics.text(str.slice(offset, spaces[i][0]), x, y + i * size, colour, alpha, size, font, type, align, lw);
-      offset = spaces[i][0];
-    }
-    return { w: spaces[0][1], h: spaces.length * size };
+    for (let i = 0; i < lines.length; i++) modules.graphics.text(lines[i], x, y + i * size, colour, alpha, size, font, type, align, lw);
   }
 }
