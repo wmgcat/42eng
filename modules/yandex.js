@@ -51,17 +51,44 @@ modules.yandex = {
         catch(err) { is_auth = 2; }
       }
       return is_auth;
-      /*let pl = await modules.yandex.profile.player(), is_auth = pl.getMode() !== 'lite';
-      if (!is_auth) {
-        await modules.yandex.main.auth.openAuthDialog().then(() => {
-          is_auth = 1;
-        }).catch(() => { is_auth = 2 });
-      }
-      return Promise.resolve(is_auth);*/
     },
     getAuth: async function() {
       let pl = await modules.yandex.profile.player();
       return pl.getMode() !== 'lite';
+    }
+  },
+  feedback: {
+    send: async function() { 
+      let promise = new Promise((res, rej) => {
+        modules.yandex.feedback.get().then(e => {
+          if (e) {
+            modules.yandex.main.feedback.requestReview().then(({feedbackSent}) => {
+              Add.debug('feedback return', feedbackSent);
+              res(feedbackSent);
+            });
+          } else res(false);
+        });
+      });
+      return (await promise);
+      /*let reqFunc = modules.yandex.main.feedback.requestReview;
+      modules.yandex.feedback.get().then(res => {
+        if (res) {
+          Eng.focus(false);
+          let obj = false;
+          
+          obj = await reqFunc();
+          Eng.focus(true);
+          if (obj) {
+            Add.debug(`feedback result: ${obj.feedbackSent}`, obj);
+            return obj.feedbackSent;
+          }
+        }
+      });*/
+    },
+    get: async function() {
+      let status = await modules.yandex.main.feedback.canReview();
+      if (status && status.value) return true;
+      return false;
     }
   },
   adv: {
