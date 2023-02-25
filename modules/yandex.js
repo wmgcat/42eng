@@ -69,21 +69,10 @@ modules.yandex = {
           } else res(false);
         });
       });
-      return (await promise);
-      /*let reqFunc = modules.yandex.main.feedback.requestReview;
-      modules.yandex.feedback.get().then(res => {
-        if (res) {
-          Eng.focus(false);
-          let obj = false;
-          
-          obj = await reqFunc();
-          Eng.focus(true);
-          if (obj) {
-            Add.debug(`feedback result: ${obj.feedbackSent}`, obj);
-            return obj.feedbackSent;
-          }
-        }
-      });*/
+      if (modules.audio) Eng.focus(false);
+      let state = await promise;
+      if (modules.audio) Eng.focus(true);
+      return state;
     },
     get: async function() {
       let status = await modules.yandex.main.feedback.canReview();
@@ -109,7 +98,6 @@ modules.yandex = {
               callbacks: {
                 onClose: function(show) {
                   if (show) mode = 1;
-                  if (modules.audio) Eng.focus(true);
                   Add.debug('focus in!');
                   modules.yandex.adv.timer.reset();
                   res(mode);
@@ -120,6 +108,7 @@ modules.yandex = {
             });
           });
           state = await promise;
+          if (modules.audio) Eng.focus(true);
         }
       }
       return Promise.resolve(state);
@@ -136,7 +125,6 @@ modules.yandex = {
               onRewarded: () => { mode = 1; },
               onClose: () => {
                 if (!mode) mode = 2;
-                if (modules.audio) Eng.focus(true);
                 Add.debug('focus in!');
                 res(mode);
               },
@@ -145,6 +133,7 @@ modules.yandex = {
           });
         });
         state = await promise;
+        if (modules.audio) Eng.focus(true);
       } catch(err) {
         Add.error(err);
         state = -1;

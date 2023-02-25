@@ -52,8 +52,10 @@ Eng.focus = value => {
   switch(value) {
     case true:
       cfg.setting.focus = true;
-      audio.volume('music', cfg.setting.music);
-      audio.volume('sounds', cfg.setting.sounds);
+      if (!cfg.setting.mute) {
+        audio.volume('music', cfg.setting.music);
+        audio.volume('sounds', cfg.setting.sounds);
+      }
       window.focus();
     break;
     case false:
@@ -72,8 +74,10 @@ window.onblur = () => {
 }
 window.onfocus = () => { modules.audio.context.suspend().then(() => {
   cfg.setting.focus = true;
-  audio.volume('music', cfg.setting.music);
-  audio.volume('sounds', cfg.setting.sounds);
+  if (!cfg.setting.mute) {
+    audio.volume('music', cfg.setting.music);
+    audio.volume('sounds', cfg.setting.sounds);
+  }
 }); }
 
 class Sound {
@@ -81,16 +85,20 @@ class Sound {
 		this.audio = sa, this.type = type, this.index = -1;
 	}
 	play(loop) {
-		if (modules.audio.context && !cfg.setting.mute && cfg.setting.user) {
-			if (modules.audio.listener.length <= cfg.setting.listener) {
-				modules.audio.listener.push(modules.audio.context.createBufferSource());
-				this.index = modules.audio.listener[modules.audio.listener.length - 1];
-				this.index.buffer = this.audio;
-				this.index.connect(modules.audio[this.type + '_volume']).connect(modules.audio.context.destination);
-				if (this.index.start) this.index.start(modules.audio.context.currentTime);
-				this.index.onended = () => { this.stop(); }
-				this.index.loop = loop;
-			}
+		if (modules.audio.context && cfg.setting.user) {
+			if (!cfg.setting.mute) {
+        if (modules.audio.listener.length <= cfg.setting.listener) {
+          modules.audio.listener.push(modules.audio.context.createBufferSource());
+          this.index = modules.audio.listener[modules.audio.listener.length - 1];
+          this.index.buffer = this.audio;
+          this.index.connect(modules.audio[this.type + '_volume']).connect(modules.audio.context.destination);
+          if (this.index.start) this.index.start(modules.audio.context.currentTime);
+          this.index.onended = () => { this.stop(); }
+          this.index.loop = loop;
+        }
+      } else {
+        //if (this.index.loop) this.stop();
+      }
 		}
 	}
 	stop() { 
