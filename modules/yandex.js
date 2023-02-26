@@ -193,6 +193,25 @@ modules.yandex = {
       ym(modules.yandex.metrika.id, 'reachGoal', name);
       Add.debug('reach is goal!', name);
     }
+  },
+  leaderboard: {
+    get: async function(id) {
+      let lbs = await modules.yandex.main.getLeaderboards(), arr = [],
+          result = await lbs.getLeaderboardEntries(id, { quantityTop: 3, includeUser: true, quantityAround: 5 });
+      result.entries.forEach(e => {
+        arr.push({
+          username: e.player.publicName, score: e.score,
+          place: e.rank, me: e.rank == result.userRank,
+          avatar: e.player.getAvatarSrc()
+        });
+      });
+      return arr;
+    },
+    add: async function(id, score) {
+      let lbs = await modules.yandex.main.getLeaderboards(), arr = [],
+          result = await lbs.setLeaderboardScore(id, score);
+      return true;
+    }
   }
 };
 /*YA = {

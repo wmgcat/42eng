@@ -41,12 +41,13 @@ Add.image = async function(args) {
           path[path.length - 1] = path[path.length - 1].replace('.png', '').replace('.jpg', '').replace('.gif', '').replace('.jpeg', '');
           images[path.join('.')] = img;
           loaded++;
-          res(true);
+          res(path.join('.'));
         }
         img.onerror = () => { rej(str); }
       });
       img.src = str;
-      await promise;
+      let state = await promise;
+      if (arguments.length == 1) return state;
     } catch(err) { Add.error(err, ERROR.NOFILE); }
   }
 }

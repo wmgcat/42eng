@@ -9,6 +9,10 @@ modules.adv = {
         modules.adv.fullscreen = modules.yandex.adv.fullscreen;
         modules.adv.reward = modules.yandex.adv.reward;
         modules.adv.banner = modules.yandex.adv.banner;
+        modules.adv.leaderboard = {
+          get: modules.yandex.leaderboard.get,
+          add: modules.yandex.leaderboard.add
+        };
       break;
     }
     Add.debug(`adv mode is ${modules.adv.type}`);
