@@ -120,6 +120,6 @@ modules.graphics = {
         case 'bottom': yy = y - (lines.length * size); break;
       }
     }
-    for (let i = 0; i < lines.length; i++) modules.graphics.text(lines[i], x, y + i * size, colour, alpha, size, font, type, align, lw);
+    for (let i = 0; i < lines.length; i++) modules.graphics.text(lines[i], x, yy + i * size, colour, alpha, size, font, type, align, lw);
   }
 }
