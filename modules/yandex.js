@@ -197,7 +197,7 @@ modules.yandex = {
   leaderboard: {
     get: async function(id) {
       let lbs = await modules.yandex.main.getLeaderboards(), arr = [],
-          result = await lbs.getLeaderboardEntries(id, { quantityTop: 3, includeUser: true, quantityAround: 5 });
+          result = await lbs.getLeaderboardEntries(id, { quantityTop: 3, includeUser: true, quantityAround: 1 });
       result.entries.forEach(e => {
         arr.push({
           username: e.player.publicName, score: e.score,
@@ -211,128 +211,44 @@ modules.yandex = {
       let lbs = await modules.yandex.main.getLeaderboards(), arr = [],
           result = await lbs.setLeaderboardScore(id, score);
       return true;
+    },
+    getself: async function(id) {
+      let lbs = await modules.yandex.main.getLeaderboards();
+      try {
+        const res = await lbs.getLeaderboardPlayerEntry(id);
+        return res.score;
+      } catch(err) {
+        if (err.code === 'LEADERBOARD_PLAYER_NOT_PRESENT') {
+          Add.debug('player not has score');
+          return false;
+        }
+        return false;
+      }
     }
+  },
+  share: {
+    send: async (title, text, url) => {
+      try {
+        if (!modules.yandex.share.can()) return false;
+        await navigator.share({
+          title: title,
+          text: text,
+          url: url
+        });
+        return true;
+      }
+      catch (err) {
+        return false;
+      }
+    },
+    url: () => {
+      let href = document.location.href, referrer = document.referrer;
+      if (window.frameElement) {
+        href = window.frameElement.ownerDocument.location.href;
+        if(window.frameElement.ownerDocument.referrer != "") referrer = window.frameElement.ownerDocument.referrer;
+      }
+      if (href != referrer) return referrer; else return href;
+    },
+    can: () => { return navigator.share && navigator.canShare; }
   }
 };
-/*YA = {
-	'version': '1.0',
-	'enabled': false,
-	'ads': true,
-	'login': false,
-	'gameinit': false,
-	'is_auth': false,
-	'is_pay': false,
-	'is_feedback': false,
-	'environment': {},
-	'device': ''
-};
-try {
-	YaGames.init().then(function(ya) {
-		Add.debug('ya.js module success!');
-		if (ya.environment) {
-			YA.enabled = true;
-			YA.environment = ya.environment;
-			YA.device = ya.deviceInfo.type;
-			Add.debug('Устройство:', YA.device);
-			ya.getStorage().then(storage => { // change localstorage for apple:
-				Object.defineProperty(window, 'localStorage', { get: () => storage });
-				YA.gameinit = true;
-			});
-			// оценка игры:
-			YA.feedback = (success, error, get) => {
-				Eng.focus(false);
-				ya.feedback.canReview().then(({value, reason}) => {
-					if (value) {
-						if (!get) {
-							ya.feedback.requestReview().then(({res}) => {
-								if (success) success(res);
-								Eng.focus(true);
-							});
-							YA.is_feedback = true;
-						} else YA.is_feedback = false;	//(reason);
-					} else { 
-						YA.is_feedback = true;
-						if (error) error(reason); 
-					}
-					Eng.focus(true);
-				});
-			}
-			// таблицы рекордов:
-			YA.getLeaderBoard = (id, success, error) => { // получение таблицы:
-				ya.getLeaderboards().then(dbs => dbs.getLeaderboardDescription(id)).then(res => {
-					if (success) success(res);
-				}).catch(err => {
-					if (error) error(err);
-				});
-			}
-			YA.getLeaderScore = (id, success, error) => { // получение записанных очков:
-				ya.getLeaderboards().then(dbs => dbs.getLeaderboardPlayerEntry(id)).then(res => {
-					if (success) success(res);
-				}).catch(err => {
-					if (err.code === 'LEADERBOARD_PLAYER_NOT_PRESENT' && error) error(err);
-				});
-			}
-			YA.getLeaderEntries = (id, success, current_user=false, around=5, top=5) => { // получение таблицы лидеров:
-				ya.getLeaderboards().then(dbs => {
-					dbs.getLeaderboardEntries(id, {quantityTop: top, includeUser: current_user, quantityAround: around}).then(res => { 
-						if (success) success(res); 
-					});
-				});
-			}
-			YA.setLeaderScore = (id, score, success, error) => { // запись нового значение:
-				ya.isAvailableMethod('leaderboards.setLeaderboardScore').then(() => {
-					ya.getLeaderboards().then(dbs => {
-						dbs.setLeaderboardScore(id, score);
-						if (success) success();
-					}).catch(err => {
-						if (error) error(err);
-					});
-				}).catch(err => { if (error) error(err); });
-			}	
-			// покупки:
-			ya.getPayments({ 'signed': true}).then(function(pay) {
-				YA.is_pay = true;
-				//console.log('PAY', pay);
-		 		YA.getcatalog = (success, error) => {
-		 			pay.getCatalog().then(dt => {
-			 			if (success) success(dt);
-		 			}).catch(err => { if (error) error(err); })
-		 		}
-		 		YA.buy = function(id, success, error) {
-		 			Eng.focus(false);
-		 			pay.purchase({ 'id': id }).then(function(ev) {
-		 				Eng.focus(true);
-		 				if (success) {
-
-		 					success(ev);
-		 					
-		 				}
-		 				//console.log(ev);
-		 			}).catch(function(err) {
-		 				Eng.focus(true);
-		 				if (error) error(err);
-		 				//console.error(err);
-		 			});
-		 		}
-		 		YA.getpay = function(success, error) {
-		 			pay.getPurchases().then(function(list) {
-		 				if (success) success(list);
-		 				//console.log(list);
-		 			}).catch(function(err) {
-		 				//console.log(err);
-		 				if (error) error(err);
-		 			});
-		 		}
-		 		YA.initpay = function(funcitem) {
-		 			pay.getPurchases().then(function(items) {
-		 				items.forEach(funcitem);
-		 				//console.log(items);
-		 			}).catch(err => {});
-		 		}
-			}).catch(err => {
-				Add.debug(err);
-				YA.is_pay = 2;
-			});
-		}
-	});
-} catch(err) { Add.debug(err); }*/
