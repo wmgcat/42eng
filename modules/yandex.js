@@ -241,13 +241,16 @@ modules.yandex = {
         return false;
       }
     },
-    url: () => {
-      let href = document.location.href, referrer = document.referrer;
-      if (window.frameElement) {
-        href = window.frameElement.ownerDocument.location.href;
-        if(window.frameElement.ownerDocument.referrer != "") referrer = window.frameElement.ownerDocument.referrer;
+    url: (link='') => {
+      const getdomain = () => {
+        let href = document.location.href, referrer = document.referrer;
+        if (window.frameElement) {
+          href = window.frameElement.ownerDocument.location.href;
+          if(window.frameElement.ownerDocument.referrer != "") referrer = window.frameElement.ownerDocument.referrer;
+        }
+        if (href != referrer) return referrer; else return href;
       }
-      if (href != referrer) return referrer; else return href;
+      return `${getdomain()}${link}`
     },
     can: () => { return navigator.share && navigator.canShare; }
   }
