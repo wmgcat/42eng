@@ -1,32 +1,7 @@
 modules.image = {
-  title: 'image', v: '1.0',
-  create: function(path, left, top, w, h, xoff, yoff, count) {
-    modules.image.path = path, modules.image.image = images[path], modules.image.left = left || 0,
-    modules.image.top = top || 0, modules.image.w = w || (modules.image.image.width || 0), modules.image.h = h || modules.image.height,
-    modules.image.count = count || 1, modules.image.xoff = xoff || 0, modules.image.yoff = yoff || 0, modules.image.frame = 0, modules.image.frame_spd = 0;
-    return Eng.copy(modules.image);
-  },
-  draw: function(cvs, x, y, w, h, alpha, xscale, yscale, rotate) {
-    try {
-      if (this.image) {
-        cvs.save();
-          if (alpha != undefined) cvs.globalAlpha = alpha;
-          let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
-          cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
-          if (xscale != undefined || yscale != undefined) cvs.scale(xscale || 1, yscale || 1);
-          if (rotate != undefined) {
-            cvs.translate(nxoff, nyoff);
-            cvs.rotate(rotate / 180 * Math.PI);
-            cvs.translate(-nxoff, -nyoff);
-          }
-          let left = (this.left + this.w * ~~this.frame) % this.image.width, top = this.top + ~~((this.left + this.w * ~~this.frame) / this.image.width) * this.h;
-          cvs.drawImage(this.image, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
-          cvs.globalAlpha = 1;
-        cvs.restore();
-        this.frame = (this.frame + this.frame_spd) % this.count;
-
-      } else this.image = images[this.path];
-    } catch(err) { this.create(this.path, this.left, this.top, this.w, this.h, this.xoff, this.yoff, this.count); }
+  title: 'image', v: '1.1',
+  create: function(path, left, top, w, h, xoff, yoff, count, speed) {
+    return new _Image(path, left, top, w, h, xoff, yoff, count, speed);
   }
 }
 
@@ -49,5 +24,34 @@ Add.image = async function(args) {
       let state = await promise;
       if (arguments.length == 1) return state;
     } catch(err) { Add.error(err, ERROR.NOFILE); }
+  }
+}
+
+class _Image {
+  constructor(source, left, top, w, h, xoff=0, yoff=0, frames=1, speed=1) {
+    let image = images[source];
+    if (image) {
+      this.left = left, this.top = top, this.w = w || image.width,
+      this.h = h || image.height, this.xoff = xoff, this.yoff = yoff,
+      this.frames = frames, this.speed = speed, this.current_frame = 0,
+      this.image = image;
+    }
+  }
+  draw(cvs, x, y, w, h, alpha=1, xscale=1, yscale=1, rotate=0) { 
+    if (this.frames > 1) this.current_frame = (this.current_frame + this.speed) % this.frames;
+    cvs.save();
+      let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
+      cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
+      if (xscale != undefined || yscale != undefined) cvs.scale(xscale || 1, yscale || 1);
+      if (rotate != undefined) {
+        cvs.translate(nxoff, nyoff);
+        cvs.rotate(rotate / 180 * Math.PI);
+        cvs.translate(-nxoff, -nyoff);
+      }
+      cvs.globalAlpha = alpha;
+      let left = (this.left + this.w * ~~this.current_frame) % this.image.width, top = this.top + ~~((this.left + this.w * ~~this.current_frame) / this.image.width) * this.h;
+      cvs.drawImage(this.image, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
+      cvs.globalAlpha = 1;
+    cvs.restore();
   }
 }
