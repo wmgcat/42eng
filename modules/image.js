@@ -30,15 +30,12 @@ Add.image = async function(args) {
 class _Image {
   constructor(source, left, top, w, h, xoff=0, yoff=0, frames=1, speed=1) {
     let image = images[source];
-    if (image) {
-      this.left = left, this.top = top, this.w = w || image.width,
-      this.h = h || image.height, this.xoff = xoff, this.yoff = yoff,
-      this.frames = frames, this.speed = speed, this.current_frame = 0,
-      this.image = image;
-    }
+    this.left = left, this.top = top, this.w = w || image.width,
+    this.h = h || image.height, this.xoff = xoff, this.yoff = yoff,
+    this.frames = frames, this.speed = speed, this.current_frame = 0,
+    this.image = image, this.path = source;
   }
   draw(cvs, x, y, w, h, alpha=1, xscale=1, yscale=1, rotate=0) { 
-    if (this.frames > 1) this.current_frame = (this.current_frame + this.speed) % this.frames;
     cvs.save();
       let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
       cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
@@ -49,11 +46,13 @@ class _Image {
         cvs.translate(-nxoff, -nyoff);
       }
       cvs.globalAlpha = alpha;
-      if (this.image) {
-        let left = (this.left + this.w * ~~this.current_frame) % this.image.width, top = this.top + ~~((this.left + this.w * ~~this.current_frame) / this.image.width) * this.h;
-        cvs.drawImage(this.image, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
-      }  
+      let left = (this.left + this.w * ~~this.current_frame) % this.image.width, top = this.top + ~~((this.left + this.w * ~~this.current_frame) / this.image.width) * this.h;
+      cvs.drawImage(this.image, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
       cvs.globalAlpha = 1;
     cvs.restore();
+    if (this.frames > 1) this.current_frame = (this.current_frame + this.speed) % this.frames;
+  }
+  copy() {
+    return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
   }
 }

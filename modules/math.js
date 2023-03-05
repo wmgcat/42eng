@@ -28,15 +28,19 @@ modules.math = {
 
 class Vector {
   constructor(arr) { this.points = arr || []; }
-  draw(cvs, mode='stroke', color='#000') {
+  draw(cvs, mode='stroke', color='#000', cap='butt', join='miter') {
     if (modules.graphics) {
       cvs.beginPath();
+      cvs.lineCap = cap;
+      cvs.lineJoin = join;
         for (let i = 0; i < this.points.length; i++) {
           cvs.lineTo(this.points[i].x, this.points[i].y);
         }
       cvs.closePath();
       cvs[`${mode}Style`] = color;
       cvs[mode]();
+      cvs.lineCap = 'butt';
+      cvs.lineJoin = 'miter';
     }
   }
   add(x, y) { this.points.push({ x: x, y: y }); }

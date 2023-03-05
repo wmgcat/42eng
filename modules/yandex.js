@@ -241,17 +241,7 @@ modules.yandex = {
         return false;
       }
     },
-    url: (link='') => {
-      const getdomain = () => {
-        let href = document.location.href, referrer = document.referrer;
-        if (window.frameElement) {
-          href = window.frameElement.ownerDocument.location.href;
-          if(window.frameElement.ownerDocument.referrer != "") referrer = window.frameElement.ownerDocument.referrer;
-        }
-        if (href != referrer) return referrer; else return href;
-      }
-      return `${getdomain()}${link}`
-    },
+    url: (link='') => { return `https://yandex.${modules.yandex.main.environment.i18n.tld}/${link}`; },
     can: () => { return navigator.share && navigator.canShare; }
   }
 };
