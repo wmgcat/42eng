@@ -49,8 +49,10 @@ class _Image {
         cvs.translate(-nxoff, -nyoff);
       }
       cvs.globalAlpha = alpha;
-      let left = (this.left + this.w * ~~this.current_frame) % this.image.width, top = this.top + ~~((this.left + this.w * ~~this.current_frame) / this.image.width) * this.h;
-      cvs.drawImage(this.image, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
+      if (this.image) {
+        let left = (this.left + this.w * ~~this.current_frame) % this.image.width, top = this.top + ~~((this.left + this.w * ~~this.current_frame) / this.image.width) * this.h;
+        cvs.drawImage(this.image, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
+      }  
       cvs.globalAlpha = 1;
     cvs.restore();
   }
