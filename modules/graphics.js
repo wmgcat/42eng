@@ -83,44 +83,105 @@ modules.graphics = {
     modules.graphics.cvs.font = savefont;
     return width;
   },
-  text: (str, x, y, colour='#000', alpha, size=10, font='Arial', type='fill', align, lw) => {
+  text: function(args) {
     modules.graphics.save(() => {
-      if (alpha != undefined) modules.graphics.cvs.globalAlpha = alpha;
-      modules.graphics.cvs.lineWidth = lw || 1;
-      modules.graphics.cvs[type + 'Style'] = colour;
+      let is_width = arguments[3] && typeof(arguments[3]) != 'string', lines = [],
+          text = '', x = arguments[1], y = arguments[2],
+          color = arguments[3 + is_width] || '#000',  alpha = arguments[4 + is_width],
+          fontsize = arguments[5 + is_width] || 10, font = arguments[6 + is_width] || 'Arial',
+          type = arguments[7 + is_width] || 'fill', align = arguments[8 + is_width],
+          linewidth = arguments[9 + is_width], width = is_width ? arguments[3] : -1;
+      if (typeof(arguments[0]) == 'object') {
+        if (arguments[0] instanceof BB) {
+          let save_i = 0;
+          for (let i = 0; i < arguments[0].get().length; i++) {
+            let narr = arguments[0].get().slice(save_i, i), nstr = '';
+            narr.forEach(e => { nstr += e.text; });
+            if (width != -1 && modules.graphics.len(nstr, fontsize, font) >= width) {
+              lines.push(narr);
+              save_i = i;
+            }
+          }
+          if (save_i < arguments[0].get().length) lines.push(arguments[0].get().slice(save_i));   
+          is_width = true;
+        } else {
+          if (modules.language) text = language.use(arguments[0][0] || arguments[0][0], arguments[0][1]);
+          else text = arguments[0].join(' ');
+        }
+      } else {
+        if (modules.language) text = language.use(arguments[0]);
+        else text = arguments[0];
+      }
+      if (lines.length <= 0 && is_width) {
+        let save_i = 0, sstr = text.split(' ');
+        for (let i = 0; i < sstr.length; i++) {
+          let substr = sstr.slice(save_i, i).join(' ')
+          if (modules.graphics.len(substr, fontsize, font) >= width) {
+            lines.push(substr);
+            save_i = i;
+          }
+        }
+        if (save_i < sstr.length) lines.push(sstr.slice(save_i).join(' '));
+      }
       if (align) {
-        let dt = align.split('-');
-        if (dt) {
-          if (dt[0]) modules.graphics.cvs.textAlign = dt[0];
-          if (dt[1]) modules.graphics.cvs.textBaseline = dt[1];
+        let parse = align.split('-');
+        modules.graphics.cvs.textAlign = parse[0];
+        modules.graphics.cvs.textBaseline = parse[1];
+        if (is_width) {
+          switch(parse[1]) {
+            case 'middle': y -= lines.length * fontsize * .5; break;
+            case 'bottom': y -= lines.length * fontsize; break;
+          }
         }
       }
-      modules.graphics.cvs.font = `${size}px ${font}`;
-      modules.graphics.cvs[type + 'Text'](modules.language ? modules.language.use(str) : str, x, y);
+      modules.graphics.cvs.globalAlpha = alpha;
+      if (linewidth) modules.graphics.cvs.lineWidth = linewidth;
+      modules.graphics.cvs[`${type}Style`] = color;
+      modules.graphics.cvs.font = `${fontsize}px ${font}`;
+      if (!is_width) modules.graphics.cvs[`${type}Text`](text, x, y);
+      else {
+        let rainbow_offset = 0;
+        for (let i = 0; i < lines.length; i++) {
+          if (typeof(lines[i]) == 'object') {
+            let linestr = '';
+            for (let j = 0; j < lines[i].length; j++) linestr += lines[i][j].text + ' ';
+            let xx = x;
+            if (align) {
+              let dt = align.split('-');
+              switch (dt[0]) {
+                case 'center': xx -= modules.graphics.len(linestr, fontsize, font) * .5; break;
+              }
+            }
+            for (let j = 0; j < lines[i].length; j++) {
+              let col = color, is_default_draw = true;
+              switch(lines[i][j].tag) {
+                case 'col': col = lines[i][j].value; break;
+                case 'shake':
+                  for (k = 0; k < lines[i][j].text.length; k++) {
+                    let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), fontsize, font) + fontsize * .05 - (fontsize * .1) * Math.random(),
+                        suby = y + i * fontsize + fontsize * .05 - (fontsize * .1) * Math.random();
+                    modules.graphics.text(lines[i][j].text.slice(k, k + 1), subx, suby, col, alpha, fontsize, font, type, 'left-middle', linewidth);
+                  }
+                  is_default_draw = false;
+                break;
+                case 'rainbow': {
+                  cols = ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000'];
+                  for (k = 0; k < lines[i][j].text.length; k++) {
+                    col = cols[rainbow_offset++ % cols.length];
+                    let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), fontsize, font),
+                        suby = y + i * fontsize + fontsize * .1 * Math.sin(current_time * .005 + k);
+                    modules.graphics.text(lines[i][j].text.slice(k, k + 1), subx, suby, col, alpha, fontsize, font, type, 'left-middle', linewidth);
+                  }
+                  is_default_draw = false;
+                } break;
+              }
+              if (is_default_draw) modules.graphics.text(lines[i][j].text, xx, y + i * fontsize, col, alpha, fontsize, font, type, 'left-middle', linewidth);
+              xx += modules.graphics.len(lines[i][j].text + ' ', fontsize, font);
+            }
+          } else modules.graphics.text(lines[i], x, y + i * fontsize, color, alpha, fontsize, font, type, align, linewidth);
+        }
+      }
     });
-    return modules.graphics.len(str, size, font);
-  },
-  wtext: (str, x, y, width, colour='#000', alpha, size=10, font='Arial', type='fill', align, lw) => {
-    if (typeof(str) == 'object') { str = (lang.use(str[0]) || str[0], str[1]); }
-    else str = modules.language ? modules.language.use(str) : str; 
-    let sstr = str.split(' '), lines = [], save_i = 0;
-    for (let i = 0; i < sstr.length; i++) {
-      let substr = sstr.slice(save_i, i).join(' ')
-      if (modules.graphics.len(substr, size, font) >= width) {
-        lines.push(substr);
-        save_i = i;
-      }
-    }
-    if (save_i < sstr.length) lines.push(sstr.slice(save_i).join(' '));
-    let yy = y;
-    if (align) {
-      let dt = align.split('-');
-      switch(dt[1]) {
-        case 'middle': yy = y - (lines.length * size) * .5; break;
-        case 'bottom': yy = y - (lines.length * size); break;
-      }
-    }
-    for (let i = 0; i < lines.length; i++) modules.graphics.text(lines[i], x, yy + i * size, colour, alpha, size, font, type, align, lw);
   },
   parseBB: str => {
     let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
@@ -141,64 +202,23 @@ modules.graphics = {
         narr.value[0].split(' ').forEach(e => { if (e != '') arr.push({ text: e }); });
       }
     }
-    return arr;
-  },
-  drawBB: (str, x, y, width, colour='#000', alpha, size=10, font='Arial', type='fill', align, lw) => {
-    let parse = modules.graphics.parseBB(str), lines = [],
-        save_i = 0, yy = y;
-    for (let i = 0; i < parse.length; i++) {
-      let narr = parse.slice(save_i, i), nstr = '';
-      narr.forEach(e => { nstr += e.text; });
-      if (modules.graphics.len(nstr, size, font) >= width) {
-        lines.push(narr);
-        save_i = i;
-      }
-    }
-    if (save_i < parse.length) lines.push(parse.slice(save_i));
-    if (align) {
-      let dt = align.split('-');
-      switch(dt[1]) {
-        case 'middle': yy = y - (lines.length * size) * .5; break;
-        case 'bottom': yy = y - (lines.length * size); break;
-      }
-    }
-    let rainbow_offset = 0;
-    for (let i = 0; i < lines.length; i++) {
-      let linestr = '';
-      for (let j = 0; j < lines[i].length; j++) linestr += lines[i][j].text + ' ';
-      let xx = x;
-      if (align) {
-        let dt = align.split('-');
-        switch (dt[0]) {
-          case 'center': xx -= modules.graphics.len(linestr, size, font) * .5; break;
-        }
-      }
-      for (let j = 0; j < lines[i].length; j++) {
-        let col = colour, is_default_draw = true;
-        switch(lines[i][j].tag) {
-          case 'col': col = lines[i][j].value; break;
-          case 'shake':
-            for (k = 0; k < lines[i][j].text.length; k++) {
-              let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), size, font) + size * .05 - (size * .1) * Math.random(),
-                  suby = yy + i * size + size * .05 - (size * .1) * Math.random();
-              modules.graphics.text(lines[i][j].text.slice(k, k + 1), subx, suby, col, alpha, size, font, type, 'left-middle', lw);
-            }
-            is_default_draw = false;
-          break;
-          case 'rainbow': {
-            cols = ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000'];
-            for (k = 0; k < lines[i][j].text.length; k++) {
-              col = cols[rainbow_offset++ % cols.length];
-              let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), size, font),
-                  suby = yy + i * size + size * .1 * Math.sin(current_time * .005 + k);
-              modules.graphics.text(lines[i][j].text.slice(k, k + 1), subx, suby, col, alpha, size, font, type, 'left-middle', lw);
-            }
-            is_default_draw = false;
-          } break;
-        }
-        if (is_default_draw) modules.graphics.text(lines[i][j].text, xx, yy + i * size, col, alpha, size, font, type, 'left-middle', lw);
-        xx += modules.graphics.len(lines[i][j].text + ' ', size, font); 
-      }
-    }
+    return new BB(arr);
+  }
+}
+
+class BB {
+  constructor(arr) {
+    this.arr = arr;
+  }
+  get() {
+    return this.arr;
+    /*let obj = {};
+    if (this.tag) {
+      obj = {
+        text: this.text, tag: this.tag,
+        value: this.value || true
+      };
+    } else obj = { text: this.text };
+    return obj;*/
   }
 }
