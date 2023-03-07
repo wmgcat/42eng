@@ -1,5 +1,5 @@
 ## 42eng
-_this game engine wrote on clean javascript. it uses canvas 2d and system of modules_
+_this game engine wrote on pure javascript. it uses canvas 2d and system of modules_
 
 ## links
 * [wiki](https://github.com/wmgcat/42eng/wiki)
