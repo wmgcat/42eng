@@ -1,5 +1,7 @@
 let templateParticle = new Obj('$part');
 
+cfg.maxparticles = 50;
+
 templateParticle.update = function() {
   let delta = 1;
   if (this.life) delta -= this.life.delta();
@@ -15,34 +17,36 @@ templateParticle.draw = function(cvs) { if (this.scale > 0) this.image_index.dra
 modules.particle = {
   title: 'particle', v: '1.0',
   create: (params, x, y, gui) => {
-    let pt = Add.object(templateParticle, x, y);
-    pt.gui = gui;
-    Object.keys(params).forEach(key => {
-      switch(key) {
-        default: pt[key] = params[key]; break;
-        case 'image': pt.image_index = params[key].copy(); break;
-        case 'current_frame':
-          if (pt.image_index)
-            pt.image_index[key] = params[key];
-        break;
-        case 'is_randomize':
-          if (pt.image_index)
-            pt.image_index.current_frame = ~~(Math.random() * pt.image_index.frames);
-        break;
-        case 'life':
-          pt.life = timer.create(params[key]);
-          pt.life.check(); 
-        break;
-      }
-    });
-    if (pt.angle == -1 || pt.angle == undefined) pt.angle = Math.random() * ((pt.angle_end || 0) - (pt.angle_start || 0)) - (pt.angle_end || 0);
-    if (pt.alpha == undefined) pt.alpha = pt.alpha_start || pt.alpha_end || 1;
-    if (pt.alpha_end == undefined) pt.alpha_end = pt.alpha_start || pt.alpha;
-    if (pt.alpha_start == undefined) pt.alpha_start = pt.alpha;
-    if (pt.scale == undefined) pt.scale = pt.scale_start || pt.scale_end || 1;
-    if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale;
-    if (pt.scale_start == undefined) pt.scale_start = pt.scale;  
-    return pt;
+    if (modules.search && ((modules.search.count('$part') + 1) <= cfg.maxparticles)) {
+      let pt = Add.object(templateParticle, x, y);
+      pt.gui = gui;
+      Object.keys(params).forEach(key => {
+        switch(key) {
+          default: pt[key] = params[key]; break;
+          case 'image': pt.image_index = params[key].copy(); break;
+          case 'current_frame':
+            if (pt.image_index)
+              pt.image_index[key] = params[key];
+          break;
+          case 'is_randomize':
+            if (pt.image_index)
+              pt.image_index.current_frame = ~~(Math.random() * pt.image_index.frames);
+          break;
+          case 'life':
+            pt.life = timer.create(params[key]);
+            pt.life.check(); 
+          break;
+        }
+      });
+      if (pt.angle == -1 || pt.angle == undefined) pt.angle = Math.random() * ((pt.angle_end || 0) - (pt.angle_start || 0)) - (pt.angle_end || 0);
+      if (pt.alpha == undefined) pt.alpha = pt.alpha_start || pt.alpha_end || 1;
+      if (pt.alpha_end == undefined) pt.alpha_end = pt.alpha_start || pt.alpha;
+      if (pt.alpha_start == undefined) pt.alpha_start = pt.alpha;
+      if (pt.scale == undefined) pt.scale = pt.scale_start || pt.scale_end || 1;
+      if (pt.scale_end == undefined) pt.scale_end = pt.scale_start || pt.scale;
+      if (pt.scale_start == undefined) pt.scale_start = pt.scale;  
+      return pt;
+    }
   }
 }
 

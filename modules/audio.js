@@ -41,6 +41,7 @@ Add.audio = function(type='sounds', source) {
         if (modules.audio.stack) modules.audio.stack[path.join('.')] = new Sound(buff, type);
       });
     }
+    req.onerror = () => { loaded++; }
     req.send();
   } else {
     if (typeof(type) == 'object') {

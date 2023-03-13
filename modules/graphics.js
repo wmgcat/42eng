@@ -1,12 +1,43 @@
 Add.font = async (name, path) => { // load fonts:
+  mloaded++;
   const src = new FontFace(name, `url(${path})`);
   document.fonts.add(src);
   try {
     let state = await src.load();
+    loaded++;
     return true;
   }
   catch(err) { Add.error(err, ERROR.NOFILE); }
 }
+Add.textbox = () => {
+  return {
+    show: () => {
+      if (bind && !bind.check('textbox')) {
+        let input = document.createElement('textarea');
+        input.style.position = 'fixed';
+        input.style.zIndex = -9999;
+        input.style.top = 0;
+        input.style.left = 0;
+        input.id = 'textbox42eng';
+        bind.add('textbox');
+        document.body.appendChild(input);
+        input.focus();
+        input.onblur = () => { Add.textbox.hide(); }
+      }
+    },
+    value: () => {
+      if (bind && bind.check('textbox')) return (document.getElementById('textbox42eng') && document.getElementById('textbox42eng').value) || "";
+      return "";
+    },
+    hide: () => {
+      if (bind && bind.check('textbox')) {
+        if (document.getElementById('textbox42eng')) document.body.removeChild(document.getElementById('textbox42eng'));
+        bind.clear('textbox');
+      }
+    }
+  };
+}
+
 modules.graphics = {
   title: 'graphics', v: '1.0',
   init: context2d => {
@@ -96,10 +127,12 @@ modules.graphics = {
           let save_i = 0;
           for (let i = 0; i < arguments[0].get().length; i++) {
             let narr = arguments[0].get().slice(save_i, i), nstr = '';
-            narr.forEach(e => { nstr += e.text; });
-            if (width != -1 && modules.graphics.len(nstr, fontsize, font) >= width) {
-              lines.push(narr);
-              save_i = i;
+            if (narr) {
+              if (narr.forEach) narr.forEach(e => { nstr += e.text; });
+              if (width != -1 && modules.graphics.len(nstr, fontsize, font) >= width) {
+                lines.push(narr);
+                save_i = i;
+              }
             }
           }
           if (save_i < arguments[0].get().length) lines.push(arguments[0].get().slice(save_i));   
@@ -184,7 +217,7 @@ modules.graphics = {
     });
   },
   parseBB: str => {
-    let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
+    let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!\?\,|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
     while(!res.done) {
       let narr = res.next();
       if (narr.done) break;
@@ -207,18 +240,6 @@ modules.graphics = {
 }
 
 class BB {
-  constructor(arr) {
-    this.arr = arr;
-  }
-  get() {
-    return this.arr;
-    /*let obj = {};
-    if (this.tag) {
-      obj = {
-        text: this.text, tag: this.tag,
-        value: this.value || true
-      };
-    } else obj = { text: this.text };
-    return obj;*/
-  }
+  constructor(arr) { this.arr = arr; }
+  get() { return this.arr; }
 }

@@ -4,14 +4,14 @@ String.prototype.replaceAll = function(match, replace) {
   return this.replace(new RegExp(match, 'g'), () => replace);
 }
 
-const ERROR = { 
+let ERROR = { 
   NOFILE: 1, NOSUPPORT: 2 
 }
 
 let cfg = {
   title: '42eng.js', debug: false,
   build: {
-    v: 1.7,
+    v: '1.7.2',
     href: 'github.com/wmgcat/42eng'
   },
   grid: 32, zoom: 1,
@@ -46,11 +46,11 @@ let Eng = {
   }
 };
 
-let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, is_loaded = false;
+let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
-let mouse = {'x': 0, 'y': 0, 'touch': {'x': 0, 'y': 0}};
+let mouse = {'x': 0, 'y': 0, 'touch': {'x': 0, 'y': 0}}, bind = false;
 
 let Add = {
 	rule: function(char, key) {
@@ -79,39 +79,48 @@ let Add = {
     } catch(err) { return this.error(err, ERROR.NOFILE); }
 	},
 	error: (msg, code=0) => { console.log('ERROR!', msg, code); },
-	canvas: (gameinit, update, loading) => {
-		let cvs = document.getElementById(cfg.window.id);
+	canvas: (init, update, loading) => {
+		let cvs = document.getElementById(cfg.window.id), getSize = () => {
+      cvs.style.background = '#000';
+      let {width, height} = cfg.window;
+      if (cfg.window.fullscreen) [width, height] = [document.body.clientWidth, document.body.clientHeight];
+      return [width, height];
+    };
 		if (!cvs) {
 			cvs = document.createElement('canvas');
-			let w = cfg.window.width, h = cfg.window.height;
-			if (cfg.window.fullscreen) {
-				w = document.body.clientWidth;
-				h = document.body.clientHeight;
-			}
-			cvs.width = w;
-			cvs.height = h;
-			document.body.appendChild(cvs);
+      [cvs.width, cvs.height] = getSize();
+      document.body.appendChild(cvs);
 		}
 		let ctx = cvs.getContext('2d');
 		let keyChecker = e => {
-			if (modules.audio) Eng.focus(true);
-    		cfg.setting.user = true;
-    		audio.context.resume();
-    		if (e.code.toLowerCase() == 'tab') {
-    			e.preventDefault();
-				  e.stopImmediatePropagation();
-    		}
-    		Object.keys(keylocks).forEach(function(f) {
-				if (e.code.toLowerCase().replace('key', '') == f) {
-					switch(e.type) {
-						case 'keydown': byte.add(keylocks[f]); break;
-						case 'keyup': byte.clear(keylocks[f]); break;
-					}
-					e.preventDefault();
-					e.stopImmediatePropagation();
-				}
-			});
-		}, mouseChecker = e => {
+		  cfg.setting.user = true;
+      if (modules.audio) {
+        audio.context.resume();
+        Eng.focus(true);
+      }
+      if (bind) {
+        let code = e.code.toLowerCase();
+        if (!bind.check('textbox')) {
+          for (let key in keylocks) {
+            if (code.replace('key', '') == key) {
+              bind[e.type == 'keydown' ? 'add': 'clear'](keylocks[key]);
+              break;
+            }
+          }
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        } else {
+          switch(code) {
+            case 'enter':
+              if (modules.graphics) Add.textbox().hide();
+              //Add.debug('press enter!');
+              e.preventDefault();
+              e.stopImmediatePropagation();
+            break;
+          }
+        }
+      }
+    }, mouseChecker = e => {
       let xoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetX : e.changedTouches[0].clientX,
 			    yoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetY : e.changedTouches[0].clientY;
 			switch(e.type) {
@@ -125,65 +134,60 @@ let Add = {
 					mouse.touch = { x: xoff, y: yoff };
 				break;
 			}
-			switch(e.type) {
-				case 'mouseup': case 'touchend':
-					is_touch = false;
-					byte.add('uclick');
-					cvs.focus();
-				break;
-				case 'mousedown': case 'touchstart': byte.add('dclick'); break;
-			}
+      if (bind) {
+        switch(e.type) {
+          case 'mouseup': case 'touchend':
+            is_touch = false;
+            bind.add('uclick');
+            cvs.focus();
+          break;
+          case 'mousedown': case 'touchstart': bind.add('dclick'); break;
+        }
+      }
 			if (e.type == 'touchstart') is_touch = true;
-			if (modules.audio) {
+			if (modules.audio && e.type != 'mousemove') {
         cfg.setting.user = true;
 			  modules.audio.context.resume();
 			  Eng.focus(true);
 			}
       e.preventDefault();
+      e.stopImmediatePropagation();
 		}, ready = () => {
 			addEventListener('keydown', keyChecker, false);
 			addEventListener('keyup', keyChecker, false);
 			if (modules.audio) Eng.focus(true);
 		}, resize = () => {
-			try {
-				let w = cfg.window.width, h = cfg.window.height;
-				if (cfg.window.fullscreen) {
-					w = document.body.clientWidth, h = document.body.clientHeight;
-					cfg.window.width = w;
-					cfg.window.height = h;
-				}
-				cvs.width = w, cvs.height = h;
-				obj.ctx = cvs.getContext('2d');
-				obj.ctx.imageSmoothingEnabled = false;
-			}
-			catch(err) { Add.error(err.message); }
+      [cvs.width, cvs.height] = getSize();
+      ctx = cvs.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
 		}, temp = t => {
-      gui = [];
-      if (loaded >= mloaded && !is_loaded) {
-        if (gameinit) gameinit();
-        is_loaded = true;
+      if (!bind && modules.byte) { // byte support:
+        let arr = [];
+        for (key in keylocks) arr.push(keylocks[key]);
+        arr.push('uclick', 'dclick', 'hover', 'textbox');
+        bind = new Byte(arr);
       }
-      if (is_loaded) {
+      gui = [];
+      if (loaded == mloaded) {
         ctx.save();
-        ctx.fillRect(0, 0, cvs.width, cvs.height);
-        ctx.scale(cfg.zoom, cfg.zoom);
-        ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
-        update(current_time);
-        Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y)).forEach(id => {
-          let obj = objects[id];
-          if (!obj.is_create && obj.create && !editor) {
-            obj.create();
-            obj.is_create = true;
-          }
-          if (obj.update && !pause) obj.update();
-          if (obj.draw) obj.draw(ctx);
-        });
+          ctx.scale(cfg.zoom, cfg.zoom);
+          ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+          update(t);
+          Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y)).forEach(id => {
+            let obj = objects[id];
+            if (!obj.is_create && obj.create && !editor) {
+              obj.create();
+              obj.is_create = true;
+            }
+            if (obj.update && !pause) obj.update();
+            if (obj.draw) obj.draw(ctx);
+          });
         ctx.restore();
-      } else loading(loaded / mloaded, current_time);
-      gui.reverse().forEach(function(e) { e(ctx); });
-      if (modules.byte) {
-        cvs.style.cursor = byte.check('hover') ? 'pointer' : 'default';
-        byte.clear('hover', 'dclick', 'uclick');
+        gui.reverse().forEach(function(e) { e(ctx); });
+      } else loading(loaded / mloaded, t); 
+      if (bind) {
+        cvs.style.cursor = bind.check('hover') ? 'pointer' : 'default';
+        bind.clear('hover', 'dclick', 'uclick');
       }
       current_time = t;	
 			window.requestAnimationFrame(temp);
@@ -198,7 +202,7 @@ let Add = {
 		  navigator.mediaSession.setActionHandler('previoustrack', () => { })
 		  navigator.mediaSession.setActionHandler('nexttrack', () => { })
 		} 
-    let obj = { id: cvs, cvs: ctx, update: temp, init: gameinit }
+    let obj = { id: cvs, cvs: ctx, update: temp, init: init }
 		window.onresize = document.body.onresize = cvs.onresize = resize;
 		resize();
 		Eng.console();

@@ -14,6 +14,18 @@ modules.adv = {
           add: modules.yandex.leaderboard.add
         };
       break;
+      case 'vk':
+        modules.vk.init();
+        modules.adv.profile = async () => {};
+        modules.adv.fullscreen = modules.vk.adv.fullscreen;
+        modules.adv.reward = modules.vk.adv.reward;
+        modules.adv.banner = modules.vk.adv.banner;
+        modules.adv.leaderboard = {
+          get: async () => {},
+          add: async () => {}
+        };
+        modules.adv.banner().then(e => { Add.debug('banner is', e); });
+      break;
     }
     Add.debug(`adv mode is ${modules.adv.type}`);
   }
