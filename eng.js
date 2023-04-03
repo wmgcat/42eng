@@ -74,10 +74,12 @@ let Add = {
         script.type = 'text/javascript';
         script.src = arguments[i];
         document.head.appendChild(script);
+        Add.debug('added script', arguments[i]);
         await promise;
       }
     } catch(err) { return this.error(err, ERROR.NOFILE); }
-	},
+	  return true;
+  },
 	error: (msg, code=0) => { console.log('ERROR!', msg, code); },
 	canvas: (init, update, loading) => {
 		let cvs = document.getElementById(cfg.window.id), getSize = () => {

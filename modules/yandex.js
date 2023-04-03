@@ -9,6 +9,7 @@ modules.yandex = {
       localStorage.setItem('_safeStorage', 'safeStorage is working');
       Add.debug(localStorage.getItem('_safeStorage'));
     });
+    ya.features.LoadingAPI.ready();
     return true;
   },
   profile: {
@@ -83,33 +84,30 @@ modules.yandex = {
   adv: {
     fullscreen: async function() {
       let state = 0;
-      if (!modules.yandex.adv.is_show) {
-        if (!modules.yandex.adv.timer) {
-          modules.yandex.adv.timer = timer.create(60);
-          modules.yandex.adv.timer.reset(60);
-        }
-        if (modules.yandex.adv.timer.check(true)) {
-          modules.yandex.adv.is_show = true;
-          if (modules.audio) Eng.focus(false);
-          Add.debug('focus out!');
-          let promise = new Promise((res, rej) => {
-            let mode = 0;
-            modules.yandex.main.adv.showFullscreenAdv({
-              callbacks: {
-                onClose: function(show) {
-                  if (show) mode = 1;
-                  Add.debug('focus in!');
-                  modules.yandex.adv.timer.reset();
-                  res(mode);
-                },
-                onOffline: function() { mode = 2; },
-                onError: function() { mode = 3; }
-              }
-            });
+      if (!modules.yandex.adv.timer) {
+        modules.yandex.adv.timer = timer.create(61);
+        modules.yandex.adv.timer.reset(61);
+      }
+      if (modules.yandex.adv.timer.check(true)) {
+        if (modules.audio) Eng.focus(false);
+        Add.debug('focus out!');
+        let promise = new Promise((res, rej) => {
+          let mode = 0;
+          modules.yandex.main.adv.showFullscreenAdv({
+            callbacks: {
+              onClose: function(show) {
+                if (show) mode = 1;
+                Add.debug('focus in!');
+                modules.yandex.adv.timer.reset();
+                res(mode);
+              },
+              onOffline: function() { mode = 2; },
+              onError: function() { mode = 3; }
+            }
           });
-          state = await promise;
-          if (modules.audio) Eng.focus(true);
-        }
+        });
+        state = await promise;
+        if (modules.audio) Eng.focus(true);
       }
       return Promise.resolve(state);
     },
@@ -195,9 +193,9 @@ modules.yandex = {
     }
   },
   leaderboard: {
-    get: async function(id) {
+    get: async function(id, auth=true) {
       let lbs = await modules.yandex.main.getLeaderboards(), arr = [],
-          result = await lbs.getLeaderboardEntries(id, { quantityTop: 3, includeUser: true, quantityAround: 1 });
+          result = await lbs.getLeaderboardEntries(id, { quantityTop: 3 + !auth * 2, includeUser: auth, quantityAround: 1 });
       result.entries.forEach(e => {
         arr.push({
           username: e.player.publicName, score: e.score,
@@ -241,7 +239,9 @@ modules.yandex = {
         return false;
       }
     },
-    url: (link='') => { return `https://yandex.${modules.yandex.main.environment.i18n.tld}/${link}`; },
+    url: (link='') => {
+      return `https://yandex.${modules.yandex.main.environment.i18n.tld}/${link}`;
+    },
     can: () => { return navigator.share && navigator.canShare; }
   }
 };

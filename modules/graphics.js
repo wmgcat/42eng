@@ -1,3 +1,11 @@
+cfg.color = {
+  link: {
+    active: '#551A8B',
+    default: '#0000EE'
+  },
+  rainbow: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000'],
+  images: false
+}
 Add.font = async (name, path) => { // load fonts:
   mloaded++;
   const src = new FontFace(name, `url(${path})`);
@@ -114,7 +122,8 @@ modules.graphics = {
     modules.graphics.cvs.font = savefont;
     return width;
   },
-  text: function(args) {
+  text: async function(args) {
+    let data = false;
     modules.graphics.save(() => {
       let is_width = arguments[3] && typeof(arguments[3]) != 'string', lines = [],
           text = '', x = arguments[1], y = arguments[2],
@@ -173,7 +182,8 @@ modules.graphics = {
       modules.graphics.cvs.font = `${fontsize}px ${font}`;
       if (!is_width) modules.graphics.cvs[`${type}Text`](text, x, y);
       else {
-        let rainbow_offset = 0;
+        let rainbow_offset = 0, is_link = false,
+            left = 0, top = 1;
         for (let i = 0; i < lines.length; i++) {
           if (typeof(lines[i]) == 'object') {
             let linestr = '';
@@ -182,11 +192,22 @@ modules.graphics = {
             if (align) {
               let dt = align.split('-');
               switch (dt[0]) {
-                case 'center': xx -= modules.graphics.len(linestr, fontsize, font) * .5; break;
+                case 'center':  
+                  xx -= modules.graphics.len(linestr, fontsize, font) * .5;
+                  left = .5;
+                break;
+                case 'right':
+                  left = -1;
+                break;
+              }
+              switch(dt[1]) {
+                case 'middle': top = .5; break;
+                case 'bottom': top = 1; break;
               }
             }
             for (let j = 0; j < lines[i].length; j++) {
-              let col = color, is_default_draw = true;
+              let col = color, is_default_draw = true, txt = lines[i][j].text;
+              if (is_link && lines[i][j].tag != 'link') is_link = false;
               switch(lines[i][j].tag) {
                 case 'col': col = lines[i][j].value; break;
                 case 'shake':
@@ -198,26 +219,53 @@ modules.graphics = {
                   is_default_draw = false;
                 break;
                 case 'rainbow': {
-                  cols = ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000'];
                   for (k = 0; k < lines[i][j].text.length; k++) {
-                    col = cols[rainbow_offset++ % cols.length];
+                    col = cfg.color.rainbow[rainbow_offset++ % cfg.color.rainbow.length];
                     let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), fontsize, font),
                         suby = y + i * fontsize + fontsize * .1 * Math.sin(current_time * .005 + k);
                     modules.graphics.text(lines[i][j].text.slice(k, k + 1), subx, suby, col, alpha, fontsize, font, type, 'left-middle', linewidth);
                   }
                   is_default_draw = false;
                 } break;
+                case 'link': {
+                  if (modules.math) {
+                    txt = `[${txt}]`;
+                    if (math.collision.mouse.grect(xx, y + i * fontsize - top * fontsize * .5, modules.graphics.len(txt, fontsize, font), fontsize)) {
+                      bind.add('hover');
+                      is_link = true;
+                      if (bind.check('uclick')) {
+                        data = lines[i][j].value;
+                        bind.clear('uclick');
+                      }
+                    }
+                    col = is_link ? cfg.color.link.active : cfg.color.link.default;
+                  }
+                } break;
+                case 'image': {
+                  is_default_draw = false;
+                  txt = ' w ';
+                  if (modules.image && cfg.color.images) {
+                    if (cfg.color.images[lines[i][j].text]) {
+                      cfg.color.images[lines[i][j].text].draw(modules.graphics.cvs, xx + fontsize * .5, y + i * fontsize, fontsize, fontsize);
+                    }
+                  }
+                } break;
+                case 'underline': {
+                  col = lines[i][j].value;
+                  math.vector(xx, y + i * fontsize - top * fontsize * .5 + fontsize, xx + modules.graphics.len(txt, fontsize, font), y + i * fontsize - top * fontsize * .5 + fontsize).draw(modules.graphics.cvs, 'stroke', col);
+                } break;
               }
-              if (is_default_draw) modules.graphics.text(lines[i][j].text, xx, y + i * fontsize, col, alpha, fontsize, font, type, 'left-middle', linewidth);
-              xx += modules.graphics.len(lines[i][j].text + ' ', fontsize, font);
+              if (is_default_draw) modules.graphics.text(txt, xx, y + i * fontsize, col, alpha, fontsize, font, type, 'left-middle', linewidth);
+              xx += modules.graphics.len(txt + ' ', fontsize, font);
             }
           } else modules.graphics.text(lines[i], x, y + i * fontsize, color, alpha, fontsize, font, type, align, linewidth);
         }
       }
     });
+    return data;
   },
   parseBB: str => {
-    let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!\?\,|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
+    let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!\?\,\:\*|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
     while(!res.done) {
       let narr = res.next();
       if (narr.done) break;
