@@ -19,7 +19,8 @@ let cfg = {
     width: 800, height: 600,
     fullscreen: true, id: 'game'
   },
-  modulepath: './modules/'
+  modulepath: './modules/',
+  datapath: ''
 };
 
 let Eng = {
@@ -241,6 +242,19 @@ let Add = {
         await promise;
       }
     } catch(err) { return this.error(err, ERROR.NOFILE); }
+  },
+  test: async func => {
+    let date = Date.now();
+    try {
+      await func();
+      Add.debug('function is done!', `${(Date.now() - date) / 1000}s`);
+      return true;
+    }
+    catch (err) {
+      Add.error(err, 0);
+      Add.debug('timeout', `${(Date.now() - date) / 1000}s`);
+      return false;
+    }
   }
 }
 

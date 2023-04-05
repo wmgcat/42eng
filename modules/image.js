@@ -12,7 +12,12 @@ Add.image = async function(args) {
       let str = arguments[i], img = new Image(),
           path = str.split('/'), promise = new Promise((res, rej) => {
         img.onload = () => {
-          if (path[0] == '.') path = path.splice(1, path.length - 1);
+          let subind = 0;
+          if (path[subind] == '.') {
+            path = path.splice(1, path.length - 1);
+            subind++;
+          }
+          if (path[0] == cfg.datapath) path = path.splice(1, path.length - 1);
           path[path.length - 1] = path[path.length - 1].replace('.png', '').replace('.jpg', '').replace('.gif', '').replace('.jpeg', '');
           images[path.join('.')] = img;
           loaded++;
