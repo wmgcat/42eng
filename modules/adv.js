@@ -11,7 +11,8 @@ modules.adv = {
         modules.adv.banner = modules.yandex.adv.banner;
         modules.adv.leaderboard = {
           get: modules.yandex.leaderboard.get,
-          add: modules.yandex.leaderboard.add
+          add: modules.yandex.leaderboard.add,
+          self: modules.yandex.leaderboard.getself
         };
       break;
       case 'vk':

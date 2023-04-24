@@ -49,7 +49,10 @@ modules.yandex = {
           await modules.yandex.main.auth.openAuthDialog();
           is_auth = 1;
         }
-        catch(err) { is_auth = 2; }
+        catch(err) {
+          Add.debug('ERROR', err);
+          is_auth = 2;
+        }
       }
       return is_auth;
     },
@@ -85,8 +88,8 @@ modules.yandex = {
     fullscreen: async function() {
       let state = 0;
       if (!modules.yandex.adv.timer) {
-        modules.yandex.adv.timer = timer.create(61);
-        modules.yandex.adv.timer.reset(61);
+        modules.yandex.adv.timer = timer.create(180);
+        modules.yandex.adv.timer.reset(180);
       }
       if (modules.yandex.adv.timer.check(true)) {
         if (modules.audio) Eng.focus(false);
@@ -96,9 +99,7 @@ modules.yandex = {
           modules.yandex.main.adv.showFullscreenAdv({
             callbacks: {
               onClose: function(show) {
-                if (show) mode = 1;
-                Add.debug('focus in!');
-                modules.yandex.adv.timer.reset();
+                if (show) mode = 1;  
                 res(mode);
               },
               onOffline: function() { mode = 2; },
@@ -107,7 +108,9 @@ modules.yandex = {
           });
         });
         state = await promise;
+        modules.yandex.adv.timer.reset();
         if (modules.audio) Eng.focus(true);
+        Add.debug('focus in!');
       }
       return Promise.resolve(state);
     },

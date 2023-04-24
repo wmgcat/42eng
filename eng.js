@@ -158,6 +158,7 @@ let Add = {
 		}, ready = () => {
 			addEventListener('keydown', keyChecker, false);
 			addEventListener('keyup', keyChecker, false);
+      addEventListener('contextmenu', e => { e.preventDefault(); }, false);
 			if (modules.audio) Eng.focus(true);
 		}, resize = () => {
       [cvs.width, cvs.height] = getSize();
@@ -178,12 +179,14 @@ let Add = {
           update(t);
           Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y)).forEach(id => {
             let obj = objects[id];
-            if (!obj.is_create && obj.create && !editor) {
-              obj.create();
-              obj.is_create = true;
+            if (obj) {
+              if (!obj.is_create && obj.create && !editor) {
+                obj.create();
+                obj.is_create = true;
+              }
+              if (obj.update && !pause) obj.update();
+              if (obj.draw) obj.draw(ctx);
             }
-            if (obj.update && !pause) obj.update();
-            if (obj.draw) obj.draw(ctx);
           });
         ctx.restore();
         gui.reverse().forEach(function(e) { e(ctx); });

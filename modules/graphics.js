@@ -197,6 +197,7 @@ modules.graphics = {
                   left = .5;
                 break;
                 case 'right':
+                  xx -= modules.graphics.len(linestr, fontsize, font);
                   left = -1;
                 break;
               }
@@ -209,7 +210,7 @@ modules.graphics = {
               let col = color, is_default_draw = true, txt = lines[i][j].text;
               if (is_link && lines[i][j].tag != 'link') is_link = false;
               switch(lines[i][j].tag) {
-                case 'col': col = lines[i][j].value; break;
+                case 'col': if (type != 'stroke') col = lines[i][j].value; break;
                 case 'shake':
                   for (k = 0; k < lines[i][j].text.length; k++) {
                     let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), fontsize, font) + fontsize * .05 - (fontsize * .1) * Math.random(),
@@ -265,7 +266,7 @@ modules.graphics = {
     return data;
   },
   parseBB: str => {
-    let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!\?\,\:\*|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
+    let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!\?\,\:\*\(\)\+\/\.|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
     while(!res.done) {
       let narr = res.next();
       if (narr.done) break;

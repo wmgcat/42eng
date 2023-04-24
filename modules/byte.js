@@ -8,12 +8,12 @@ class Byte {
     if (typeof(args) == 'object') {
       for (let key in args) {
         let _keys = Object.keys(this.keys);
-        this.keys[args[key]] = !_keys.length + (2 << (_keys.length - 1));
+        if (!this.keys[args[key]]) this.keys[args[key]] = !_keys.length + (2 << (_keys.length - 1));
       }
     } else {
       for (let key in arguments) {
         let _keys = Object.keys(this.keys);
-        this.keys[arguments[key]] = !_keys.length + (2 << (_keys.length - 1));
+        if (!this.keys[args[key]]) this.keys[arguments[key]] = !_keys.length + (2 << (_keys.length - 1));
       }
     }
   }
