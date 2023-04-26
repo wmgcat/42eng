@@ -1,49 +1,24 @@
 modules.search = {
-  title: 'search', v: '1.0',
-  distance: (obj, x, y, dist, offset) => {
-    let s = [];
-    if (typeof(obj) == 'object')
-      obj.forEach(e => { s = s.concat(modules.search.search(e)); });
-    else s = modules.search.search(obj);
-    s.sort((a, b) => { return math.distance(x, y, a.x + (offset || 0), a.y + (offset || 0)) - math.distance(x, y, b.x + (offset || 0), b.y + (offset || 0));  });
-    if (dist)
-      for (let i = 0; i < s.length; i++)
-        if (math.distance(x, y, s[i].x + (offset || 0), s[i].y + (offset || 0)) >= dist)
-          return s.splice(0, i);
-    return s;
+  title: 'search', v: '1.1',
+  distance: (type, x, y, distance, offset=0) => {
+    if (!modules.math) return false;
+    return modules.search.search(...type).filter(obj => (modules.math.distance(x, y, obj.x + offset, obj.y + offset) <= distance));
   },
-  id: function(id) {
-    let s = [];
-    if (arguments.length > 1) {
-      for (let i = 0; i < arguments.length; i++)
-        s = s.concat(modules.search.id(arguments[i]));
-    } else {
-      let nid = objects[id];
-      if (nid) s.push(nid);
+  id: (...args) => {
+    let arr = [];
+    for (const id of args) {
+      if (objects[id]) arr.push(objects[id]);
     }
-    if (s.length > 1) return s;
-    else if (s.length == 1) return s[0];
-    else return false;
+    return arr;
   },
-  search: function(obj) {
-    let s = [];
-    Object.keys(objects).forEach(id => {
-      for (let i = 0; i < arguments.length; i++) {
-        if (arguments[i] == 'all' || objects[id].name == arguments[i]) s.push(objects[id]);
+  search: (...args) => {
+    return Object.keys(objects).filter(x => {
+      for (const name of args) {
+        if (name == 'all' || objects[x].name == name)
+          return true;
       }
-    });
-    return s;
+    }).map(x => objects[x]);
   },
-  count: function(obj) {
-    let count = 0;
-    for (let i = 0; i < arguments.length; i++) count += modules.search.search(arguments[i]).length;
-    return count;
-  },
-  key: (name, key, value) => {
-		let arr = modules.search.search(name), narr = [];
-		if (arr) arr.forEach(obj => {
-			if (obj[key] && obj[key] == value) narr.push(obj);
-		});
-		return narr;
-	}
+  count: (...args) => modules.search.search(args).length,
+  key: (name, key, value) => modules.search.search(name).filter(x => (x[key] == value))
 };
