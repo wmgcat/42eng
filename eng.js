@@ -81,7 +81,7 @@ let Add = {
     } catch(err) { return this.error(err, ERROR.NOFILE); }
 	  return true;
   },
-	error: (msg, code=0) => { console.log('ERROR!', msg, code); },
+	error: (msg, code=0) => { console.error('ERROR!', msg, code); },
 	canvas: (init, update, loading) => {
 		let cvs = document.getElementById(cfg.window.id), getSize = () => {
       cvs.style.background = '#000';
@@ -177,17 +177,16 @@ let Add = {
           ctx.scale(cfg.zoom, cfg.zoom);
           ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
           update(t);
-          Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y)).forEach(id => {
+          for (const id of Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y))) {
             let obj = objects[id];
-            if (obj) {
-              if (!obj.is_create && obj.create && !editor) {
-                obj.create();
-                obj.is_create = true;
-              }
-              if (obj.update && !pause) obj.update();
-              if (obj.draw) obj.draw(ctx);
+            if (!obj) continue;
+            if (!editor && !obj.is_create && obj.create) {
+              obj.create();
+              obj.is_create = true;
             }
-          });
+            if (!pause && obj.update) obj.update(t);
+            if (obj.draw) obj.draw(ctx);
+          }
         ctx.restore();
         gui.reverse().forEach(function(e) { e(ctx); });
       } else loading(loaded / mloaded, t); 
@@ -273,5 +272,3 @@ class Obj {
     return true;
   }
 }
-
-
