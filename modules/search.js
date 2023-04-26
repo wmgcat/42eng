@@ -2,7 +2,7 @@ modules.search = {
   title: 'search', v: '1.1',
   distance: (type, x, y, distance, offset=0) => {
     if (!modules.math) return false;
-    return modules.search.search(...type).filter(obj => (modules.math.distance(x, y, obj.x + offset, obj.y + offset) <= distance));
+    return modules.search.search(type).filter(obj => (modules.math.distance(x, y, obj.x + offset, obj.y + offset) <= distance));
   },
   id: (...args) => {
     let arr = [];
