@@ -20,7 +20,8 @@ let cfg = {
     fullscreen: true, id: 'game'
   },
   modulepath: './modules/',
-  datapath: ''
+  datapath: '',
+  sort: true
 };
 
 let Eng = {
