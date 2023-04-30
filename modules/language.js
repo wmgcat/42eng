@@ -1,20 +1,19 @@
 modules.language = {
-  title: 'language', v: '1.0',
+  title: 'language', v: '1.1',
   table: {}, select: '',
-  use: function(args) {
-    let text = arguments['0'];
-    for (let i = 0; i < arguments.length; i++) {
-      if (!i) {
-        let path = arguments[i].split('.'), pos = 0, arr = modules.language.table[modules.language.select] || {};
-        while(arr[path[pos]]) {
-          if (typeof(arr[path[pos]]) == 'string') {
-            text = arr[path[pos]];
-            break;
-          }
-          arr = arr[path[pos++]];
-        }
-      } else { if (text) text = text.replace('%s', modules.language.use(arguments[i])); }
+  use: (...args) => {
+    if (!args[0]) return false;
+    let path = args[0].split('.'), pos = 0,
+        arr = modules.language.table[modules.language.select] || {}, text = args[0];
+    while(arr[path[pos]]) {
+      if (typeof(arr[path[pos]]) == 'string') {
+        text = arr[path[pos]];
+        break;
+      }
+      arr = arr[path[pos++]];
     }
+    for (const param of args.splice(1, args.length - 1))
+      text = text.replace('%s', `${modules.language.use(param)}`);
     return text;
   }
 }
