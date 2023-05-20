@@ -18,9 +18,9 @@ modules.math = {
     rect: (px, py, x, y, w, h) => { return ((px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + (h || w)))); },
     circle: (px, py, x, y, range) => { return modules.math.distance(px, py, x, y) <= range; },
     mouse: {
-      rect: (x, y, w, h) => { return modules.math.collision.rect(mouse.x, mouse.y, x * cfg.zoom, y * cfg.zoom, w * cfg.zoom, (h || w) * cfg.zoom); },
+      rect: (x, y, w, h) => { return modules.math.collision.rect(mouse.x, mouse.y, x, y, w, (h || w)); },
       grect: (x, y, w, h) => { return modules.math.collision.rect(mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y, x, y, w, h || w); },
-      circle: (x, y, range) => { return modules.math.collision.circle(mouse.x, mouse.y, x * cfg.zoom, y * cfg.zoom, range * cfg.zoom); },
+      circle: (x, y, range) => { return modules.math.collision.circle(mouse.x, mouse.y, x, y, range); },
       gcircle: (x, y, range) => { return modules.math.collision.circle(mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y, x, y, range); }
     }
   }
@@ -33,7 +33,8 @@ class Vector {
       cvs.beginPath();
       cvs.lineCap = cap;
       cvs.lineJoin = join;
-        for (let i = 0; i < this.points.length; i++) {
+        cvs.moveTo(this.points[0].x, this.points[0].y);
+        for (let i = 1; i < this.points.length; i++) {
           cvs.lineTo(this.points[i].x, this.points[i].y);
         }
       cvs.closePath();

@@ -246,5 +246,59 @@ modules.yandex = {
       return `https://yandex.${modules.yandex.main.environment.i18n.tld}/${link}`;
     },
     can: () => { return navigator.share && navigator.canShare; }
+  },
+  pay: {
+    payments: false,
+    init: async function() {
+      try {
+        modules.yandex.pay.payments = await modules.yandex.main.getPayments({ signed: true });
+        return true;
+      }
+      catch(err) {
+        Add.error(err, 0);
+        return false;
+      }
+    },
+    get: async function() {
+      if (!modules.yandex.pay.payments) return false;
+      try {
+        return await modules.yandex.pay.payments.getPurchases();
+      }
+      catch(err) {
+        Add.error(err, 0);
+        return false;
+      }
+    },
+    catalog: async function() {
+      if (!modules.yandex.pay.payments) return false;
+      try {
+        return await modules.yandex.pay.payments.getCatalog();
+      }
+      catch(err) {
+        Add.error(err, 0);
+        return false;
+      }
+    },
+    more: async function(id) {
+      try {
+        const order = await modules.yandex.pay.payments.purchase({ id: id });
+        await modules.yandex.pay.payments.consumePurchase(order.purchaseToken);
+        return true;
+      }
+      catch(err) {
+        Add.error(err, 0);
+        return false;
+      }
+    },
+    one: async function(id) {
+      try {
+        await modules.yandex.pay.payments.purchase({ id: id });
+        return true;
+      }
+      catch(err) {
+        Add.error(err, 0);
+        return false;
+      }
+    }
   }
 };

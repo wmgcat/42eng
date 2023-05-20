@@ -39,7 +39,8 @@ class _Image {
       image = source;
       this.path = source.path;
     } else {
-      image = images[source];
+      if ( images[source]) image = images[source];
+      else image = source;
       this.path = source;
     }
     if (image) {
