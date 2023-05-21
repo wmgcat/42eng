@@ -142,9 +142,9 @@ let Add = {
    *  Add.debug("Файл загружен!");
    * });
   */
-  script: async function(args) {
+  script: async function(...args) {
     try {
-      for (const path of Object.values(arguments)) {
+      for (const path of Object.values(args)) {
         mloaded++;
         const promise = new Promise((res, rej) => {
           const script = document.createElement('script');

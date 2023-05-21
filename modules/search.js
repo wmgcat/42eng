@@ -47,12 +47,12 @@ search.id = (...args) => {
  * @return {array}
 */
 search.search = (...args) => (
-  return Object.keys(objects).filter(x => {
+  Object.keys(objects).filter(x => {
     for (const name of args) {
       if (name == 'all' || objects[x].name == name)
         return true;
     }
-  }).map(x => objects[x]);
+  }).map(x => objects[x])
 );
 
 /**
