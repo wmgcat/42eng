@@ -4,25 +4,10 @@
 */
 
 /**
- * Аналогичная функция replaceAll, нужна для Electron
- * @function replaceAll
- * @param  {string} match Регулярное выражение
- * @param  {string} replace Значение для замены
- * @return {string}
- *
- * @example
- * "hello world".replaceAll('o', '');
-
-*/
-String.prototype.replaceAll = function(match, replace) {
-  return this.replace(new RegExp(match, 'g'), () => replace);
-}
-
-/**
  * Коды ошибок
  * @readonly
  * @enum {number}
- */
+*/
 const ERROR = { 
   /** Отсутствует файл */
   NOFILE: 1,
@@ -52,7 +37,7 @@ const ERROR = {
  * @property {bool} [sort=true] Режим сортировки
  * @property {bool} [smooth=false] Режим сглаживания
  * @property {number} [pixel=window.devicePixelRatio] Пиксель
- */
+*/
 let cfg = {
   title: '42eng.js',
   author: 'wmgcat',
@@ -79,12 +64,12 @@ let cfg = {
 /**
  * Основной функционал движка
  * @namespace
- */
+*/
 const Eng = {
   /**
    * Генерирует уникальный ID
    * @return {string}
-   */
+  */
   id: () => {
     const gen4 = () => ((1 + Math.random()) * 0x10000).toString(16).substring(1);
     return `${gen4()}_${gen4()}.${gen4()}`;
@@ -121,7 +106,7 @@ let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}}, bind = false;
 /**
  * Добавление функционала
  * @namespace
- */
+*/
 let Add = {
   /**
    * Настраивает управление с клавиатуры, работает с модулем byte
@@ -192,7 +177,7 @@ let Add = {
    *
    * @example
    * Add.error("Файл не найден!", ERROR.NOFILE);
-   */
+  */
   error: (msg, code=0) => console.error('ERROR!', msg, code),
 
   /**
@@ -215,12 +200,12 @@ let Add = {
    *  Add.debug('loading...', procent);
    * });
    * canvas.init().then(() => canvas.update());
-   */
+  */
   canvas: (init, update, loading) => {
     let canvas = document.getElementById(cfg.window.id);
 
     /**
-     * 
+     * Возвращает ширину и высоту в соответствии с настройками в cfg
      * 
      * @return {array} [width, height]
     */
@@ -235,6 +220,12 @@ let Add = {
       }
       return [width, height];
     }
+
+    /**
+     * Проверяет нажатие клавиш
+     * 
+     * @param  {object} e Объект события
+    */
     const funcKeyChecker = e => {
       if (modules.audio) {
         audio.context.resume();
@@ -252,6 +243,12 @@ let Add = {
       if (code in keylocks)
         bind[e.type == 'keydown' ? 'add' : 'clear'](keylocks[code]);
     }
+
+    /**
+     * Проверяет события мышки или тачскрина
+     * 
+     * @param  {object} e Объект события
+    */
     const funcMouseChecker = e => {
       const isTouch = ~['touchstart', 'touchend', 'touchmove'].indexOf(e.type);
 
@@ -291,6 +288,8 @@ let Add = {
         break;
       }
     }
+
+    /** Функция выполняется при изменении окна */
     const funcResize = () => {
       [canvas.width, canvas.height] = funcGetCanvasSize();
       cvs = canvas.getContext('2d');
@@ -301,6 +300,8 @@ let Add = {
       canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
       canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
     }
+
+    /** Устанавливает события и отключает аудиоплеер */
     const funcReady = () => {
       addEventListener('keydown', funcKeyChecker, false);
       addEventListener('keyup', funcKeyChecker, false);
@@ -322,6 +323,12 @@ let Add = {
       navigator.mediaSession.setActionHandler('previoustrack', () => { })
       navigator.mediaSession.setActionHandler('nexttrack', () => { })
     }
+
+    /**
+     * Функция которая обрабатывает все объекты и GUI
+     * 
+     * @param  {number} t Кол-во секунд с запуска
+    */
     const funcUpdate = t => {
       current_time = t;
 
