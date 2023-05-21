@@ -85,23 +85,23 @@ const Eng = {
    * Генерирует уникальный ID
    * @return {string}
    */
-	id: () => {
-		const gen4 = () => ((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  id: () => {
+    const gen4 = () => ((1 + Math.random()) * 0x10000).toString(16).substring(1);
     return `${gen4()}_${gen4()}.${gen4()}`;
-	},
+  },
   /**
    * Копирует объект
    * 
    * @param  {object} source Объект
    * @return {object}
   */
-	copy: source => {
-		let arr = {};
-		Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
-		return arr;
-	},
+  copy: source => {
+    let arr = {};
+    Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
+    return arr;
+  },
   /** Выводит информацию о проекте */
-	console: () => {
+  console: () => {
     let img = [
       `информация о проекте:`,
       `${cfg.title} автор: ${cfg.author}`,
@@ -138,13 +138,13 @@ let Add = {
    *  a: 'left', d: 'right'
    * })
   */
-	rule: function(char, key) {
-		if (typeof(char) == 'object') { Object.keys(char).forEach(function(k) { keylocks[k] = char[k]; });
-		} else {
-			if (arguments.length > 2) for (let i = 0; i < arguments.length; i += 2) keylocks[arguments[i]] = arguments[i + 1];
-			else keylocks[char] = key;
-		}
-	},
+  rule: function(char, key) {
+    if (typeof(char) == 'object') { Object.keys(char).forEach(function(k) { keylocks[k] = char[k]; });
+    } else {
+      if (arguments.length > 2) for (let i = 0; i < arguments.length; i += 2) keylocks[arguments[i]] = arguments[i + 1];
+      else keylocks[char] = key;
+    }
+  },
 
   /**
    * Добавление скриптов
@@ -157,8 +157,8 @@ let Add = {
    *  Add.debug("Файл загружен!");
    * });
   */
-	script: async function(args) {
-		try {
+  script: async function(args) {
+    try {
       for (const path of Object.values(arguments)) {
         mloaded++;
         const promise = new Promise((res, rej) => {
@@ -193,7 +193,7 @@ let Add = {
    * @example
    * Add.error("Файл не найден!", ERROR.NOFILE);
    */
-	error: (msg, code=0) => console.error('ERROR!', msg, code),
+  error: (msg, code=0) => console.error('ERROR!', msg, code),
 
   /**
    * @param  {function} init Выполняется только один раз
@@ -216,8 +216,8 @@ let Add = {
    * });
    * canvas.init().then(() => canvas.update());
    */
-	canvas: (init, update, loading) => {
-		let canvas = document.getElementById(cfg.window.id);
+  canvas: (init, update, loading) => {
+    let canvas = document.getElementById(cfg.window.id);
 
     /**
      * 
@@ -377,7 +377,7 @@ let Add = {
       id: canvas, cvs: cvs,
       init: init, update: funcUpdate,
     }
-	},
+  },
 
   /**
    * Добавляет объект
@@ -392,15 +392,15 @@ let Add = {
    * let obj = Add.object('player', 50, 50);
    * obj.yr += 8;
    */
-	object: (obj, x=0, y=0, nid=false) => {
+  object: (obj, x=0, y=0, nid=false) => {
     if (typeof(obj) == 'string') obj = templates[obj];
-		let id = nid || Eng.id(); 
+    let id = nid || Eng.id(); 
     objects[id] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
     objects[id].x = x;
     objects[id].y = y;
     objects[id].id = id;
     return objects[id];
-	},
+  },
 
   /**
    * Добавляет функционал для отрисовки поверх всех игровых объектов
@@ -413,7 +413,7 @@ let Add = {
    *  cvs.fillText("Hello world", 10, 10);
    * });
    */
-	gui: func => gui.push(func),
+  gui: func => gui.push(func),
 
   /**
    * Выводит в консоль информацию только при включенном cfg.debug
