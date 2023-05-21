@@ -1,36 +1,71 @@
-modules.language = {
-  title: 'language', v: '1.1',
-  table: {}, select: '',
-  use: (...args) => {
-    if (!args[0]) return false;
-    let path = args[0].split('.'), pos = 0,
-        arr = modules.language.table[modules.language.select] || {}, text = args[0];
-    while(arr[path[pos]]) {
-      if (typeof(arr[path[pos]]) == 'string') {
-        text = arr[path[pos]];
-        break;
-      }
-      arr = arr[path[pos++]];
+/**
+ * @file Модуль локализации
+ * @author wmgcat
+ * @version 1.2
+*/
+
+/**
+ * Модуль локализации
+ * @namespace
+*/
+const language = new Module('language', '1.2');
+
+language.table = {};
+language.select = '';
+
+/**
+ * Возвращает текст из таблицы локализации, подставляет значения в %s
+ * 
+ * @param  {string|array|number} args значения в таблице локалзации или аргументы для %s
+ * @return {string}
+*/
+language.use = function(...args) {
+  if (!args[0]) return false;
+
+  let text = args[0], pos = 0,
+      arr = this.table[this.select] || {};
+  const path = text.split('.')
+
+  while(arr[path[pos]]) {
+    if (typeof(arr[path[pos]]) == 'string') {
+      text = arr[path[pos]];
+      break;
     }
-    for (const param of args.splice(1, args.length - 1))
-      text = text.replace('%s', `${modules.language.use(param)}`);
-    return text;
+    arr = arr[path[pos++]];
   }
+  for (const param of args.splice(1, args.length - 1))
+    text = text.replace('%s', `${this.use(param)}`);
+
+  return text;
 }
 
-Add.language = async function(path, short, is_first=false) {
+/**
+ * Добавляет файл локализации
+ * 
+ * @param  {string} path путь к файлу локализации
+ * @param  {string} short короткое название для локализации, например ru, en
+ * @param  {bool} [primary=false] установить локализацию по умолчанию
+ * @return {bool}
+*/
+Add.language = async function(path, short, primary=false) {
   try {
     mloaded++;
-    let script = document.createElement('script'), promise = new Promise((res, rej) => {
-      script.onload = () => {
+    const promise = new Promise((res, rej) => {
+      const local = document.createElement('script');
+
+      local.onload = () => {
         modules.language.table[short] = Eng.copy(Lang);
-        if (is_first) modules.language.select = short;
+        if (primary) modules.language.select = short;
         loaded++;
         res(true);
       }
-      script.onerror = () => { rej(path); }
+      local.onerror = () => rej(path);
+
+      local.src = path;
+      document.body.appendChild(local);
     });
-    script.src = path;
-    document.body.appendChild(script);
-  } catch(err) { Add.error(err, ERROR.NOFILE); }
+    await promise;
+  }
+  catch(err) { return this.error(err, ERROR.NOFILE); }
+  return true;
 }
