@@ -86,8 +86,8 @@ const Eng = {
    * @return {string}
    */
 	id: () => {
-		let a4 = () => { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1); }, separator = '.';
-		return '#id' + a4() + a4() + separator + a4() + a4() + separator + a4() + a4() + separator + a4() + a4();
+		const gen4 = () => ((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    return `${gen4()}_${gen4()}.${gen4()}`;
 	},
   /**
    * Копирует объект
@@ -157,25 +157,31 @@ let Add = {
    *  Add.debug("Файл загружен!");
    * });
   */
-	script: async function(source) {
+	script: async function(args) {
 		try {
-      for (let i = 0; i < arguments.length; i++) {
+      for (const path of Object.values(arguments)) {
         mloaded++;
-        let script = document.createElement('script'), promise = new Promise((res, rej) => {
-          script.onload = function() {
+        const promise = new Promise((res, rej) => {
+          const script = document.createElement('script');
+          script.onload = () => {
             loaded++;
             res(true);
           }
-          script.onerror = function() { rej(arguments[i]);  }
+          script.onerror = () => rej(path);
+          script.type = 'text/javascript';
+          script.src = path;
+
+          document.head.appendChild(script);
         });
-        script.type = 'text/javascript';
-        script.src = arguments[i];
-        document.head.appendChild(script);
-        Add.debug('added script', arguments[i]);
+
         await promise;
+        Add.debug(`скрипт ${path} загружен!`);
       }
-    } catch(err) { return this.error(err, ERROR.NOFILE); }
-	  return true;
+    }
+    catch(err) {
+      return this.error(err, ERROR.NOFILE);
+    }
+    return true;
   },
 
   /**
@@ -211,154 +217,166 @@ let Add = {
    * canvas.init().then(() => canvas.update());
    */
 	canvas: (init, update, loading) => {
-		let cvs = document.getElementById(cfg.window.id), getSize = () => {
-      cvs.style.background = '#000';
+		let canvas = document.getElementById(cfg.window.id);
+
+    /**
+     * 
+     * 
+     * @return {array} [width, height]
+    */
+    const funcGetCanvasSize = () => {
       let {width, height} = cfg.window;
       if (cfg.window.fullscreen) [width, height] = [window.innerWidth, window.innerHeight];
-  
-      return [width, height];
-    };
-		if (!cvs) {
-      let div = document.createElement('div');
-      div.id = cfg.window.id;
-			cvs = document.createElement('canvas');
-      [cvs.width, cvs.height] = getSize();
-      div.appendChild(cvs);
-      document.body.appendChild(div);
-		}
-		let ctx = cvs.getContext('2d');
-    if (cfg.pixel > 1) {
-          var canvasWidth = cvs.width;
-          var canvasHeight = cvs.height;
-
-          cvs.width = canvasWidth * cfg.pixel;
-          cvs.height = canvasHeight * cfg.pixel;
-          cvs.style.width = canvasWidth + "px";
-          cvs.style.height = canvasHeight + "px";
-          
-          cfg.zoom = cfg.pixel;
+      if (cfg.pixel > 1) {
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        [width, height] = [width * cfg.pixel, height * cfg.pixel];
+        cfg.zoom = cfg.pixel;
       }
-		let keyChecker = e => {
-		  if (cfg.setting) cfg.setting.user = true;
+      return [width, height];
+    }
+    const funcKeyChecker = e => {
       if (modules.audio) {
         audio.context.resume();
         Eng.focus(true);
       }
-      if (bind) {
-        let code = e.code.toLowerCase();
-        if (!bind.check('textbox')) {
-          for (let key in keylocks) {
-            if (code.replace('key', '') == key) {
-              bind[e.type == 'keydown' ? 'add': 'clear'](keylocks[key]);
-              break;
-            }
-          }
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }
-      }
-    }, mouseChecker = e => {
-      let xoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetX : e.changedTouches[0].clientX,
-			    yoff = (e.type == 'mousedown' || e.type == 'mouseup' || e.type == 'mousemove') ? e.offsetY : e.changedTouches[0].clientY;
-			switch(e.type) {
-				case 'mousedown': case 'mouseup': case 'mousemove':
-					mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
-					mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
-				break;
-				case 'touchstart': case 'touchend': case 'touchmove':
-					mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
-					mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
-					mouse.touch = { x: xoff, y: yoff };
-				break;
-			}
-      if (bind) {
-        switch(e.type) {
-          case 'mouseup': case 'touchend':
-            is_touch = false;
-            bind.add('uclick');
-            cvs.focus();
-          break;
-          case 'mousedown': case 'touchstart': bind.add('dclick'); break;
-        }
-      }
-			if (e.type == 'touchstart') is_touch = true;
-			if (modules.audio && e.type != 'mousemove') {
-        cfg.setting.user = true;
-			  modules.audio.context.resume();
-			  Eng.focus(true);
-			}
+      if (cfg.setting) cfg.setting.user = true;
+      if (!bind) return false;
+      if (bind.check('textbox')) return false;
+
+      const code = e.code.toLowerCase().replace('key', '');
+
       e.preventDefault();
       e.stopImmediatePropagation();
-		}, ready = () => {
-			addEventListener('keydown', keyChecker, false);
-			addEventListener('keyup', keyChecker, false);
-      addEventListener('contextmenu', e => { e.preventDefault(); }, false);
-			if (modules.audio) Eng.focus(true);
-		}, resize = () => {
-      [cvs.width, cvs.height] = getSize();
-      ctx = cvs.getContext('2d');
-      if (cfg.pixel > 1) {
-          var canvasWidth = cvs.width;
-          var canvasHeight = cvs.height;
 
-          cvs.width = canvasWidth * cfg.pixel;
-          cvs.height = canvasHeight * cfg.pixel;
-          cvs.style.width = canvasWidth + "px";
-          cvs.style.height = canvasHeight + "px";
+      if (code in keylocks)
+        bind[e.type == 'keydown' ? 'add' : 'clear'](keylocks[code]);
+    }
+    const funcMouseChecker = e => {
+      const isTouch = ~['touchstart', 'touchend', 'touchmove'].indexOf(e.type);
+
+      const xoff = isTouch ? e.changedTouches[0].clientX : e.offsetX,
+            yoff = isTouch ? e.changedTouches[0].clientY : e.offsetY;
+
+      mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
+      mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
+      if (isTouch) {
+        is_touch = true;
+        mouse.touch = {
+          x: xoff,
+          y: yoff
         }
-      ctx.imageSmoothingEnabled = cfg.smooth || false;
-      if (cfg.smooth)
-        ctx.imageSmoothingQuality = 'high';
-      cvs.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
-      cvs.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
-		}, temp = t => {
-      if (!bind && modules.byte) { // byte support:
-        let arr = [];
-        for (key in keylocks) arr.push(keylocks[key]);
-        arr.push('uclick', 'dclick', 'hover', 'textbox');
-        bind = new Byte(arr);
       }
-      gui = [];
+      if (!bind) return false;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      if (modules.audio && !~['touchmove', 'mousemove'].indexOf(e.type)) {
+        cfg.setting.user = true;
+        modules.audio.context.resume();
+        Eng.focus(true);
+      }
+
+      switch(e.type) {
+        case 'mouseup':
+          case 'touchend':
+            is_touch = false;
+            bind.add('uclick');
+            canvas.focus();
+        break;
+        case 'mousedown':
+          case 'touchstart':
+            bind.add('dclick');
+        break;
+      }
+    }
+    const funcResize = () => {
+      [canvas.width, canvas.height] = funcGetCanvasSize();
+      cvs = canvas.getContext('2d');
+      
+      canvas.imageSmoothingEnabled = cfg.smooth || false;
+      if (cfg.smooth)
+        canvas.imageSmoothingQuality = 'high';
+      canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
+      canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
+    }
+    const funcReady = () => {
+      addEventListener('keydown', funcKeyChecker, false);
+      addEventListener('keyup', funcKeyChecker, false);
+      addEventListener('contextmenu', e => e.preventDefault(), false);
+      addEventListener('resize', funcResize, false);
+
+      for (const event of [
+        'mousedown', 'mouseup', 'mousemove',
+        'touchstart', 'touchend', 'touchmove'
+      ]) addEventListener(event, funcMouseChecker, false);
+
+      if (modules.audio) Eng.focus(true);
+      if (!'mediaSession' in navigator) return false;
+
+      navigator.mediaSession.setActionHandler('play', () => { })
+      navigator.mediaSession.setActionHandler('pause', () => { })
+      navigator.mediaSession.setActionHandler('seekbackward', () => { })
+      navigator.mediaSession.setActionHandler('seekforward', () => { })
+      navigator.mediaSession.setActionHandler('previoustrack', () => { })
+      navigator.mediaSession.setActionHandler('nexttrack', () => { })
+    }
+    const funcUpdate = t => {
+      current_time = t;
+
       if (loaded == mloaded) {
-        ctx.save();
-          ctx.scale(cfg.zoom, cfg.zoom);
-          ctx.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
-          update(t);
-          for (const id of Object.keys(objects).sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y))) {
-            let obj = objects[id];
+        cvs.save();
+          cvs.scale(cfg.zoom, cfg.zoom);
+          cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+          update(current_time);
+          for (const id of Object.keys(objects)
+            .sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y))) {
+            
+            const obj = objects[id];
             if (!obj) continue;
             if (!editor && !obj.is_create && obj.create) {
               obj.create();
               obj.is_create = true;
             }
-            if (!pause && obj.update) obj.update(t);
-            if (obj.draw) obj.draw(ctx);
+            if (!pause && obj.update) obj.update(current_time);
+            if (obj.draw) obj.draw(cvs);
           }
-        ctx.restore();
-        gui.reverse().forEach(function(e) { e(ctx); });
-      } else loading(loaded / mloaded, t); 
-      if (bind) {
-        cvs.style.cursor = bind.check('hover') ? 'pointer' : 'default';
+        cvs.restore();
+        gui.reverse().forEach(e => e(cvs));
+      } else loading(loaded / mloaded, current_time);
+      gui = [];
+
+      if (!bind) {
+        if (modules.byte) {
+          let arr = [];
+          for (key in keylocks) arr.push(keylocks[key]);
+          arr.push('uclick', 'dclick', 'hover', 'textbox');
+          bind = new Byte(arr);
+        }
+      } else {
+        canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
         bind.clear('hover', 'dclick', 'uclick');
       }
-      current_time = t;	
-			window.requestAnimationFrame(temp);
-		}
-		window.onmousedown = window.onmouseup = window.onmousemove = cvs.ontouchstart = cvs.ontouchend = cvs.ontouchmove = mouseChecker;
-		ready();
-		if ('mediaSession' in navigator) {
-		  navigator.mediaSession.setActionHandler('play', () => { })
-		  navigator.mediaSession.setActionHandler('pause', () => { })
-		  navigator.mediaSession.setActionHandler('seekbackward', () => { })
-		  navigator.mediaSession.setActionHandler('seekforward', () => { })
-		  navigator.mediaSession.setActionHandler('previoustrack', () => { })
-		  navigator.mediaSession.setActionHandler('nexttrack', () => { })
-		} 
-    let obj = { id: cvs, cvs: ctx, update: temp, init: init }
-		window.onresize = document.body.onresize = cvs.onresize = resize;
-		resize();
-		Eng.console();
-		return obj;
+
+      window.requestAnimationFrame(funcUpdate);
+    }
+
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = cfg.window.id;
+      [canvas.width, canvas.height] = funcGetCanvasSize();
+      document.body.appendChild(canvas);
+    }
+
+    let cvs = canvas.getContext('2d');
+    
+    Eng.console();
+    funcReady();
+    return {
+      id: canvas, cvs: cvs,
+      init: init, update: funcUpdate,
+    }
 	},
 
   /**
