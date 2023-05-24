@@ -1,63 +1,77 @@
-modules.byte = { title: 'byte', v: '1.1' };
+/**
+ * @file Модуль проверки значений
+ * @author wmgcat
+ * @version 1.2
+*/
 
-ERROR.NOKEY = 3;
+const byte = new Module('byte', '1.2');
 
+ERROR.NOKEY = 3; // Добавляет ошибку неизвестного ключа
+
+/**
+ * Проверка значений
+ * 
+ * @constructor
+*/
 class Byte {
-  constructor(args) {
-    [this.keys, this.key] = [{}, 0];
-    if (typeof(args) == 'object') {
-      for (let key in args) {
-        let _keys = Object.keys(this.keys);
-        if (!this.keys[args[key]]) this.keys[args[key]] = !_keys.length + (2 << (_keys.length - 1));
-      }
-    } else {
-      for (let key in arguments) {
-        let _keys = Object.keys(this.keys);
-        if (!this.keys[args[key]]) this.keys[arguments[key]] = !_keys.length + (2 << (_keys.length - 1));
-      }
+  /**
+   * @param  {string} key Ключ, можно указать несколько
+  */
+  constructor(...args) {
+    this.keys = {};
+    this.key = 0;
+    
+    let offset = 0;
+    for (const key of args) {
+      if (!(key in this.keys))
+        this.keys[key] = !offset + (2 << (offset - 1));
+      offset++;
     }
   }
-  add(args) {
+
+  /**
+   * Добавляет ключ в значение
+   * 
+   * @param {string} key Ключ, можно указать несколько
+  */
+  add(...args) {
     try {
-      for (let key in arguments) {
-        if (arguments[key] in this.keys) this.key |= this.keys[arguments[key]];
-        else throw new Error(arguments[key]);
+      for (const key of args) {
+        if (!(key in this.keys)) throw new Error(key);
+        this.key |= this.keys[key];
+      }
+    }
+    catch(err) { return Add.error(err, ERROR.NOKEY); }
+  }
+
+  /**
+   * Очищает ключ из значения
+   * 
+   * @param {string} key Ключ, можно указать несколько
+  */
+  clear(...args) {
+    try {
+      for (const key of args) {
+        if (!(key in this.keys)) throw new Error(key);
+        this.key &=~ this.keys[key];
+      }
+    }
+    catch(err) { return Add.error(err, ERROR.NOKEY); }
+  }
+
+  /**
+   * Проверяет ключи в значении
+   *
+   * @param {string} key Ключ, можно указать несколько
+  */
+  check(...args) {
+    try {
+      for (const key of args) {
+        if (!(key in this.keys)) throw new Error(key);
+        if ((this.key & this.keys[key]) <= 0) return false;
       }
       return true;
     }
-    catch (err) {
-      Add.error(err.message, ERROR.NOKEY);
-      return false;      
-    }
-  }
-  clear(args) {
-    try {
-      if (!arguments.length) this.key = 0;
-      else {
-        for (let key in arguments) {
-          if (arguments[key] in this.keys) this.key &=~ this.keys[arguments[key]];
-          else throw new Error(arguments[key]);
-        }
-      }
-      return true;
-    }
-    catch (err) {
-      Add.error(err.message, ERROR.NOKEY);
-      return false;
-    }
-  }
-  check(args) {
-    try {
-      for (let key in arguments) {
-        if (arguments[key] in this.keys) {
-          if ((this.key & this.keys[arguments[key]]) <= 0) return false;
-        } else throw new Error(arguments[key]);
-      }
-      return true;
-    }
-    catch (err) {
-      Add.error(err.message, ERROR.NOKEY);
-      return false;
-    }
+    catch(err) { return Add.error(err, ERROR.NOKEY); }
   }
 }

@@ -4,10 +4,6 @@
  * @version 1.2
 */
 
-/**
- * Модуль поиска
- * @namespace
-*/
 const search = new Module('search', '1.2');
 
 /**

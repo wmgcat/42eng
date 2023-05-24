@@ -359,7 +359,7 @@ let Add = {
           let arr = [];
           for (key in keylocks) arr.push(keylocks[key]);
           arr.push('uclick', 'dclick', 'hover', 'textbox');
-          bind = new Byte(arr);
+          bind = new Byte(...arr);
         }
       } else {
         canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
