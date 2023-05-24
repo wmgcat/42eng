@@ -35,13 +35,9 @@ class Byte {
    * @param {string} key Ключ, можно указать несколько
   */
   add(...args) {
-    try {
-      for (const key of args) {
-        if (!(key in this.keys)) throw new Error(key);
-        this.key |= this.keys[key];
-      }
-    }
-    catch(err) { return Add.error(err, ERROR.NOKEY); }
+    return this.checkKey(key => {
+      this.key |= this.keys[key];
+    }, ...args);
   }
 
   /**
@@ -50,13 +46,9 @@ class Byte {
    * @param {string} key Ключ, можно указать несколько
   */
   clear(...args) {
-    try {
-      for (const key of args) {
-        if (!(key in this.keys)) throw new Error(key);
-        this.key &=~ this.keys[key];
-      }
-    }
-    catch(err) { return Add.error(err, ERROR.NOKEY); }
+    return this.checkKey(key => {
+      this.key &=~ this.keys[key];
+    }, ...args);
   }
 
   /**
@@ -65,13 +57,26 @@ class Byte {
    * @param {string} key Ключ, можно указать несколько
   */
   check(...args) {
+    return this.checkKey(key => {
+      if ((this.key & this.keys[key]) <= 0) return -1;
+    }, ...args);
+  }
+
+  /**
+   * Проверяет есть ли ключ и выполняет функцию
+   * 
+   * @param  {function} func(key) Функция, принимает аргумент с ключом
+   * @param  {...string} key Ключ, можно указать несколько
+   * @return {bool}
+  */
+  checkKey(func, ...args) {
     try {
       for (const key of args) {
         if (!(key in this.keys)) throw new Error(key);
-        if ((this.key & this.keys[key]) <= 0) return false;
+
+        if (func(key) == -1) return false;
       }
       return true;
-    }
-    catch(err) { return Add.error(err, ERROR.NOKEY); }
+    } catch(err) { return Add.error(err, ERROR.NOKEY); }
   }
 }
