@@ -1,87 +1,176 @@
-modules.image = {
-  title: 'image', v: '1.1',
-  create: function(path, left, top, w, h, xoff, yoff, count, speed) {
-    return new _Image(path, left, top, w, h, xoff, yoff, count, speed);
-  }
-}
+/**
+ * @file Модуль изображений
+ * @author wmgcat
+ * @version 1.2
+*/
 
-Add.image = async function(args) {
-  for (let i = 0; i < arguments.length; i++) {
-    try {
+/**
+ * Модуль изображений
+ * @namespace
+*/
+const image = new Module('image', '1.2');
+
+/**
+ * Добавляет объект _Image, который можно использовать для отрисовки
+ * 
+ * @param  {string|_Image} id ID изображения или объект класса _Image
+ * @param {number} [left=0] Левый отступ
+ * @param {number} [top=0] Верхний отступ
+ * @param {number} [w=path.width] Ширина
+ * @param {number} [h=path.height] Высота
+ * @param {number} [xoff=0] Горизонтальный центр изображения
+ * @param {number} [yoff=0] Вертикальный центр изображения
+ * @param {number} [frames=1] Кол-во кадров
+ * @param {number} [speed=1] Скорость анимации
+ * 
+ * @return {_Image}
+*/
+image.create = (id, left, top, w, h, xoff, yoff, frames, speed) => (
+  new _Image(id, left, top, w, h, xoff, yoff, frames, speed)
+);
+
+/**
+ * Добавляет изображения в объект image
+ * 
+ * @param  {string|array} path Путь к файлу изображения, можно указывать несколько
+ * @return {string}
+*/
+Add.image = async function(...args) {
+  try {
+    let id;
+    for (const path of args) {
       mloaded++;
-      let str = arguments[i], img = new Image(),
-          path = str.split('/'), promise = new Promise((res, rej) => {
+      const promise = new Promise((res, rej) => {
+        const img = new Image();
+        img.src = path;
+
         img.onload = () => {
-          let subind = 0;
-          if (path[subind] == '.') {
-            path = path.splice(1, path.length - 1);
-            subind++;
-          }
-          if (path[0] == cfg.datapath) path = path.splice(1, path.length - 1);
-          path[path.length - 1] = path[path.length - 1].replace('.png', '').replace('.jpg', '').replace('.gif', '').replace('.jpeg', '');
-          images[path.join('.')] = img;
+          let id = path.split('/');
+
+          if (id[0] == '.') id = id.splice(1, id.length - 1);
+          if (id[0] == cfg.datapath) id = id.splice(1, id.length - 1);
+
+          for (const ext of ['png', 'jpeg', 'jpg', 'gif'])
+            id[id.length - 1] = id[id.length - 1].replace(`.${ext}`, '');
+
+          id = id.join('.');
+          
+          images[id] = img;
           loaded++;
-          res(path.join('.'));
+          res(id);
         }
-        img.onerror = () => { rej(str); }
+        img.onerror = err => rej(err);
+
       });
-      img.src = str;
-      let state = await promise;
-      if (arguments.length == 1) return state;
-    } catch(err) { Add.error(err, ERROR.NOFILE); }
-  }
+      id = await promise;
+    }
+    return id;
+  } catch(err) { return this.error(err, ERROR.NOFILE); }
 }
 
+/**
+ * Класс для картинок
+ * @constructor
+*/
 class _Image {
-  constructor(source, left, top, w, h, xoff=0, yoff=0, frames=1, speed=1) {
+  /**
+   * @param  {string|_Image} id ID изображения или объект класса _Image
+   * @param  {number} [left=0] Левый отступ
+   * @param  {number} [top=0] Верхний отступ
+   * @param  {number} [w=source.width] Ширина
+   * @param  {number} [h=source.height] Высота
+   * @param  {number} [xoff=0] Горизонтальный центр изображения
+   * @param  {number} [yoff=0] Вертикальный центр изображения
+   * @param  {number} [frames=1] Кол-во кадров
+   * @param  {number} [speed=1] Скорость анимации
+  */
+  constructor(id, left=0, top=0, w, h,
+              xoff=0, yoff=0, frames=1, speed=1) {
     let image;
-    if (source instanceof _Image) {
-      image = source;
-      this.path = source.path;
+    if (id instanceof _Image) {
+      image = id;
+      this.path = image.path;
+      this.reference = true;
     } else {
-      if ( images[source]) image = images[source];
-      else image = source;
-      this.path = source;
+      image = id;
+      if (images[id]) image = images[id];
+      this.path = id;
     }
-    if (image) {
-      this.left = left;
-      this.top = top;
-      this.w = w || image.w || image.width;
-      this.h = h || image.h || image.height;
-      this.xoff = xoff;
-      this.yoff = yoff;
-      this.frames = frames;
-      this.speed = speed;
-      this.current_frame = 0;
-      this.image = image;
-    }
+    if (!image) return;
+
+    this.left = left;
+    this.top = top;
+    this.w = w || image.w || image.width;
+    this.h = h || image.h || image.height
+    this.xoff = xoff;
+    this.yoff = yoff;
+    this.frames = frames;
+    this.speed = speed;
+    this.current_frame = 0;
+    this.image = image;
   }
-  draw(cvs, x, y, w, h, alpha=1, xscale=1, yscale=1, rotate=0) { 
+
+  /**
+   * Рисование картинки
+   * 
+   * @param  {object} cvs Объект рисования
+   * @param  {number} x X
+   * @param  {number} y Y
+   * @param  {number} w Ширина
+   * @param  {number} h Высота
+   * @param  {number} [alpha=1] Прозрачность
+   * @param  {number} [xscale=1] Увеличение по X
+   * @param  {number} [yscale=1] Увеличение по Y
+   * @param  {number} [rotate=0] Поворот
+  */
+  draw(cvs, x, y, w, h, alpha=1, xscale=1, yscale=1, rotate=0) {
+    if (!this.image || !xscale || !yscale || !alpha) return;
+
+    const nw = w || this.w, nh = h || this.h,
+          xoff = nw / this.w * this.xoff, yoff = nh / this.h * this.yoff;
+
     cvs.save();
-      let nxoff = ((w || this.w) / this.w) * this.xoff, nyoff = ((h || this.h) / this.h) * this.yoff;
-      cvs.translate((x || 0) - nxoff * (xscale || 1), (y || 0) - nyoff * (yscale || 1));
-      if (xscale != undefined || yscale != undefined) cvs.scale(xscale || 1, yscale || 1);
-      if (rotate != undefined) {
-        cvs.translate(nxoff, nyoff);
-        cvs.rotate(rotate / 180 * Math.PI);
-        cvs.translate(-nxoff, -nyoff);
+      if (alpha != 1) cvs.globalAlpha = alpha;
+
+      cvs.translate(x - xoff * xscale, y - yoff * yscale);
+      cvs.scale(xscale, yscale);
+
+      if (rotate && modules.math) {
+        cvs.translate(xoff, yoff);
+        cvs.rotate(math.torad(rotate));
+        cvs.translate(-xoff, -yoff);
       }
-      cvs.globalAlpha = alpha;
-      let left, top, img = this.image;
-      if (this.image instanceof _Image) {
+
+      let left = 0, top = 0, img = this.image,
+          source_w = this.image.width;
+
+      if (this.reference) {
         img = images[this.path];
-        left = this.image.left + ((this.left + this.w * ~~this.current_frame) % this.image.w);
-        top = this.image.top + (this.top + ~~((this.left + this.w * ~~this.current_frame) / this.image.w) * this.h);
-      } else {
-        left = (this.left + this.w * ~~this.current_frame) % this.image.width;
-        top = this.top + ~~((this.left + this.w * ~~this.current_frame) / this.image.width) * this.h;
+        left = this.image.left;
+        top = this.image.top;
+        source_w = this.image.w;
       }
-      cvs.drawImage(img, left, top, this.w, this.h, 0, 0, w || this.w, h || this.h);
-      cvs.globalAlpha = 1;
+
+      left += (this.left + this.w * ~~this.current_frame) % source_w;
+      top += this.top + ~~((this.left + this.w * ~~this.current_frame) / source_w) * this.h;
+
+      cvs.drawImage(img, left, top, this.w, this.h, 0, 0, nw, nh);
+
+      if (alpha != 1) cvs.globalAlpha = 1;
     cvs.restore();
+
     if (this.frames > 1) this.current_frame = (this.current_frame + this.speed) % this.frames;
   }
+
+  /**
+   * Возвращает новую копию картинки
+   * 
+   * @return {_Image}
+  */
   copy() {
-    return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    return Object.assign(
+      Object.create(Object.getPrototypeOf(this)),
+      this
+    );
   }
 }
