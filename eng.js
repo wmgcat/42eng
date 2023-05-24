@@ -292,13 +292,15 @@ let Add = {
     /** Функция выполняется при изменении окна */
     const funcResize = () => {
       [canvas.width, canvas.height] = funcGetCanvasSize();
+
       cvs = canvas.getContext('2d');
-      
-      canvas.imageSmoothingEnabled = cfg.smooth || false;
+
+      cvs.imageSmoothingEnabled = cfg.smooth || false;
       if (cfg.smooth)
         canvas.imageSmoothingQuality = 'high';
       canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
       canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
+
     }
 
     /** Устанавливает события и отключает аудиоплеер */
@@ -376,7 +378,8 @@ let Add = {
       document.body.appendChild(canvas);
     }
 
-    let cvs = canvas.getContext('2d');
+    let cvs;
+    funcResize();
     
     Eng.console();
     funcReady();
