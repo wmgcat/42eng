@@ -1,294 +1,278 @@
-cfg.color = {
-  link: {
-    active: '#551A8B',
-    default: '#0000EE'
-  },
-  rainbow: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000'],
-  images: false
+/**
+ * @file Модуль для графики
+ * @author wmgcat
+ * @version 1.1
+*/
+
+const graphics = new Module('graphics', '1.1'),
+      types = {
+        fill: 'fill',
+        stroke: 'stroke'
+      }
+
+cfg.font = {
+  name: 'Arial', // Стандартный шрифт
+  size: 10 // Стандартный размер шрифта
 }
-Add.font = async (name, path) => { // load fonts:
+
+/**
+ * Возвращает модуль для отрисовки графики
+ * @param {object} ctx Контекст холста на котором будет производиться отрисовка
+ * @returns {object} this Возвращает себя
+*/
+graphics.create = function(ctx) {
+  this.cvs = ctx;
+  return this;
+}
+
+/**
+ * Метод для отрисовки фигур с альфой и шириной линии
+ * 
+ * @param {function} func Функция для отрисовки фигуры
+ * @param {string|object} color='#000' Цвет или текстура
+ * @param {number} alpha=1 Прозрачность
+ * @param {string} type='fill' Заполнение, может быть fill или stroke
+ * @param {number} linewidth=1 Ширина линии, работает если указан stroke в заполнении
+*/
+graphics.save = function(func, color='#000', alpha=1, type=types.fill, linewidth=1) {
+  if (type == types.stroke) this.cvs.lineWidth = linewidth;
+  if (alpha != 1) this.cvs.globalAlpha = alpha;
+  this.cvs[`${type}Style`] = color;
+  func(this);
+  if (alpha != 1) this.cvs.globalAlpha = 1;
+}
+
+/**
+ * Рисует прямоугольник
+ * 
+ * @param {number} x X
+ * @param {number} y Y
+ * @param {number} w Ширина
+ * @param {number} h Высота
+ * @param {string|object} color='#000' Цвет или Текстура
+ * @param {number} alpha=1 Прозрачность
+ * @param {string} type='fill' Заполнение, может быть fill или stroke
+ * @param {number} linewidth=1 Ширина линии, работает если указан stroke в заполнении
+*/
+graphics.rect = function(x, y, w, h, color='#000',
+                         alpha=1, type=types.fill, linewidth=1) {
+  this.save(e => e.cvs[`${type}Rect`](x, y, w, h),
+            color, alpha, type, linewidth);
+}
+
+/**
+ * Рисует прямоугольник с закругленными краями
+ * 
+ * @param {number} x X
+ * @param {number} y Y
+ * @param {number} w Ширина
+ * @param {number} h Высота
+ * @param {number|Array} range Скругление краев. Можно указать каждый угол отдельно, используя массив
+ * @param {string|object} color='#000' Цвет или Текстура
+ * @param {number} alpha=1 Прозрачность
+ * @param {string} type='fill' Заполнение, может быть fill или stroke
+ * @param {number} linewidth=1 Ширина линии, работает если указан stroke в заполнении
+*/
+graphics.round = function(x, y, w, h, range, color='#000',
+                          alpha=1, type=types.fill, linewidth=1) {
+  this.save(e => {
+    e.cvs.beginPath();
+      e.cvs.roundRect(x, y, w, h, range);
+      e.cvs[type]();
+    e.cvs.closePath();
+  }, color, alpha, type, linewidth);
+}
+
+/**
+ * Рисует круг
+ * 
+ * @param {number} x X
+ * @param {number} y Y
+ * @param {number} range Радиус
+ * @param {number} start=0 Начало круга в радианах
+ * @param {number} end=Math.PI*2 Конец круга в радианах
+ * @param {string|object} color='#000' Цвет или Текстура
+ * @param {number} alpha=1 Прозрачность
+ * @param {string} type='fill' Заполнение, может быть fill или stroke
+ * @param {number} linewidth=1 Ширина линии, работает если указан stroke в заполнении
+*/
+graphics.circle = function(x, y, range, start=0, end=Math.PI*2, color='#000',
+                           alpha=1, type=types.fill, linewidth=1) {
+  this.save(e => {
+    e.cvs.beginPath();
+      
+      e.cvs.arc(x, y, range, start, end);
+      e.cvs[type]();
+    e.cvs.closePath();
+  }, color, alpha, type, linewidth);
+}
+
+/**
+ * Рисует эллипс
+ * 
+ * @param {number} x X
+ * @param {number} y Y
+ * @param {number} w Ширина
+ * @param {number} h Высота
+ * @param {string|object} color='#000' Цвет или Текстура
+ * @param {number} alpha=1 Прозрачность
+ * @param {string} type='fill' Заполнение, может быть fill или stroke
+ * @param {number} linewidth=1 Ширина линии, работает если указан stroke в заполнении
+*/
+graphics.ellipse = function(x, y, w, h, color='#000',
+                            alpha=1, type=types.fill, linewidth=1) {
+  this.save(e => {
+    e.cvs.beginPath();
+      e.cvs.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+      e.cvs[type]();
+    e.cvs.closePath();
+  }, color, alpha, type, linewidth);
+}
+
+/**
+ * Рисует текст
+ * @namespace
+ * @memberof graphics
+*/
+graphics.text = {}
+
+/**
+ * Рисует текст
+ * 
+ * @param {string} str Текст
+ * @param {number} x X
+ * @param {number} y Y
+ * @param {string|object} [color=#000] Цвет или Текстура
+ * @param {number} [alpha=1] Прозрачность
+ * @param {number} [fontsize=cfg.font.size] Размер шрифта
+ * @param {string} [font=cfg.font.name] Название шрифта
+ * @param {string} [align=left-top] Положение текста
+ * @param {string} [type=fill] Заполнение, может быть fill или stroke
+ * @param {number} [linewidth=1] Ширина линии, работает если указан stroke в заполнении
+*/
+graphics.text.draw = function(str, x, y, color='#000', alpha=1, fontsize=cfg.font.size,
+                              font=cfg.font.name, align='left-top', type=types.fill, linewidth=1) {
+  graphics.save(e => {
+    e.cvs.font = `${fontsize}px ${font}`;
+    align = align.split('-');
+    if (align[0]) e.cvs.textAlign = align[0];
+    if (align[1]) e.cvs.textBaseline = align[1];
+    e.cvs[`${type}Text`](str, x, y);
+  }, color, alpha, type, linewidth);
+}
+
+/**
+ * Рисует текст с переносом строки
+ * 
+ * @param {string} str Текст
+ * @param {number} x X
+ * @param {number} y Y
+ * @param {number} width Ширина текста
+ * @param {string|object} [color=#000] Цвет или Текстура
+ * @param {number} [alpha=1] Прозрачность
+ * @param {number} [fontsize=cfg.font.size] Размер шрифта
+ * @param {string} [font=cfg.font.name] Название шрифта
+ * @param {string} [align=left-top] Положение текста
+ * @param {string} [type=fill] Заполнение, может быть fill или stroke
+ * @param {number} [linewidth=1] Ширина линии, работает если указан stroke в заполнении
+ */
+graphics.text.drawMultiLine = function(str, x, y, width, color='#000', alpha=1, fontsize=cfg.font.size,
+                        font=cfg.font.name, align='left-top', type=types.fill, linewidth=1) {
+  graphics.save(e => {
+    e.cvs.font = `${fontsize}px ${font}`;
+    align = align.split('-');
+
+    const lines = [],
+          parseText = str.split(' ');
+    let offset = 0;
+    for (let i = 0; i < parseText.length; i++) {
+      const line = parseText.slice(offset, i).join(' ');
+      if (this.width(line, fontsize, font) >= width) {
+        lines.push(parseText.slice(offset, i).join(' '));
+        offset = i;
+      }
+    }
+    lines.push(parseText.slice(offset).join(' '));
+
+    let yy = y;
+    if (align[0]) e.cvs.textAlign = align[0];
+    if (align[1]) {
+      e.cvs.textBaseline = align[1];
+      if (align[1] == 'middle') yy -= lines.length * fontsize * .5;
+      if (align[1] == 'bottom') yy -= lines.length * fontsize;
+    }
+
+    for (let i = 0; i < lines.length; i++)
+      e.cvs[`${type}Text`](lines[i], x, yy + fontsize * i);
+
+  }, color, alpha, type, linewidth);
+}
+
+/**
+ * Возвращает длину текста
+ *
+ * @param {string} str текст
+ * @param {number} [fontsize=cfg.font.size] Размер шрифта
+ * @param {string} [font=cfg.font.name] Название шрифта
+ * @return {number}
+*/
+graphics.text.width = function(str, fontsize=cfg.font.size, font=cfg.font.name) {
+  graphics.cvs.font = `${fontsize}px ${font}`;
+  return graphics.cvs.measureText(str).width;
+}
+
+/**
+ * Паттерн
+ * @type {Pattern}
+ * @memberof graphics
+*/
+class Pattern {
+  /**
+   * @param {object} cvs Основной контекст
+   * @param {_Image} image Объект класса _Image
+   * @param {string} repeat Режим повтора
+   *
+   * @example
+   * const grass = new Pattern(canvas.cvs, image.grass, repeat='repeat-x');
+   * graphics.rect(0, 0, 32, 32, grass.pattern, 1);
+  */
+  constructor(cvs, image, repeat='repeat') {
+    this.canvas = document.createElement('canvas');
+    this.context2d = this.canvas.getContext('2d');
+    this.image = image;
+    this.canvas.width = this.image.w;
+    this.canvas.height = this.image.h;
+    this.repeat = repeat;
+    this.update(cvs); 
+  }
+
+  /**
+   * Обновление паттерна (нужно для анимаций)
+   * 
+   * @param  {object} cvs Основной контекст
+  */
+  update(cvs) {
+    this.context2d.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.image.draw(this.context2d, this.image.xoff, this.image.yoff);
+    this.pattern = cvs.createPattern(this.canvas, this.repeat);
+  }
+}
+
+/**
+ * Добавляет шрифт
+ * 
+ * @param  {string} path Путь к файлу
+ * @param  {string} name Название шрифта
+ * @return {bool}
+*/
+Add.font = async function(path, name) {
   mloaded++;
-  const src = new FontFace(name, `url(${path})`);
-  document.fonts.add(src);
+  const font = new FontFace(name, `url(${path})`);
+  document.fonts.add(font);
   try {
-    let state = await src.load();
+    let state = await font.load();
     loaded++;
     return true;
   }
-  catch(err) { Add.error(err, ERROR.NOFILE); }
-}
-Add.textbox = () => {
-  return {
-    show: () => {
-      if (bind && !bind.check('textbox')) {
-        let input = document.createElement('textarea');
-        input.style.position = 'fixed';
-        input.style.zIndex = -9999;
-        input.style.top = 0;
-        input.style.left = 0;
-        input.id = 'textbox42eng';
-        bind.add('textbox');
-        document.body.appendChild(input);
-        input.focus();
-        input.onblur = () => { Add.textbox.hide(); }
-      }
-    },
-    value: () => {
-      if (bind && bind.check('textbox')) return (document.getElementById('textbox42eng') && document.getElementById('textbox42eng').value) || "";
-      return "";
-    },
-    hide: () => {
-      if (bind && bind.check('textbox')) {
-        if (document.getElementById('textbox42eng')) document.body.removeChild(document.getElementById('textbox42eng'));
-        bind.clear('textbox');
-      }
-    }
-  };
-}
-
-modules.graphics = {
-  title: 'graphics', v: '1.0',
-  init: context2d => {
-    modules.graphics.cvs = context2d;
-    return modules.graphics;
-  },
-  save: func => {
-    let _save = {
-      fillStyle: modules.graphics.cvs.fillStyle, strokeStyle: modules.graphics.cvs.strokeStyle,
-      globalAlpha: modules.graphics.cvs.globalAlpha, lineWidth: modules.graphics.cvs.lineWidth,
-      font: modules.graphics.cvs.font
-     };
-     if (func) func();
-     Object.keys(_save).forEach(key => { modules.graphics.cvs[key] = _save[key]; });
-  },
-  rect: (x, y, w, h, colour='#000', alpha, type='fill', lw) => {
-    modules.graphics.save(() => {
-      if (alpha != undefined) modules.graphics.cvs.globalAlpha = alpha;
-      modules.graphics.cvs.lineWidth = lw || 1;
-      modules.graphics.cvs[type + 'Style'] = colour;
-      modules.graphics.cvs[type + 'Rect'](x, y, w, h);
-    });
-    return { x: x, y: y, w: w, h: h };
-  },
-  round: (x, y, w, h, range, colour='#000', alpha, type='fill', lw) => {
-    modules.graphics.save(() => {
-      if (alpha != undefined) modules.graphics.cvs.globalAlpha = alpha;
-      modules.graphics.cvs.lineWidth = lw || 1;
-      modules.graphics.cvs[type + 'Style'] = colour;
-      modules.graphics.cvs.beginPath();
-        modules.graphics.cvs.lineTo(x, y + range);
-        modules.graphics.cvs.quadraticCurveTo(x, y, x + range, y);
-        modules.graphics.cvs.lineTo(x + range, y);
-        modules.graphics.cvs.lineTo(x + w - range, y);
-        modules.graphics.cvs.quadraticCurveTo(x + w, y, x + w, y + range);
-        modules.graphics.cvs.lineTo(x + w, y + h - range);
-        modules.graphics.cvs.quadraticCurveTo(x + w, y + h, x + w - range, y + h);
-        modules.graphics.cvs.lineTo(x + w - range, y + h);
-        modules.graphics.cvs.lineTo(x + range, y + h);
-        modules.graphics.cvs.quadraticCurveTo(x, y + h, x, y + h - range);
-        modules.graphics.cvs.lineTo(x, y + h - range);
-        modules.graphics.cvs.lineTo(x, y + range);
-        modules.graphics.cvs[type]();
-      modules.graphics.cvs.closePath();
-    });
-    return { x: x, y: y, w: w, h: h };
-  },
-  circle: (x, y, rad, start, end, colour='#000', alpha, type='fill', lw) => {
-    modules.graphics.save(() => {
-      if (alpha != undefined) modules.graphics.cvs.globalAlpha = alpha;
-      modules.graphics.cvs.lineWidth = lw || 1;
-      modules.graphics.cvs[type + 'Style'] = colour;
-      modules.graphics.cvs.beginPath();
-        modules.graphics.cvs.arc(x, y, rad, start, end);
-        modules.graphics.cvs[type]();
-      modules.graphics.cvs.closePath();
-    });
-  },
-  ellipse: (x, y, w, h, colour='#000', alpha, type='fill', lw) => {
-    modules.graphics.save(() => {
-      if (alpha != undefined) modules.graphics.cvs.globalAlpha = alpha;
-      modules.graphics.cvs.lineWidth = lw || 1;
-      modules.graphics.cvs[type + 'Style'] = colour;
-      modules.graphics.cvs.beginPath();
-        modules.graphics.cvs.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
-        modules.graphics.cvs[type]();
-      modules.graphics.cvs.closePath();
-    });
-  },
-  len: (str, size=10, font='Arial') => {
-    let savefont = modules.graphics.cvs.font;
-    modules.graphics.cvs.font = size + 'px ' + (font || 'Arial');
-    let width = modules.graphics.cvs.measureText(modules.language ? modules.language.use(str) : str).width;
-    modules.graphics.cvs.font = savefont;
-    return width;
-  },
-  text: async function(args) {
-    let data = false;
-    modules.graphics.save(() => {
-      let is_width = arguments[3] && typeof(arguments[3]) != 'string', lines = [],
-          text = '', x = arguments[1], y = arguments[2],
-          color = arguments[3 + is_width] || '#000',  alpha = arguments[4 + is_width],
-          fontsize = arguments[5 + is_width] || 10, font = arguments[6 + is_width] || 'Arial',
-          type = arguments[7 + is_width] || 'fill', align = arguments[8 + is_width],
-          linewidth = arguments[9 + is_width], width = is_width ? arguments[3] : -1;
-      if (typeof(arguments[0]) == 'object') {
-        if (arguments[0] instanceof BB) {
-          let save_i = 0;
-          for (let i = 0; i < arguments[0].get().length; i++) {
-            let narr = arguments[0].get().slice(save_i, i), nstr = '';
-            if (narr) {
-              if (narr.forEach) narr.forEach(e => { nstr += e.text; });
-              if (width != -1 && modules.graphics.len(nstr, fontsize, font) >= width) {
-                lines.push(narr);
-                save_i = i;
-              }
-            }
-          }
-          if (save_i < arguments[0].get().length) lines.push(arguments[0].get().slice(save_i));   
-          is_width = true;
-        } else {
-          if (modules.language) text = language.use(arguments[0][0] || arguments[0][0], arguments[0][1]);
-          else text = arguments[0].join(' ');
-        }
-      } else {
-        if (modules.language) text = language.use(arguments[0]);
-        else text = arguments[0];
-      }
-      if (lines.length <= 0 && is_width) {
-        let save_i = 0, sstr = text.split(' ');
-        for (let i = 0; i < sstr.length; i++) {
-          let substr = sstr.slice(save_i, i).join(' ')
-          if (modules.graphics.len(substr, fontsize, font) >= width) {
-            lines.push(substr);
-            save_i = i;
-          }
-        }
-        if (save_i < sstr.length) lines.push(sstr.slice(save_i).join(' '));
-      }
-      if (align) {
-        let parse = align.split('-');
-        modules.graphics.cvs.textAlign = parse[0];
-        modules.graphics.cvs.textBaseline = parse[1];
-        if (is_width) {
-          switch(parse[1]) {
-            case 'middle': y -= lines.length * fontsize * .5; break;
-            case 'bottom': y -= lines.length * fontsize; break;
-          }
-        }
-      }
-      modules.graphics.cvs.globalAlpha = alpha;
-      if (linewidth) modules.graphics.cvs.lineWidth = linewidth;
-      modules.graphics.cvs[`${type}Style`] = color;
-      modules.graphics.cvs.font = `${fontsize}px ${font}`;
-      if (!is_width) modules.graphics.cvs[`${type}Text`](text, x, y);
-      else {
-        let rainbow_offset = 0, is_link = false,
-            left = 0, top = 1;
-        for (let i = 0; i < lines.length; i++) {
-          if (typeof(lines[i]) == 'object') {
-            let linestr = '';
-            for (let j = 0; j < lines[i].length; j++) linestr += lines[i][j].text + ' ';
-            let xx = x;
-            if (align) {
-              let dt = align.split('-');
-              switch (dt[0]) {
-                case 'center':  
-                  xx -= modules.graphics.len(linestr, fontsize, font) * .5;
-                  left = .5;
-                break;
-                case 'right':
-                  xx -= modules.graphics.len(linestr, fontsize, font);
-                  left = -1;
-                break;
-              }
-              switch(dt[1]) {
-                case 'middle': top = .5; break;
-                case 'bottom': top = 1; break;
-              }
-            }
-            for (let j = 0; j < lines[i].length; j++) {
-              let col = color, is_default_draw = true, txt = lines[i][j].text;
-              if (is_link && lines[i][j].tag != 'link') is_link = false;
-              switch(lines[i][j].tag) {
-                case 'col': if (type != 'stroke') col = lines[i][j].value; break;
-                case 'shake':
-                  for (k = 0; k < lines[i][j].text.length; k++) {
-                    let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), fontsize, font) + fontsize * .05 - (fontsize * .1) * Math.random(),
-                        suby = y + i * fontsize + fontsize * .05 - (fontsize * .1) * Math.random();
-                    modules.graphics.text(lines[i][j].text.slice(k, k + 1), subx, suby, col, alpha, fontsize, font, type, 'left-middle', linewidth);
-                  }
-                  is_default_draw = false;
-                break;
-                case 'rainbow': {
-                  for (k = 0; k < lines[i][j].text.length; k++) {
-                    col = cfg.color.rainbow[rainbow_offset++ % cfg.color.rainbow.length];
-                    let subx = xx + modules.graphics.len(lines[i][j].text.slice(0, k), fontsize, font),
-                        suby = y + i * fontsize + fontsize * .1 * Math.sin(current_time * .005 + k);
-                    modules.graphics.text(lines[i][j].text.slice(k, k + 1), subx, suby, col, alpha, fontsize, font, type, 'left-middle', linewidth);
-                  }
-                  is_default_draw = false;
-                } break;
-                case 'link': {
-                  if (modules.math) {
-                    txt = `[${txt}]`;
-                    if (math.collision.mouse.grect(xx, y + i * fontsize - top * fontsize * .5, modules.graphics.len(txt, fontsize, font), fontsize)) {
-                      bind.add('hover');
-                      is_link = true;
-                      if (bind.check('uclick')) {
-                        data = lines[i][j].value;
-                        bind.clear('uclick');
-                      }
-                    }
-                    col = is_link ? cfg.color.link.active : cfg.color.link.default;
-                  }
-                } break;
-                case 'image': {
-                  is_default_draw = false;
-                  txt = ' w ';
-                  if (modules.image && cfg.color.images) {
-                    if (cfg.color.images[lines[i][j].text]) {
-                      cfg.color.images[lines[i][j].text].draw(modules.graphics.cvs, xx + fontsize * .5, y + i * fontsize, fontsize, fontsize);
-                    }
-                  }
-                } break;
-                case 'underline': {
-                  col = lines[i][j].value;
-                  math.vector(xx, y + i * fontsize - top * fontsize * .5 + fontsize, xx + modules.graphics.len(txt, fontsize, font), y + i * fontsize - top * fontsize * .5 + fontsize).draw(modules.graphics.cvs, 'stroke', col);
-                } break;
-              }
-              if (is_default_draw) modules.graphics.text(txt, xx, y + i * fontsize, col, alpha, fontsize, font, type, 'left-middle', linewidth);
-              xx += modules.graphics.len(txt + ' ', fontsize, font);
-            }
-          } else modules.graphics.text(lines[i], x, y + i * fontsize, color, alpha, fontsize, font, type, align, linewidth);
-        }
-      }
-    });
-    return data;
-  },
-  parseBB: str => {
-    let res = str.matchAll(/\[(\w+)(=(#?[\w|\d]+))?\]([\w|\d|\s\!\?\,\:\*\(\)\+\/\.|А-я]+)\[\/(\w+)\]|([\w|\d\s|А-я]+)/gi), arr = [];
-    while(!res.done) {
-      let narr = res.next();
-      if (narr.done) break;
-      if (narr.value[1]) {
-        narr.value[4].split(' ').forEach(e => {
-          if (e != '') {
-            arr.push({
-              text: e,
-              tag: narr.value[1],
-              value: narr.value[3] || true
-            });
-          }
-        });
-      } else {
-        narr.value[0].split(' ').forEach(e => { if (e != '') arr.push({ text: e }); });
-      }
-    }
-    return new BB(arr);
-  }
-}
-
-class BB {
-  constructor(arr) { this.arr = arr; }
-  get() { return this.arr; }
+  catch(err) { return this.error(err, ERROR.NOFILE); }
 }
