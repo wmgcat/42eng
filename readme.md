@@ -4,27 +4,27 @@
 ## Пример
 index.html
 ```html
-	<!doctype html>
-	<html>
-		<head>
-			<style>
-				* {
-					margin: 0;
-					padding: 0;
-				}
-			</style>
-			<script src = './42eng/eng.js' type = 'text/javascript'></script>
-			<script src = './game.js' type = 'text/javascript'></script>
-		</head>
-		<body></body>
-	</html>
+<!doctype html>
+<html>
+	<head>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+			}
+		</style>
+		<script src = './42eng/eng.js' type = 'text/javascript'></script>
+		<script src = './game.js' type = 'text/javascript'></script>
+	</head>
+	<body></body>
+</html>
 ```
 
 game.js
 ```js
-	cfg.debug = true;
-	const canvas = Add.canvas('canvas', async () => {
-		Add.debug('Hello world!');
-	}, () => {});
-	canvas.init().then(() => canvas.update());
+cfg.debug = true;
+const canvas = Add.canvas('canvas', async () => {
+	Add.debug('Hello world!');
+}, () => {});
+canvas.init().then(() => canvas.update());
 ```
