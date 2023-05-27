@@ -1,4 +1,107 @@
-let templateParticle = new Obj('$part');
+/**
+ * @file Модуль частиц
+ * @author wmgcat
+ * @version 1.0
+*/
+
+const particle = new Module('particle', '1.0');
+
+cfg.particle = {
+  gravity: 1, // гравитация частиц
+  max: 50 // максимальное кол-во
+};
+
+/**
+ * @param  {[type]}
+ * @return {[type]}
+*/
+particle.create = props => {
+
+}
+
+particle.emitter = (props, x, y, count) => {
+
+}
+
+
+const templateParticle = new Obj('$part',
+
+  function() {
+    this.data = {};
+    this.listPropertyLive = [];
+    /*
+      {
+        image, // _Image
+        frame, // -1 - random
+        isLife, // set animation to particle life
+        gravity, //number
+        speed, // Move speed
+        life, // Timer
+        alpha: { // number
+          start,
+          end,
+          step
+        },
+        scale: { // number
+          start,
+          end,
+          step
+        },
+        angle: { // number
+          start,
+          end,
+          step
+        }
+      }
+    */
+  },
+
+  function() {
+    if (!this.data.life || this.data.life.check()) return this.destroy();
+
+    for (const key of this.listPropertyLive)
+      this.data[key].start = math.lerp(this.data[key].start, this.data[key].end, this.data[key].step);
+
+    if (!'angle' in this.data) return;
+    this.x += Math.cos(math.torad(this.data.angle.start)) * this.data.speed;
+    this.y += Math.sin(math.torad(this.data.angle.start)) * this.data.speed + (this.data.gravity || 0);
+
+    if (!'gravity' in this.data) return;
+    this.data.gravity = math.lerp(this.data.gravity, 0, cfg.particle.gravity);
+  },
+
+  function(cvs) {
+    if (!this.data.image) return;
+
+    this.data.image.draw(cvs,
+      this.x, this.y,
+      undefined, undefined,
+      this.data.alpha.start,
+      this.data.scale.start, this.data.scale.start,
+      this.data.angle.start
+    );
+  }
+
+);
+
+/**
+ * Добавляет значение, которое будет автоматически изменяться с помощью интерполяции
+ * 
+ * @param {string} key Ключ
+ * @param {number} [start=0] Начало
+ * @param {number} [end=0] Конец
+ * @param {number} [step=0] Шаг [0..1]
+*/
+templateParticle.setProperty = function(key, start=0, end=0, step=0) {
+  this.listPropertyLive.push(key);
+  this.data[key] = {
+    start: start,
+    end: end,
+    step: step
+  };
+}
+
+/*let templateParticle = new Obj('$part');
 
 cfg.maxparticles = 50;
 
@@ -56,3 +159,4 @@ Add.emitter = (params, x, y, count, range, gui) => {
     if (modules.math && math.collision.rect(nx, ny, cameraes[current_camera].x - cfg.grid, cameraes[current_camera].y - cfg.grid, cfg.window.width + cfg.grid * 2, cfg.window.height + cfg.grid * 2)) modules.particle.create(params, nx, ny, gui);
   }
 }
+*/

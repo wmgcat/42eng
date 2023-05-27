@@ -46,6 +46,7 @@ class Byte {
    * @param {string} key Ключ, можно указать несколько
   */
   clear(...args) {
+    if (!args.length) this.key = 0;
     return this.checkKey(key => {
       this.key &=~ this.keys[key];
     }, ...args);
