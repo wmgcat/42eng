@@ -231,7 +231,6 @@ let Add = {
         audio.context.resume();
         Eng.focus(true);
       }
-      if (cfg.setting) cfg.setting.user = true;
       if (!bind) return false;
       if (bind.check('textbox')) return false;
 
@@ -270,7 +269,6 @@ let Add = {
       e.stopImmediatePropagation();
 
       if (modules.audio && !~['touchmove', 'mousemove'].indexOf(e.type)) {
-        cfg.setting.user = true;
         modules.audio.context.resume();
         Eng.focus(true);
       }
