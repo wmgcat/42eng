@@ -10,7 +10,7 @@
  * @param  {number[]} args Точки вектора
  * @return {Vector}
 */
-math.vector = function(args) {
+Add.vector = function(args) {
   let vec = new Vector();
   for (let i = 0; i < arguments.length; i += 2) vec.add(arguments[i], arguments[i + 1]);
   return vec;
