@@ -12,8 +12,11 @@ cfg.particle = {
 };
 
 /**
- * @param  {[type]}
- * @return {[type]}
+ * Создает частицу
+ * 
+ * @param  {object} props Параметры частицы
+ * @param {number} x X
+ * @param {number} y Y
 */
 particle.create = (props, x, y) => {
   const part = Add.object('$part', x, y);
@@ -47,6 +50,15 @@ particle.create = (props, x, y) => {
   }
 }
 
+/**
+ * Создает несколько частиц в радиусе [X:Y]
+ * 
+ * @param  {object} props Параметры частицы
+ * @param  {number} x X
+ * @param  {number} y Y
+ * @param  {number} count Кол-во частиц
+ * @param  {number} range Радиус создания частиц
+ */
 particle.emitter = function (props, x, y, count, range) {
   for (let i = 0; i < count; i++) {
     let nx = x + Math.random() * range * 2 - range, ny = y + Math.random() * range * 2 - range;
@@ -55,7 +67,7 @@ particle.emitter = function (props, x, y, count, range) {
   }
 }
 
-
+// шаблон частицы:
 const templateParticle = new Obj('$part',
   // создание:
   function() {
