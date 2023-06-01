@@ -74,6 +74,7 @@ const Eng = {
     const gen4 = () => ((1 + Math.random()) * 0x10000).toString(16).substring(1);
     return `${gen4()}_${gen4()}.${gen4()}`;
   },
+
   /**
    * Копирует объект
    * 
@@ -85,6 +86,7 @@ const Eng = {
     Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
     return arr;
   },
+
   /** Выводит информацию о проекте */
   console: () => {
     let img = [
@@ -399,7 +401,7 @@ let Add = {
    * @example
    * let obj = Add.object('player', 50, 50);
    * obj.yr += 8;
-   */
+  */
   object: (obj, x=0, y=0, nid=false) => {
     if (typeof(obj) == 'string') obj = templates[obj];
     let id = nid || Eng.id(); 
@@ -420,7 +422,7 @@ let Add = {
    *  cvs.fillStyle = '#fff';
    *  cvs.fillText("Hello world", 10, 10);
    * });
-   */
+  */
   gui: func => gui.push(func),
 
   /**
@@ -430,7 +432,7 @@ let Add = {
    *
    * @example
    * Add.debug("hello world", {x: 5, y: 10}, cfg.build.v);
-   */
+  */
 	debug: function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); },
 
   /**
@@ -474,7 +476,7 @@ let Add = {
    *  for (let i = 0; i < 100000; i++) sum += i ** 2;
    *  Add.debug('result', sum);
    * });
-   */
+  */
   test: async func => {
     let date = Date.now();
     try {
@@ -501,7 +503,7 @@ class Obj {
    * @param  {update} update Функция для обработки данных (зависит от pause)
    * @param  {draw} draw Функция рисования
    * @return {Obj}
-   */
+  */
   constructor(name='undefined', create, update, draw) {
     this.name = name;
     this.x = this.y = this.image_index = 0;
@@ -515,7 +517,7 @@ class Obj {
    * Функция уничтожения объекта
    * 
    * @return {bool}
-   */
+  */
   destroy() {
     if (this.delete) {
       while(!this.delete());
@@ -536,7 +538,7 @@ class Module {
   /**
    * @param  {string} id Название модуля
    * @param  {string} [v=1.0] Версия модуля
-   */
+  */
   constructor(id, v='1.0') {
     this.id = id;
     this.v = v;
