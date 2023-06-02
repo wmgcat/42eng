@@ -35,6 +35,7 @@ particle.create = (props, x, y) => {
         }
       break;
       case 'speed': case 'gravity': case 'islive':
+      case 'no_angle':
         part.data[key] = props[key];
         if (key == 'gravity')
           part.data.save_gravity = props[key];
@@ -78,7 +79,7 @@ const templateParticle = new Obj('$part',
     /*
       {
         image, // _Image
-        isLife, // set animation to particle life
+        no_angle, // Не вращать картинку от angle
         gravity, //number
         speed, // Move speed
         life, // Timer
@@ -125,7 +126,7 @@ const templateParticle = new Obj('$part',
       undefined, undefined,
       this.data.alpha.start,
       this.data.scale.start, this.data.scale.start,
-      this.data.angle.start
+      this.data.angle.start * !this.data.no_angle
     );
   }
 

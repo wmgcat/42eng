@@ -267,9 +267,6 @@ let Add = {
       }
       if (!bind) return false;
 
-      e.preventDefault();
-      e.stopImmediatePropagation();
-
       if (modules.audio && !~['touchmove', 'mousemove'].indexOf(e.type)) {
         modules.audio.context.resume();
         Eng.focus(true);
@@ -287,6 +284,9 @@ let Add = {
             bind.add('dclick');
         break;
       }
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
     }
 
     /** Функция выполняется при изменении окна */
@@ -310,10 +310,12 @@ let Add = {
       addEventListener('contextmenu', e => e.preventDefault(), false);
       addEventListener('resize', funcResize, false);
 
-      for (const event of [
-        'mousedown', 'mouseup', 'mousemove',
-        'touchstart', 'touchend', 'touchmove'
-      ]) addEventListener(event, funcMouseChecker, false);
+      for (const event of ['mousedown', 'mouseup', 'mousemove'])
+        window[`on${event}`] = funcMouseChecker;
+
+      for (const event of ['touchstart', 'touchend', 'touchmove'])
+        canvas[`on${event}`] = funcMouseChecker;
+
 
       if (modules.audio) Eng.focus(true);
       if (!'mediaSession' in navigator) return false;
