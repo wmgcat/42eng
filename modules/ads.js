@@ -63,6 +63,9 @@ ads.init = async function() {
       ads.main = true;
       ads.auth = true;
     break;
+    case 'crazygames':
+      ads.main = window.CrazyGames.SDK;
+    break;
   }
 }
 
@@ -96,6 +99,12 @@ ads.fullscreen = async function() {
             if (ad.result) res(true);
             res(false);
           });
+        });
+      break;
+      case 'crazygames':
+        this.main.ad.requestAd('midgame', {
+          adError: err => rej(err),
+          adFinished: () => res(true)
         });
       break;
     }
@@ -136,6 +145,12 @@ ads.reward = async function() {
           if (data.result) res(true);
           else res(false);
         }).catch(err => rej(err));
+      break;
+      case 'crazygames':
+        this.main.ad.requestAd('rewarded', {
+          adError: err => rej(err),
+          adFinished: () => res(true)
+        });
       break;
     }
   });

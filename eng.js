@@ -205,6 +205,7 @@ let Add = {
   */
   canvas: (init, update, loading) => {
     let canvas = document.getElementById(cfg.window.id);
+    
 
     /**
      * Возвращает ширину и высоту в соответствии с настройками в cfg
@@ -291,6 +292,7 @@ let Add = {
 
     /** Функция выполняется при изменении окна */
     const funcResize = () => {
+      funcRelease();
       [canvas.width, canvas.height] = funcGetCanvasSize();
 
       cvs = canvas.getContext('2d');
@@ -300,7 +302,13 @@ let Add = {
         canvas.imageSmoothingQuality = 'high';
       canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
       canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
+    }
 
+    /** Очистка кеша канваса */
+    const funcRelease = () => {
+      [canvas.width, canvas.height] = [1, 1];
+      cvs = canvas.getContext('2d');
+      cvs && cvs.clearRect(0, 0, 1, 1);
     }
 
     /** Устанавливает события и отключает аудиоплеер */
