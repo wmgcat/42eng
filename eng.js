@@ -395,7 +395,10 @@ let Add = {
     funcReady();
     return {
       id: canvas, cvs: cvs,
-      init: init, update: funcUpdate,
+      init: async () => {
+        loading(0);
+        await init();
+      }, update: funcUpdate,
     }
   },
 
