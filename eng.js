@@ -343,7 +343,6 @@ let Add = {
     */
     const funcUpdate = t => {
       current_time = t;
-
       if (loaded == mloaded) {
         cvs.save();
           cvs.scale(cfg.zoom, cfg.zoom);

@@ -27,5 +27,6 @@ const canvas = Add.canvas('canvas', async () => {
   Add.debug('Hello world!');
 }, () => {});
 
-canvas.init().then(() => canvas.update());
+canvas.init();
+canvas.update();
 ```
