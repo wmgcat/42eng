@@ -13,7 +13,7 @@ const ERROR = {
   NOFILE: 1,
   /** Не поддерживается */
   NOSUPPORT: 2 
-}
+};
 
 /**
  * Конфигурация
@@ -94,7 +94,7 @@ const Eng = {
       `${cfg.title} автор: ${cfg.author}`,
       `версия: ${cfg.build.v}`,
       `ссылка: ${cfg.build.href}`
-    ]
+    ];
     console.log(img.join('\n'));
   }
 };

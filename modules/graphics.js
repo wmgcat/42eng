@@ -182,17 +182,7 @@ graphics.text.drawMultiLine = function(str, x, y, width, color='#000', alpha=1, 
     e.cvs.font = `${fontsize}px ${font}`;
     align = align.split('-');
 
-    const lines = [],
-          parseText = str.split(' ');
-    let offset = 0;
-    for (let i = 0; i < parseText.length; i++) {
-      const line = parseText.slice(offset, i).join(' ');
-      if (this.width(line, fontsize, font) >= width) {
-        lines.push(parseText.slice(offset, i).join(' '));
-        offset = i;
-      }
-    }
-    lines.push(parseText.slice(offset).join(' '));
+    const lines = typeof(str) == 'object' ? str : this.multiLine(str, width, fontsize, font);
 
     let yy = y;
     if (align[0]) e.cvs.textAlign = align[0];
@@ -219,6 +209,32 @@ graphics.text.drawMultiLine = function(str, x, y, width, color='#000', alpha=1, 
 graphics.text.width = function(str, fontsize=cfg.font.size, font=cfg.font.name) {
   graphics.cvs.font = `${fontsize}px ${font}`;
   return graphics.cvs.measureText(str).width;
+}
+
+/**
+ * Разделяет текст на строки
+ * 
+ * @param  {string} str Текст
+ * @param  {number} width Максимальная ширина строки
+ * @param  {number} fontsize Размер шрифта
+ * @param  {string} font Название шрифта
+ * @return {array}
+*/
+graphics.text.multiLine = function(str, width, fontsize=cfg.font.size, font=cfg.font.name) {
+  graphics.cvs.font = `${fontsize}px ${font}`;
+  const lines = [],
+        parseText = str.split(' ');
+  let offset = 0;
+  for (let i = 0; i < parseText.length; i++) {
+    const line = parseText.slice(offset, i).join(' ');
+    if (this.width(line, fontsize, font) >= width) {
+      lines.push(parseText.slice(offset, i).join(' '));
+      offset = i;
+    }
+  }
+  lines.push(parseText.slice(offset).join(' '));
+
+  return lines;
 }
 
 /**
