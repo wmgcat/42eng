@@ -22,19 +22,21 @@ ads.ad_timer.reset(999);
 */
 ads.set = async function(sdk) {
   this.sdk = sdk;
-  let path = '';
-  switch(this.sdk) {
-    case 'yandex': path = 'https://yandex.ru/games/sdk/v2'; break;
-    case 'vk': path = 'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js'; break;
-    case 'crazygames': path = 'https://sdk.crazygames.com/crazygames-sdk-v2.js'; break;
-  }
+  if (sdk) {
+    let path = '';
+    switch(this.sdk) {
+      case 'yandex': path = 'https://yandex.ru/games/sdk/v2'; break;
+      case 'vk': path = 'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js'; break;
+      case 'crazygames': path = 'https://sdk.crazygames.com/crazygames-sdk-v2.js'; break;
+    }
 
-  try {
-    await Add.script(path);
-    await this.init();
-    Add.debug(`${this.sdk} SDK загружен!`);
+    try {
+      await Add.script(path);
+      await this.init();
+      Add.debug(`${this.sdk} SDK загружен!`);
+    }
+    catch(err) { return Add.error(err, ERROR.ADS); }
   }
-  catch(err) { return Add.error(err, ERROR.ADS); }
 }
 
 /**

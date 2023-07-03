@@ -361,7 +361,7 @@ let Add = {
             if (obj.draw) obj.draw(cvs);
           }
         cvs.restore();
-        gui.reverse().forEach(e => e(cvs));
+        gui.forEach(e => e(cvs));
       } else loading(loaded / mloaded, current_time);
       gui = [];
 
