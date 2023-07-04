@@ -43,7 +43,7 @@ let cfg = {
   author: 'wmgcat',
   debug: false,
   build: {
-    v: '1.7.5',
+    v: '1.7.5.2',
     href: 'github.com/wmgcat/42eng'
   },
   grid: 32,
