@@ -13,7 +13,7 @@ const ERROR = {
   NOFILE: 1,
   /** Не поддерживается */
   NOSUPPORT: 2 
-}
+};
 
 /**
  * Конфигурация
@@ -43,7 +43,7 @@ let cfg = {
   author: 'wmgcat',
   debug: false,
   build: {
-    v: '1.7.5',
+    v: '1.7.5.2',
     href: 'github.com/wmgcat/42eng'
   },
   grid: 32,
@@ -94,7 +94,7 @@ const Eng = {
       `${cfg.title} автор: ${cfg.author}`,
       `версия: ${cfg.build.v}`,
       `ссылка: ${cfg.build.href}`
-    ]
+    ];
     console.log(img.join('\n'));
   }
 };
@@ -205,6 +205,7 @@ let Add = {
   */
   canvas: (init, update, loading) => {
     let canvas = document.getElementById(cfg.window.id);
+    
 
     /**
      * Возвращает ширину и высоту в соответствии с настройками в cfg
@@ -291,6 +292,7 @@ let Add = {
 
     /** Функция выполняется при изменении окна */
     const funcResize = () => {
+      funcRelease();
       [canvas.width, canvas.height] = funcGetCanvasSize();
 
       cvs = canvas.getContext('2d');
@@ -300,7 +302,13 @@ let Add = {
         canvas.imageSmoothingQuality = 'high';
       canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
       canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
+    }
 
+    /** Очистка кеша канваса */
+    const funcRelease = () => {
+      [canvas.width, canvas.height] = [1, 1];
+      cvs = canvas.getContext('2d');
+      cvs && cvs.clearRect(0, 0, 1, 1);
     }
 
     /** Устанавливает события и отключает аудиоплеер */
@@ -316,16 +324,7 @@ let Add = {
       for (const event of ['touchstart', 'touchend', 'touchmove'])
         canvas[`on${event}`] = funcMouseChecker;
 
-
       if (modules.audio) Eng.focus(true);
-      if (!'mediaSession' in navigator) return false;
-
-      navigator.mediaSession.setActionHandler('play', () => { })
-      navigator.mediaSession.setActionHandler('pause', () => { })
-      navigator.mediaSession.setActionHandler('seekbackward', () => { })
-      navigator.mediaSession.setActionHandler('seekforward', () => { })
-      navigator.mediaSession.setActionHandler('previoustrack', () => { })
-      navigator.mediaSession.setActionHandler('nexttrack', () => { })
     }
 
     /**
@@ -335,7 +334,6 @@ let Add = {
     */
     const funcUpdate = t => {
       current_time = t;
-
       if (loaded == mloaded) {
         cvs.save();
           cvs.scale(cfg.zoom, cfg.zoom);
@@ -354,7 +352,7 @@ let Add = {
             if (obj.draw) obj.draw(cvs);
           }
         cvs.restore();
-        gui.reverse().forEach(e => e(cvs));
+        gui.forEach(e => e(cvs));
       } else loading(loaded / mloaded, current_time);
       gui = [];
 
@@ -387,7 +385,10 @@ let Add = {
     funcReady();
     return {
       id: canvas, cvs: cvs,
-      init: init, update: funcUpdate,
+      init: async () => {
+        loading(0);
+        await init();
+      }, update: funcUpdate,
     }
   },
 

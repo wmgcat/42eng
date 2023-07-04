@@ -22,19 +22,21 @@ ads.ad_timer.reset(999);
 */
 ads.set = async function(sdk) {
   this.sdk = sdk;
-  let path = '';
-  switch(this.sdk) {
-    case 'yandex': path = 'https://yandex.ru/games/sdk/v2'; break;
-    case 'vk': path = 'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js'; break;
-    case 'crazygames': path = 'https://sdk.crazygames.com/crazygames-sdk-v2.js'; break;
-  }
+  if (sdk) {
+    let path = '';
+    switch(this.sdk) {
+      case 'yandex': path = 'https://yandex.ru/games/sdk/v2'; break;
+      case 'vk': path = 'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js'; break;
+      case 'crazygames': path = 'https://sdk.crazygames.com/crazygames-sdk-v2.js'; break;
+    }
 
-  try {
-    await Add.script(path);
-    await this.init();
-    Add.debug(`${this.sdk} SDK загружен!`);
+    try {
+      await Add.script(path);
+      await this.init();
+      Add.debug(`${this.sdk} SDK загружен!`);
+    }
+    catch(err) { return Add.error(err, ERROR.ADS); }
   }
-  catch(err) { return Add.error(err, ERROR.ADS); }
 }
 
 /**
@@ -62,6 +64,9 @@ ads.init = async function() {
       await vkBridge.send("VKWebAppInit", {});
       ads.main = true;
       ads.auth = true;
+    break;
+    case 'crazygames':
+      ads.main = window.CrazyGames.SDK;
     break;
   }
 }
@@ -96,6 +101,12 @@ ads.fullscreen = async function() {
             if (ad.result) res(true);
             res(false);
           });
+        });
+      break;
+      case 'crazygames':
+        this.main.ad.requestAd('midgame', {
+          adError: err => rej(err),
+          adFinished: () => res(true)
         });
       break;
     }
@@ -136,6 +147,12 @@ ads.reward = async function() {
           if (data.result) res(true);
           else res(false);
         }).catch(err => rej(err));
+      break;
+      case 'crazygames':
+        this.main.ad.requestAd('rewarded', {
+          adError: err => rej(err),
+          adFinished: () => res(true)
+        });
       break;
     }
   });

@@ -10,6 +10,8 @@ audio.stack = {};
 audio.listener = [];
 audio.volumes = {};
 
+if (!cfg) cfg = {}; 
+
 cfg.setting = { // настройки звуков и музыки:
   mute: false, // отключение всех звуков и музыки в игре
   focus: false, // фокус окна (музыка играет только при фокусе)
@@ -20,6 +22,16 @@ cfg.setting = { // настройки звуков и музыки:
 
 const windowAudioContext = window.AudioContext || window.webkitAudioContext || false;
 audio.context = windowAudioContext ? (new windowAudioContext) : false;
+
+// отключение методов навигатора:
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => { });
+  navigator.mediaSession.setActionHandler('pause', () => { });
+  navigator.mediaSession.setActionHandler('seekbackward', () => { });
+  navigator.mediaSession.setActionHandler('seekforward', () => { });
+  navigator.mediaSession.setActionHandler('previoustrack', () => { });
+  navigator.mediaSession.setActionHandler('nexttrack', () => { });
+}
 
 // перезагрузка аудио при переключении вкладок:
 if (audio.context)

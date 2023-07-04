@@ -47,6 +47,9 @@ particle.create = (props, x, y) => {
       case 'yr':
         part.yr = props[key];
       break;
+      case 'gui':
+          part.gui = props[key];
+      break;
     }
   }
 }
@@ -121,6 +124,18 @@ const templateParticle = new Obj('$part',
   function(cvs) {
     if (!this.data.image) return;
 
+    if (this.gui) {
+      Add.gui(cvs => {
+        this.data.image.draw(cvs,
+          this.x, this.y,
+          undefined, undefined,
+          this.data.alpha.start,
+          this.data.scale.start, this.data.scale.start,
+          this.data.angle.start * !this.data.no_angle
+        );
+      });
+      return;
+    }
     this.data.image.draw(cvs,
       this.x, this.y,
       undefined, undefined,
