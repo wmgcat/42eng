@@ -324,16 +324,7 @@ let Add = {
       for (const event of ['touchstart', 'touchend', 'touchmove'])
         canvas[`on${event}`] = funcMouseChecker;
 
-
       if (modules.audio) Eng.focus(true);
-      if (!'mediaSession' in navigator) return false;
-
-      navigator.mediaSession.setActionHandler('play', () => { })
-      navigator.mediaSession.setActionHandler('pause', () => { })
-      navigator.mediaSession.setActionHandler('seekbackward', () => { })
-      navigator.mediaSession.setActionHandler('seekforward', () => { })
-      navigator.mediaSession.setActionHandler('previoustrack', () => { })
-      navigator.mediaSession.setActionHandler('nexttrack', () => { })
     }
 
     /**
