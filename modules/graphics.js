@@ -255,10 +255,19 @@ class Pattern {
   constructor(cvs, image, repeat='repeat') {
     this.canvas = document.createElement('canvas');
     this.context2d = this.canvas.getContext('2d');
+
+    
+
     this.image = image;
     this.canvas.width = this.image.w;
     this.canvas.height = this.image.h;
     this.repeat = repeat;
+
+    this.context2d.imageSmoothingEnabled = cfg.smooth || false;
+    if (cfg.smooth)
+      this.canvas.imageSmoothingQuality = 'high';
+    this.canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
+    this.canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
     this.update(cvs); 
   }
 

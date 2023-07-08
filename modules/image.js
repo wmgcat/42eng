@@ -124,7 +124,7 @@ class _Image {
    * @param  {number} [rotate=0] Поворот
   */
   draw(cvs, x, y, w, h, alpha=1, xscale=1, yscale=1, rotate=0) {
-    if (!this.image || !xscale || !yscale || !alpha) return;
+    if (!this.image || !xscale || !yscale || !alpha || !cvs) return;
 
     const nw = w || this.w, nh = h || this.h,
           xoff = nw / this.w * this.xoff, yoff = nh / this.h * this.yoff;

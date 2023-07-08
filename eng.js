@@ -219,7 +219,7 @@ let Add = {
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
         [width, height] = [width * cfg.pixel, height * cfg.pixel];
-        cfg.zoom = cfg.pixel;
+        //cfg.zoom = cfg.pixel;
       }
       return [width, height];
     }
@@ -354,7 +354,8 @@ let Add = {
         cvs.restore();
         gui.forEach(e => e(cvs));
       } else loading(loaded / mloaded, current_time);
-      gui = [];
+      
+      //gui = [];
 
       if (!bind) {
         if (modules.byte) {
