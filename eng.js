@@ -354,7 +354,6 @@ let Add = {
         cvs.restore();
         gui.forEach(e => e(cvs));
       } else loading(loaded / mloaded, current_time);
-      gui = [];
 
       if (!bind) {
         if (modules.byte) {
