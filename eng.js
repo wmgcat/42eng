@@ -32,11 +32,15 @@ const ERROR = {
  * @property {number} [window.width=800] Ширина
  * @property {number} [window.height=600] Высота
  * @property {bool} [window.fullscreen=true] Полноэкранный режим
+ * @property {number} [window.fps=60] Максимальное кол-во кадров в секунду, если -1, то ограничений нет
  * @property {string} [modulepath=./modules/] Путь до папки с модулями
  * @property {string} datapath Обрезание путей, для сокращения названий
  * @property {bool} [sort=true] Режим сортировки
  * @property {bool} [smooth=false] Режим сглаживания
  * @property {number} [pixel=window.devicePixelRatio] Пиксель
+ * @property {object} loading Экран загрузки
+ * @property {string} [loading.background=#1e0528] Цвет фона
+ * @property {string} [loading.color=#9664e6] Цвет полоски загрузки
 */
 let cfg = {
   title: '42eng.js',
@@ -52,13 +56,18 @@ let cfg = {
     id: 'game',
     width: 800,
     height: 600,
-    fullscreen: true
+    fullscreen: true,
+    fps: -1
   },
   modulepath: './modules/',
   datapath: '',
   sort: true,
   smooth: false,
-  pixel: window.devicePixelRatio
+  pixel: window.devicePixelRatio,
+  loading: {
+    background: '#1e0528',
+    color: '#9664e6'
+  }
 };
 
 /**
@@ -104,6 +113,7 @@ let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
 let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}}, bind = false;
+let lastFrame = window.performance.now();
 
 /**
  * Добавление функционала
@@ -205,7 +215,7 @@ let Add = {
   */
   canvas: (init, update, loading) => {
     let canvas = document.getElementById(cfg.window.id);
-    
+    const fpsPerSec = 1000 / cfg.window.fps;
 
     /**
      * Возвращает ширину и высоту в соответствии с настройками в cfg
@@ -335,7 +345,13 @@ let Add = {
     const funcUpdate = t => {
       window.requestAnimationFrame(funcUpdate);
 
-      current_time = t;
+      current_time++;
+
+      const now = window.performance.now(),
+            passed = now - lastFrame;
+
+      if (cfg.window.fps != -1 && passed < fpsPerSec) return;
+      lastFrame = now - (passed % fpsPerSec);
 
       // обработка нажатий (требуется модуль byte):
       if (modules.byte && keylocks) {
@@ -352,69 +368,65 @@ let Add = {
       // экран загрузки:
       if (loaded < mloaded) {
         if (!loading) {
-          cvs.fillStyle = '#1e0528';
+          cvs.fillStyle = cfg.loading.background;
           cvs.fillRect(0, 0, canvas.width, canvas.height);
 
           const percent = loaded / mloaded, w = canvas.width * .6;
-          const x = (canvas.id.width - w) * .5, y = (canvas.id.height - cfg.grid) * .5;
+          const x = (canvas.width - w) * .5, y = (canvas.height - cfg.grid) * .5;
 
-          cvs.fillStyle = cvs.strokeStyle = '#9664e6';
+          cvs.fillStyle = cvs.strokeStyle = cfg.loading.color;
           
           cvs.strokeRect(x, y, w, cfg.grid);
           cvs.fillRect(x + 2, y + 2, (w - 4) * percent, cfg.grid - 4);
-          return;
-        }
-        loading(loaded / mloaded, current_time);
-        return;
+        } else loading(loaded / mloaded, current_time);
+      } else {
+        cvs.save();
+
+          cvs.scale(cfg.zoom, cfg.zoom);
+          cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+
+          update(current_time);
+
+          // сортировка:
+          let stack = Object.values(objects);
+          if (cfg.sort)
+            stack = stack.sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
+
+          // обработка всех объектов:
+          for (const obj of stack) {
+            if (!obj) continue;
+
+            // совместимость со старыми версиями:
+            if (obj.create && typeof(obj.create) == 'function') {
+              obj.__funcCreate = obj.create;
+              delete obj.create;
+            }
+            if (obj.update && typeof(obj.update) == 'function') {
+              obj.__funcUpdate = obj.update;
+              delete obj.update;
+            }
+            if (obj.draw && typeof(obj.draw) == 'function') {
+              obj.__funcDraw = obj.draw;
+              delete obj.draw;
+            }
+
+            if (!editor && !obj.__isCreate && obj.__funcCreate) {
+              obj.__funcCreate();
+              obj.__isCreate = true;
+            }
+            if (!pause && obj.__funcUpdate) obj.__funcUpdate(current_time);
+            if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
+          }
+
+        cvs.restore();
+
+        // отрисовка интерфейсов:
+        gui.forEach(func => func(cvs));
+
+        canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
+        bind.clear('hover', 'dclick', 'uclick');
+
       }
-
-      cvs.save();
-
-        cvs.scale(cfg.zoom, cfg.zoom);
-        cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
-
-        update(current_time);
-
-        // сортировка:
-        let stack = Object.values(objects);
-        if (cfg.sort)
-          stack = stack.sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
-
-        // обработка всех объектов:
-        for (const obj of stack) {
-          if (!obj) continue;
-
-          // совместимость со старыми версиями:
-          if (obj.create && typeof(obj.create) == 'function') {
-            obj.__funcCreate = obj.create;
-            delete obj.create;
-          }
-          if (obj.update && typeof(obj.update) == 'function') {
-            obj.__funcUpdate = obj.update;
-            delete obj.update;
-          }
-          if (obj.draw && typeof(obj.draw) == 'function') {
-            obj.__funcDraw = obj.draw;
-            delete obj.draw;
-          }
-
-          if (!editor && !obj.__isCreate && obj.__funcCreate) {
-            obj.__funcCreate();
-            obj.__isCreate = true;
-          }
-          if (!pause && obj.__funcUpdate) obj.__funcUpdate(current_time);
-          if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
-        }
-
-      cvs.restore();
-
-      // отрисовка интерфейсов:
-      gui.forEach(func => func(cvs));
-
-
-
-      canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
-      bind.clear('hover', 'dclick', 'uclick');
     }
 
     if (!canvas) {
@@ -432,7 +444,8 @@ let Add = {
     return {
       id: canvas, cvs: cvs,
       init: async () => {
-        loading(0);
+        if (loading)
+          loading(0);
         await init();
       }, update: funcUpdate,
     }
@@ -511,33 +524,6 @@ let Add = {
         await promise;
       }
     } catch(err) { return this.error(err, ERROR.NOFILE); }
-  },
-
-  /**
-   * Функция для тестирования время работы функций
-   * 
-   * @param  {function} func Функция для теста
-   * @return {bool}
-   *
-   * @example
-   * Add.test(() => {
-   *  let sum = 0;
-   *  for (let i = 0; i < 100000; i++) sum += i ** 2;
-   *  Add.debug('result', sum);
-   * });
-  */
-  test: async func => {
-    let date = Date.now();
-    try {
-      await func();
-      Add.debug('function is done!', `${(Date.now() - date) / 1000}s`);
-      return true;
-    }
-    catch (err) {
-      Add.error(err, 0);
-      Add.debug('timeout', `${(Date.now() - date) / 1000}s`);
-      return false;
-    }
   }
 }
 
