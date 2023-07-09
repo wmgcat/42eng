@@ -105,13 +105,27 @@ const Eng = {
       `ссылка: ${cfg.build.href}`
     ];
     console.log(img.join('\n'));
+  },
+
+  /**
+   * Проверяет есть ли модули в проекте
+   * 
+   * @param  {...string} args Названия модулей
+   * @return {bool}
+  */
+  exist(...args) {
+    for (const module of args)
+      if (typeof(modules[module]) === 'undefined')
+        return false;
+
+    return true;
   }
 };
 
 let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
-let keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
+let keylocks = {}, grid = {}, levelMemory = {}, objects = [], templates = {}, images = {};
 let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}}, bind = false;
 let lastFrame = window.performance.now();
 
@@ -394,12 +408,11 @@ let Add = {
           update(current_time);
 
           // сортировка:
-          let stack = Object.values(objects);
           if (cfg.sort)
-            stack = stack.sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
+            objects = objects.sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
 
           // обработка всех объектов:
-          for (const obj of stack) {
+          for (const obj of objects) {
             if (!obj) continue;
 
             // совместимость со старыми версиями:
@@ -473,11 +486,32 @@ let Add = {
   object: (obj, x=0, y=0, nid=false) => {
     if (typeof(obj) == 'string') obj = templates[obj];
     let id = nid || Eng.id(); 
+    
+    let i = objects.findIndex(e => !e);
+    if (~i) {
+      objects[i] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
+      objects[i].x = x;
+      objects[i].y = y;
+      objects[i].id = id;
+    } else {
+      i = objects.push(Object.assign(Object.create(Object.getPrototypeOf(obj)), obj)) - 1;
+      objects[i].x = x;
+      objects[i].y = y;
+      objects[i].id = id;
+    }
+
+
+    return objects[i];
+    
+    /*
     objects[id] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
     objects[id].x = x;
     objects[id].y = y;
     objects[id].id = id;
-    return objects[id];
+
+    */
+   
+    //return objects[id];
   },
 
   /**
@@ -569,12 +603,25 @@ class Obj {
    * @return {bool}
   */
   destroy() {
+    
+    const i = objects.findIndex(e => e == this);
+
     if (this.delete) {
       while(!this.delete());
-      delete objects[this.id];
+      
+      if (~i)
+        objects[i] = false;
+
+      //delete this;
+
+      //delete objects[this.id];
       return true;
     } else {
-      delete objects[this.id];
+
+      if (~i)
+        objects[i] = false;
+      //delete this;
+      //delete objects[this.id];
       return true;
     }
   }
