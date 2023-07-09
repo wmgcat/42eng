@@ -333,41 +333,88 @@ let Add = {
      * @param  {number} t Кол-во секунд с запуска
     */
     const funcUpdate = t => {
-      current_time = t;
-      if (loaded == mloaded) {
-        cvs.save();
-          cvs.scale(cfg.zoom, cfg.zoom);
-          cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
-          update(current_time);
-          for (const id of Object.keys(objects)
-            .sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y))) {
-            
-            const obj = objects[id];
-            if (!obj) continue;
-            if (!editor && !obj.is_create && obj.create) {
-              obj.create();
-              obj.is_create = true;
-            }
-            if (!pause && obj.update) obj.update(current_time);
-            if (obj.draw) obj.draw(cvs);
-          }
-        cvs.restore();
-        gui.forEach(e => e(cvs));
-      } else loading(loaded / mloaded, current_time);
+      window.requestAnimationFrame(funcUpdate);
 
-      if (!bind) {
-        if (modules.byte) {
-          let arr = [];
-          for (key in keylocks) arr.push(keylocks[key]);
+      current_time = t;
+
+      // обработка нажатий (требуется модуль byte):
+      if (modules.byte && keylocks) {
+        if (!bind) {
+          const arr = [];
+          for (const key in keylocks)
+            arr.push(keylocks[key]);
           arr.push('uclick', 'dclick', 'hover', 'textbox');
+
           bind = new Byte(...arr);
         }
-      } else {
-        canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
-        bind.clear('hover', 'dclick', 'uclick');
       }
 
-      window.requestAnimationFrame(funcUpdate);
+      // экран загрузки:
+      if (loaded < mloaded) {
+        if (!loading) {
+          cvs.fillStyle = '#1e0528';
+          cvs.fillRect(0, 0, canvas.width, canvas.height);
+
+          const percent = loaded / mloaded, w = canvas.width * .6;
+          const x = (canvas.id.width - w) * .5, y = (canvas.id.height - cfg.grid) * .5;
+
+          cvs.fillStyle = cvs.strokeStyle = '#9664e6';
+          
+          cvs.strokeRect(x, y, w, cfg.grid);
+          cvs.fillRect(x + 2, y + 2, (w - 4) * percent, cfg.grid - 4);
+          return;
+        }
+        loading(loaded / mloaded, current_time);
+        return;
+      }
+
+      cvs.save();
+
+        cvs.scale(cfg.zoom, cfg.zoom);
+        cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+
+        update(current_time);
+
+        // сортировка:
+        let stack = Object.values(objects);
+        if (cfg.sort)
+          stack = stack.sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
+
+        // обработка всех объектов:
+        for (const obj of stack) {
+          if (!obj) continue;
+
+          // совместимость со старыми версиями:
+          if (obj.create && typeof(obj.create) == 'function') {
+            obj.__funcCreate = obj.create;
+            delete obj.create;
+          }
+          if (obj.update && typeof(obj.update) == 'function') {
+            obj.__funcUpdate = obj.update;
+            delete obj.update;
+          }
+          if (obj.draw && typeof(obj.draw) == 'function') {
+            obj.__funcDraw = obj.draw;
+            delete obj.draw;
+          }
+
+          if (!editor && !obj.__isCreate && obj.__funcCreate) {
+            obj.__funcCreate();
+            obj.__isCreate = true;
+          }
+          if (!pause && obj.__funcUpdate) obj.__funcUpdate(current_time);
+          if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
+        }
+
+      cvs.restore();
+
+      // отрисовка интерфейсов:
+      gui.forEach(func => func(cvs));
+
+
+
+      canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
+      bind.clear('hover', 'dclick', 'uclick');
     }
 
     if (!canvas) {
@@ -509,9 +556,10 @@ class Obj {
   constructor(name='undefined', create, update, draw) {
     this.name = name;
     this.x = this.y = this.image_index = 0;
-    this.create = create;
-    this.update = update;
-    this.draw = draw;
+    this.__funcCreate = create;
+    this.__funcUpdate = update;
+    this.__funcDraw = draw;
+
     templates[name] = this;
   }
 
