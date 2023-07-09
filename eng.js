@@ -186,11 +186,17 @@ let Add = {
    * 
    * @param  {string} msg Текст ошибки
    * @param  {number} [code=0] Код ошибки
+   * @return {string}
    *
    * @example
    * Add.error("Файл не найден!", ERROR.NOFILE);
   */
-  error: (msg, code=0) => console.error('ERROR!', msg, code),
+  error: (msg, code=0) => {
+    const str = `[CODE ${code}]: ${msg}`;
+    
+    console.error(str);
+    return str;
+  },
 
   /**
    * @param  {function} init Выполняется только один раз
@@ -491,11 +497,19 @@ let Add = {
    * Выводит в консоль информацию только при включенном cfg.debug
    * 
    * @param  {any} arg Информация, можно перечислять через запятую
+   * @return {string|undefined}
    *
    * @example
    * Add.debug("hello world", {x: 5, y: 10}, cfg.build.v);
   */
-	debug: function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); },
+	debug: function(arg) {
+    if (cfg.debug) {
+      const str = `[DEBUG]: ${[...arguments].join(' ')}`;
+      
+      console.log(str);
+      return str;
+    }
+  },
 
   /**
    * Загружает модули из папки по умолчанию (cfg.modulepath)
