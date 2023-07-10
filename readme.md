@@ -30,3 +30,6 @@ const canvas = Add.canvas('canvas', async () => {
 canvas.init();
 canvas.update();
 ```
+
+## Другие примеры:
+* examples/simple-project — Простой проект, показывает как использовать модуль graphics и math;
