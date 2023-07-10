@@ -34,4 +34,4 @@ canvas.update();
 ### Другие примеры
 | Пример | Описание |
 | --- | --- |
-| [https://github.com/wmgcat/42eng/tree/dev/examples/simple-project](examples/simple-project) | Простой проект, показывает как использовать модуль graphics и math |
+| (examples/simple-project)[https://github.com/wmgcat/42eng/tree/dev/examples/simple-project] | Простой проект, показывает как использовать модуль graphics и math |
