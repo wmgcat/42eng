@@ -47,11 +47,10 @@
           gr.rect(0, 0, w, h, '#000');
           
           const speed = .01,
-                step = 45;
-          for (let i = 0; i < 360 / step; i++) {
-            const x = w * .5 + Math.cos(t * speed + math.torad(i * step)) * w * .25,
-                  y = h * .5 + Math.sin(t * speed + math.torad(i * step)) * h * .2,
-                  size = math.clamp(Math.sin(t * speed + math.torad(i * step)) * cfg.grid, cfg.grid * .25, cfg.grid);
+                step = math.torad(45);
+          for (let i = 0; i < 360 / math.todeg(step); i++) {
+            const dir = t * speed + i * step, x = w * .5 + Math.cos(dir) * w * .25,
+                  y = h * .5 + Math.sin(dir) * h * .2, size = math.clamp(Math.sin(dir) * cfg.grid, cfg.grid * .25, cfg.grid);
             gr.circle(x, y, size, 0, Math.PI * 2, colors[i % colors.length]);
           }
 
