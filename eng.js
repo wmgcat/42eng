@@ -442,6 +442,7 @@ let Add = {
         // отрисовка интерфейсов:
         gui.forEach(func => func(cvs));
 
+        if (!bind) return;
         canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
         bind.clear('hover', 'dclick', 'uclick');
 
