@@ -44,10 +44,10 @@ search.id = (...args) => {
 search.search = (...args) => (
   objects.filter(x => {
     for (const name of args) {
-      if (name == 'all' || objects[x].name == name)
+      if (name == 'all' || x.name == name)
         return true;
     }
-  }).map(x => objects[x])
+  })
 );
 
 /**

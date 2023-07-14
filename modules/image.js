@@ -8,7 +8,7 @@
  * Модуль изображений
  * @namespace
 */
-const image = new Module('image', '1.2');
+const image = new Module('image', '1.3');
 
 /**
  * Добавляет объект _Image, который можно использовать для отрисовки
@@ -28,6 +28,24 @@ const image = new Module('image', '1.2');
 image.create = (id, left, top, w, h, xoff, yoff, frames, speed) => (
   new _Image(id, left, top, w, h, xoff, yoff, frames, speed)
 );
+
+/**
+ * Возвращает DataURL
+ *
+ * @param {string} id Ключ к изображению
+ * @return {string}
+*/
+image.getDataURL = id => {
+  const _canvas = document.createElement('canvas'),
+        _cvs = _canvas.getContext('2d');
+
+  _canvas.height = images[id].naturalHeight;
+  _canvas.width = images[id].naturalWidth;
+
+  _cvs.drawImage(images[id], 0, 0);
+
+  return _canvas.toDataURL('image/png');
+}
 
 /**
  * Добавляет изображения в объект image
@@ -66,6 +84,31 @@ Add.image = async function(...args) {
     }
     return id;
   } catch(err) { return this.error(err, ERROR.NOFILE); }
+}
+
+/**
+ * Загружает изображение по URL
+ * 
+ * @param  {string} id Ключ по которому будет храниться изображение
+ * @param  {string} url Ссылка на изображение
+ * @return {string}
+*/
+Add.imageURL = async function(id, url) {
+  mloaded++;
+  const promise = new Promise((res, rej) => {
+    images[id] = new Image();
+    images[id].src = url;
+    images[id].onload = () => {
+      loaded++;
+      res(id);
+    }
+    images[id].onerror = err => rej(err);
+  });
+  try {
+    const str = await promise;
+    return str;
+  }
+  catch(err) { return this.error(err, ERROR.NOFILE); }
 }
 
 /**
