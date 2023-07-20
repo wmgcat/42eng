@@ -14,9 +14,10 @@ index.html
       }
     </style>
     <script src = './42eng/eng.js' type = 'text/javascript'></script>
-    <script src = './game.js' type = 'text/javascript'></script>
   </head>
-  <body></body>
+  <body>
+    <script src = './game.js' type = 'text/javascript'></script>
+  </body>
 </html>
 ```
 
