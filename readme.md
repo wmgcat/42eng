@@ -12,6 +12,7 @@ index.html
         margin: 0;
         padding: 0;
       }
+      body { overflow: hidden; }
     </style>
     <script src = './42eng/eng.js' type = 'text/javascript'></script>
   </head>
