@@ -11,6 +11,21 @@ cfg.particle = {
   max: 50 // максимальное кол-во
 };
 
+particle.draw = function(cvs) {
+  for (const part of search.search('$part').filter(e => e.gui == true)) {
+    if (!part.data.image) continue;
+
+    part.data.image.draw(cvs,
+      part.x, part.y,
+      undefined, undefined,
+      part.data.alpha.start,
+      part.data.scale.start, part.data.scale.start,
+      part.data.angle.start * !part.data.no_angle
+    );
+  }
+}
+
+
 /**
  * Создает частицу
  * 
@@ -48,7 +63,8 @@ particle.create = (props, x, y) => {
         part.yr = props[key];
       break;
       case 'gui':
-          part.gui = props[key];
+          if (props[key])
+            part.gui = props[key]
       break;
     }
   }
@@ -125,7 +141,7 @@ const templateParticle = new Obj('$part',
     if (!this.data.image) return;
 
     if (this.gui) {
-      Add.gui(cvs => {
+      /*this.gui = function(cvs) {
         this.data.image.draw(cvs,
           this.x, this.y,
           undefined, undefined,
@@ -133,7 +149,16 @@ const templateParticle = new Obj('$part',
           this.data.scale.start, this.data.scale.start,
           this.data.angle.start * !this.data.no_angle
         );
-      });
+      }*/
+      /*Add.gui(cvs => {
+        this.data.image.draw(cvs,
+          this.x, this.y,
+          undefined, undefined,
+          this.data.alpha.start,
+          this.data.scale.start, this.data.scale.start,
+          this.data.angle.start * !this.data.no_angle
+        );
+      });*/
       return;
     }
     this.data.image.draw(cvs,

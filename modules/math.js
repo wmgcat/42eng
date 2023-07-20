@@ -135,7 +135,7 @@ math.collision.mouse = {};
  * @param  {number} [h=w] Высота
  * @return {bool}
  */
-math.collision.mouse.rect = (x, y, w, h) => math.collision.rect(mouse.x, mouse.y, x, y, w, h || w);
+math.collision.mouse.rect = (x, y, w, h) => math.collision.rect(mouse.x, mouse.y, x * cfg.pixel, y * cfg.pixel, w * cfg.pixel, (h || w) * cfg.pixel);
 
 /**
  * Проверка столкновений мышки с прямоугольником, относительно камеры

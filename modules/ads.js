@@ -250,6 +250,124 @@ ads.feedback = async function() {
 }
 
 /**
+ * Покупки
+*/
+ads.pay = {};
+
+/**
+ * Инициализация покупок
+*/
+ads.pay.init = async function() {
+  if (!ads.main) return;
+
+  const promise = new Promise((res, rej) => {
+    switch(ads.sdk) {
+      case 'yandex':
+        ads.main.getPayments({ signed: false }).then(_pay => {
+          ads.pay.main = _pay;
+          res(true);
+        }).catch(e => rej(e));
+      break;
+    }
+  });
+
+  try {
+    const state = await promise;
+    return state;
+  }
+  catch(err) {
+    return Add.error(err, ERROR.ADS);
+  }
+}
+
+/**
+ * Покупка предмета по ID
+ * 
+ * @param  {string} id ID предмета
+ * @return {bool}
+*/
+ads.pay.set = async function(id) {
+  if (!ads.main || !ads.pay.main) return;
+
+  const promise = new Promise((res, rej) => {
+    switch(ads.sdk) {
+      case 'yandex':
+        ads.pay.main.purchase({id: id}).then(() => {
+          res(true);
+        }).catch(e => res(false));
+      break;
+      default:
+        res(false);
+      break;
+    }
+  });
+
+  try {
+    const state = await promise;
+    return state;
+  }
+  catch(err) {
+    return Add.error(err, ERROR.ADS);
+  }
+}
+
+/**
+ * Получение списка покупок
+ *
+ * @return {array}
+*/
+ads.pay.get = async function() {
+  if (!ads.main || !ads.pay.main) return;
+
+  const promise = new Promise((res, rej) => {
+    switch(ads.sdk) {
+      case 'yandex':
+        ads.pay.main.getPurchases().then(list => res(list)).catch(e => res([]));
+      break;
+      default:
+        rej([]);
+      break;
+    }
+  });
+
+  try {
+    const state = await promise;
+    return state;
+  }
+  catch(err) {
+    return Add.error(err, ERROR.ADS);
+  }
+}
+
+/**
+ * Получение всех товаров, которые можно купить
+ * 
+ * @return {array}
+*/
+ads.pay.getAll = async function() {
+  if (!ads.main || !ads.pay.main) return;
+
+  const promise = new Promise((res, rej) => {
+    switch(ads.sdk) {
+      case 'yandex':
+        ads.pay.main.getCatalog().then(list => res(list)).catch(e => res([]));
+      break;
+      default:
+        rej([]);
+      break;
+    }
+  });
+
+  try {
+    const state = await promise;
+    return state;
+  }
+  catch(err) {
+    return Add.error(err, ERROR.ADS);
+  }
+}
+
+/**
  * Облачные сохранения
 */
 ads.cloud = {};
