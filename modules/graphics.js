@@ -17,11 +17,28 @@ cfg.font = {
 
 /**
  * Возвращает модуль для отрисовки графики
- * @param {object} ctx Контекст холста на котором будет производиться отрисовка
- * @returns {object} this Возвращает себя
+ * @param {object} cvs Контекст холста на котором будет производиться отрисовка
+ * @return {object} this Возвращает себя
 */
-graphics.create = function(ctx) {
-  this.cvs = ctx;
+graphics.create = function(cvs, vertex, fragment) {
+  this.cvs = cvs;
+  this.program = Add.program(this.cvs, vertex, fragment);
+
+  this.position = this.cvs.getAttribLocation(this.program, 'a_position');
+  this.resolution = this.cvs.getUniformLocation(this.program, 'u_resolution');
+  this.color = this.cvs.getUniformLocation(this.program, 'u_color');
+  this.posBuffer = this.cvs.createBuffer();
+
+  this.cvs.bindBuffer(this.cvs.ARRAY_BUFFER, this.posBuffer);
+
+  this.params = {
+    size: 2,
+    type: this.cvs.FLOAT,
+    normalize: false,
+    stride: 0,
+    offset: 0
+  };
+
   return this;
 }
 
@@ -35,11 +52,11 @@ graphics.create = function(ctx) {
  * @param {number} linewidth=1 Ширина линии, работает если указан stroke в заполнении
 */
 graphics.save = function(func, color='#000', alpha=1, type=types.fill, linewidth=1) {
-  if (type == types.stroke) this.cvs.lineWidth = linewidth;
+  /*if (type == types.stroke) this.cvs.lineWidth = linewidth;
   if (alpha != 1) this.cvs.globalAlpha = alpha;
   this.cvs[`${type}Style`] = color;
   func(this);
-  if (alpha != 1) this.cvs.globalAlpha = 1;
+  if (alpha != 1) this.cvs.globalAlpha = 1;*/
 }
 
 /**
@@ -56,8 +73,41 @@ graphics.save = function(func, color='#000', alpha=1, type=types.fill, linewidth
 */
 graphics.rect = function(x, y, w, h, color='#000',
                          alpha=1, type=types.fill, linewidth=1) {
-  this.save(e => e.cvs[`${type}Rect`](x, y, w, h),
-            color, alpha, type, linewidth);
+  //this.draw(function() {
+  this.cvs.useProgram(this.program);
+  this.cvs.enableVertexAttribArray(this.position);
+  
+  this.cvs.bufferData(this.cvs.ARRAY_BUFFER, new Float32Array(
+    x, y,
+    x + w, y,
+    x, y + h,
+    x, y + h,
+    x + w, y,
+    x + w, y + h
+  ), this.cvs.STATIC_DRAW);
+
+  this.cvs.vertexAttribPointer(this.position, 2, this.cvs.FLOAT, false, 0, 0);
+  this.cvs.uniform2f(this.resolution, this.cvs.canvas.width, this.cvs.canvas.height);
+  this.cvs.uniform4fv(this.color, [1, 0, 1, 1]);
+
+  this.cvs.drawArrays(this.cvs.TRIANGLES, 0, 6);
+
+    
+  //});
+  /*var x1 = x;
+  var x2 = x + width;
+  var y1 = y;
+  var y2 = y + height;
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+     x1, y1,
+     x2, y1,
+     x1, y2,
+     x1, y2,
+     x2, y1,
+     x2, y2,
+  ]), gl.STATIC_DRAW);*/
+  /*this.save(e => e.cvs[`${type}Rect`](x, y, w, h),
+            color, alpha, type, linewidth);*/
 }
 
 /**
@@ -75,7 +125,7 @@ graphics.rect = function(x, y, w, h, color='#000',
 */
 graphics.round = function(x, y, w, h, range, color='#000',
                           alpha=1, type=types.fill, linewidth=1) {
-  this.save(e => {
+  /*this.save(e => {
     e.cvs.beginPath();
       try {
         e.cvs.roundRect(x, y, w, h, range);
@@ -85,7 +135,7 @@ graphics.round = function(x, y, w, h, range, color='#000',
       }
       e.cvs[type]();
     e.cvs.closePath();
-  }, color, alpha, type, linewidth);
+  }, color, alpha, type, linewidth);*/
 }
 
 /**
@@ -103,13 +153,13 @@ graphics.round = function(x, y, w, h, range, color='#000',
 */
 graphics.circle = function(x, y, range, start=0, end=Math.PI*2, color='#000',
                            alpha=1, type=types.fill, linewidth=1) {
-  this.save(e => {
+  /*this.save(e => {
     e.cvs.beginPath();
       
       e.cvs.arc(x, y, range, start, end);
       e.cvs[type]();
     e.cvs.closePath();
-  }, color, alpha, type, linewidth);
+  }, color, alpha, type, linewidth);*/
 }
 
 /**
@@ -126,12 +176,12 @@ graphics.circle = function(x, y, range, start=0, end=Math.PI*2, color='#000',
 */
 graphics.ellipse = function(x, y, w, h, color='#000',
                             alpha=1, type=types.fill, linewidth=1) {
-  this.save(e => {
+  /*this.save(e => {
     e.cvs.beginPath();
       e.cvs.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
       e.cvs[type]();
     e.cvs.closePath();
-  }, color, alpha, type, linewidth);
+  }, color, alpha, type, linewidth);*/
 }
 
 /**
@@ -157,13 +207,13 @@ graphics.text = {}
 */
 graphics.text.draw = function(str, x, y, color='#000', alpha=1, fontsize=cfg.font.size,
                               font=cfg.font.name, align='left-top', type=types.fill, linewidth=1) {
-  graphics.save(e => {
+  /*graphics.save(e => {
     e.cvs.font = `${fontsize}px ${font}`;
     align = align.split('-');
     if (align[0]) e.cvs.textAlign = align[0];
     if (align[1]) e.cvs.textBaseline = align[1];
     e.cvs[`${type}Text`](str, x, y);
-  }, color, alpha, type, linewidth);
+  }, color, alpha, type, linewidth);*/
 }
 
 /**
@@ -183,7 +233,7 @@ graphics.text.draw = function(str, x, y, color='#000', alpha=1, fontsize=cfg.fon
  */
 graphics.text.drawMultiLine = function(str, x, y, width, color='#000', alpha=1, fontsize=cfg.font.size,
                         font=cfg.font.name, align='left-top', type=types.fill, linewidth=1) {
-  graphics.save(e => {
+  /*graphics.save(e => {
     e.cvs.font = `${fontsize}px ${font}`;
     align = align.split('-');
 
@@ -200,7 +250,7 @@ graphics.text.drawMultiLine = function(str, x, y, width, color='#000', alpha=1, 
     for (let i = 0; i < lines.length; i++)
       e.cvs[`${type}Text`](lines[i], x, yy + fontsize * i);
 
-  }, color, alpha, type, linewidth);
+  }, color, alpha, type, linewidth);*/
 }
 
 /**
@@ -212,8 +262,8 @@ graphics.text.drawMultiLine = function(str, x, y, width, color='#000', alpha=1, 
  * @return {number}
 */
 graphics.text.width = function(str, fontsize=cfg.font.size, font=cfg.font.name) {
-  graphics.cvs.font = `${fontsize}px ${font}`;
-  return graphics.cvs.measureText(str).width;
+  /*graphics.cvs.font = `${fontsize}px ${font}`;
+  return graphics.cvs.measureText(str).width;*/
 }
 
 /**
@@ -226,7 +276,7 @@ graphics.text.width = function(str, fontsize=cfg.font.size, font=cfg.font.name) 
  * @return {array}
 */
 graphics.text.multiLine = function(str, width, fontsize=cfg.font.size, font=cfg.font.name) {
-  graphics.cvs.font = `${fontsize}px ${font}`;
+  /*graphics.cvs.font = `${fontsize}px ${font}`;
   const lines = [],
         parseText = str.split(' ');
   let offset = 0;
@@ -239,7 +289,7 @@ graphics.text.multiLine = function(str, width, fontsize=cfg.font.size, font=cfg.
   }
   lines.push(parseText.slice(offset).join(' '));
 
-  return lines;
+  return lines;*/
 }
 
 /**

@@ -12,7 +12,9 @@ const ERROR = {
   /** Отсутствует файл */
   NOFILE: 1,
   /** Не поддерживается */
-  NOSUPPORT: 2 
+  NOSUPPORT: 2,
+  /** Ошибка шейдера */
+  SHADER: 13
 };
 
 /**
@@ -126,7 +128,7 @@ let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera
     deltaTime = 0;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
-let keylocks = {}, grid = {}, levelMemory = {}, objects = [], templates = {}, images = {};
+let keylocks = {}, grid = {}, levelMemory = {}, objects = [], templates = {}, images = {}, shaders = {};
 let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}}, bind = false;
 let lastFrame = window.performance.now();
 
@@ -328,18 +330,21 @@ let Add = {
 
       cvs = canvas.getContext('webgl');
 
+
+
       cvs.imageSmoothingEnabled = cfg.smooth || false;
       if (cfg.smooth)
         canvas.imageSmoothingQuality = 'high';
       canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
       canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
+
+      cvs.viewport(0, 0, canvas.width, canvas.height);
     }
 
     /** Очистка кеша канваса */
     const funcRelease = () => {
       [canvas.width, canvas.height] = [1, 1];
       cvs = canvas.getContext('webgl');
-      cvs && cvs.clearRect(0, 0, 1, 1);
     }
 
     /** Устанавливает события и отключает аудиоплеер */
@@ -386,9 +391,17 @@ let Add = {
         }
       }
 
+      if (!modules.graphics) return;
+      if (!modules.graphics.cvs) return;
+
+      modules.graphics.cvs.viewport(0, 0, canvas.width, canvas.height);
+      
+      modules.graphics.cvs.clearColor(0, 0, 0, 0);
+      modules.graphics.cvs.clear(modules.graphics.cvs.COLOR_BUFFER_BIT);
+
       // экран загрузки:
       if (loaded < mloaded) {
-        if (!loading) {
+        /*if (!loading) {
           cvs.fillStyle = cfg.loading.background;
           cvs.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -399,12 +412,17 @@ let Add = {
           
           cvs.strokeRect(x, y, w, cfg.grid);
           cvs.fillRect(x + 2, y + 2, (w - 4) * percent, cfg.grid - 4);
-        } else loading(loaded / mloaded, current_time);
+        } else loading(loaded / mloaded, current_time);*/
       } else {
-        cvs.save();
+        
 
-          cvs.scale(cfg.zoom, cfg.zoom);
-          cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+
+        
+        //modules.graphics.cvs.bindBuffer(modules.graphics.cvs.ARRAY_BUFFER, modules.graphics.posBuffer);
+        //cvs.save();
+
+        //  cvs.scale(cfg.zoom, cfg.zoom);
+        //  cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
 
           deltaTime = now - delta;
           update(deltaTime);
@@ -440,7 +458,7 @@ let Add = {
             if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
           }
 
-        cvs.restore();
+        //cvs.restore();
 
         // отрисовка интерфейсов:
         gui.forEach(func => func(cvs));
@@ -450,12 +468,19 @@ let Add = {
 
         delta = now;
 
+        
+        
+        
+        
+
         if (!bind) return;
         canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
         bind.clear('hover', 'dclick', 'uclick');
 
 
       }
+
+      
     }
 
     if (!canvas) {
@@ -582,6 +607,70 @@ let Add = {
         await promise;
       }
     } catch(err) { return this.error(err, ERROR.NOFILE); }
+  },
+
+  /**
+   * Добавляет шейдер в проект
+   *
+   * @param {object} cvs Канвас
+   * @param {string} type VERTEX_SHADER или FRAGMENT_SHADER
+   * @param {string} path Путь к шейдеру
+   *
+   * @return {bool|string}
+  */
+  shader: async function(cvs, type, path) {
+
+    const data = await fetch(path),
+          code = await data.text();
+
+    let id = path.split('/');
+
+    if (id[0] == '.') id = id.splice(1, id.length - 1);
+    if (id[0] == cfg.datapath) id = id.splice(1, id.length - 1);
+
+    id[id.length - 1] = id[id.length - 1].replace(`.vsh`, '');
+
+    id = id.join('.');
+
+    const shader = cvs.createShader(cvs[type]);
+    cvs.shaderSource(shader, code);
+    cvs.compileShader(shader);
+
+    if (cvs.getShaderParameter(shader, cvs.COMPILE_STATUS)) {
+      shaders[id] = shader;
+      return id;
+    }
+
+    Add.error(cvs.getShaderInfoLog(shader), ERROR.SHADER);
+    cvs.deleteShader(shader);
+
+    return false;
+  },
+
+  /**
+   * Создает программу из вертексного и фрагментного шейдера
+   *
+   * @param {object} cvs Канвас
+   * @param {string} vertex Вертексный шейдер
+   * @param {string} fragment Фрагментный шейдер
+   *
+   * @return {bool|WebGLProgram}
+  */
+  program: function(cvs, vertex, fragment) {
+    const program = cvs.createProgram();
+
+    cvs.attachShader(program, shaders[vertex]);
+    cvs.attachShader(program, shaders[fragment]);
+
+    cvs.linkProgram(program);
+
+    if (cvs.getProgramParameter(program, cvs.LINK_STATUS))
+      return program;
+
+    Add.error(cvs.getProgramInfoLog(program), ERROR.PROGRAM);
+    cvs.deleteProgram(program);
+
+    return false;
   }
 }
 
