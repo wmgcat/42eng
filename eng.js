@@ -326,7 +326,7 @@ let Add = {
       funcRelease();
       [canvas.width, canvas.height] = funcGetCanvasSize();
 
-      cvs = canvas.getContext('2d');
+      cvs = canvas.getContext('webgl');
 
       cvs.imageSmoothingEnabled = cfg.smooth || false;
       if (cfg.smooth)
@@ -338,7 +338,7 @@ let Add = {
     /** Очистка кеша канваса */
     const funcRelease = () => {
       [canvas.width, canvas.height] = [1, 1];
-      cvs = canvas.getContext('2d');
+      cvs = canvas.getContext('webgl');
       cvs && cvs.clearRect(0, 0, 1, 1);
     }
 
