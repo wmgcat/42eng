@@ -122,7 +122,8 @@ const Eng = {
   }
 };
 
-let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
+let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, delta = Date.now(),
+    deltaTime = 0;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let keylocks = {}, grid = {}, levelMemory = {}, objects = [], templates = {}, images = {};
@@ -367,11 +368,11 @@ let Add = {
 
       current_time++;
 
-      const now = window.performance.now(),
-            passed = now - lastFrame;
+      const now = Date.now();
+      
 
-      if (cfg.window.fps != -1 && passed < fpsPerSec) return;
-      lastFrame = now - (passed % fpsPerSec);
+      //if (cfg.window.fps != -1 && passed < fpsPerSec) return;
+      
 
       // обработка нажатий (требуется модуль byte):
       if (modules.byte && keylocks) {
@@ -405,11 +406,13 @@ let Add = {
           cvs.scale(cfg.zoom, cfg.zoom);
           cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
 
-          update(current_time);
+          deltaTime = now - delta;
+          update(deltaTime);
+
 
           // сортировка:
-          if (cfg.sort)
-            objects = objects.sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
+          if (cfg.sort && objects)
+            objects = objects.filter(x => x != false).sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
 
           // обработка всех объектов:
           for (const obj of objects) {
@@ -441,10 +444,16 @@ let Add = {
 
         // отрисовка интерфейсов:
         gui.forEach(func => func(cvs));
+        if (modules.particle) {
+          particle.draw(cvs);
+        }
+
+        delta = now;
 
         if (!bind) return;
         canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
         bind.clear('hover', 'dclick', 'uclick');
+
 
       }
     }
