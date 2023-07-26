@@ -57,7 +57,7 @@ let cfg = {
     width: 800,
     height: 600,
     fullscreen: true,
-    fps: -1
+    fps: 60
   },
   modulepath: './modules/',
   datapath: '',
@@ -349,6 +349,10 @@ let Add = {
       addEventListener('contextmenu', e => e.preventDefault(), false);
       addEventListener('resize', funcResize, false);
 
+      addEventListener('wheel', e => e.preventDefault(), {
+        passive: false
+      });
+
       for (const event of ['mousedown', 'mouseup', 'mousemove'])
         window[`on${event}`] = funcMouseChecker;
 
@@ -406,7 +410,7 @@ let Add = {
           cvs.scale(cfg.zoom, cfg.zoom);
           cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
 
-          deltaTime = now - delta;
+          deltaTime = (now - delta) / cfg.window.fps;
           update(deltaTime);
 
 

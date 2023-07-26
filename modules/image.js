@@ -202,7 +202,7 @@ class _Image {
       if (alpha != 1) cvs.globalAlpha = 1;
     cvs.restore();
 
-    if (this.frames > 1) this.current_frame = (this.current_frame + this.speed) % this.frames;
+    if (this.frames > 1) this.current_frame = (this.current_frame + this.speed * deltaTime) % this.frames;
   }
 
   /**

@@ -126,14 +126,14 @@ const templateParticle = new Obj('$part',
     if (!this.data.life || this.data.life.check()) return this.destroy();
 
     for (const key of this.listPropertyLive)
-      this.data[key].start = math.lerp(this.data[key].start, this.data[key].end, this.data[key].step);
+      this.data[key].start = math.lerp(this.data[key].start, this.data[key].end, this.data[key].step * deltaTime);
 
     if (!'angle' in this.data) return;
-    this.x += Math.cos(math.torad(this.data.angle.start)) * this.data.speed;
-    this.y += Math.sin(math.torad(this.data.angle.start)) * this.data.speed + (this.data.gravity || 0);
+    this.x += Math.cos(math.torad(this.data.angle.start)) * this.data.speed * deltaTime;
+    this.y += Math.sin(math.torad(this.data.angle.start)) * this.data.speed * deltaTime + (this.data.gravity || 0) * deltaTime;
 
     if (!'gravity' in this.data) return;
-    this.data.gravity = math.lerp(this.data.gravity, -this.data.save_gravity, cfg.particle.gravity);
+    this.data.gravity = math.lerp(this.data.gravity, -this.data.save_gravity, cfg.particle.gravity * deltaTime);
   },
 
   // рисование:

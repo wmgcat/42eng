@@ -18,6 +18,7 @@
       cfg.debug = true;
       cfg.modulepath = './42eng/modules/';
       cfg.grid = 64;
+      cfg.window.fps = 60;
 
       let gr;
 
@@ -34,11 +35,12 @@
             '#c846c8', '#fff096', '#78e6b4',
             '#f05064', '#ff8c64', '#6eb4ff'
           ];
+          angle = 0;
 
           Add.debug('Загрузка завершена!');
         },
 
-        function(t) { // игровой процесс:
+        function() { // игровой процесс:
           if (!gr) return;
 
           const w = canvas.id.width / cfg.pixel,
@@ -46,10 +48,13 @@
 
           gr.rect(0, 0, w, h, '#000');
           
-          const speed = .01,
+          const speed = .1 * deltaTime,
                 step = math.torad(45);
+
+          angle += speed;
+
           for (let i = 0; i < 360 / math.todeg(step); i++) {
-            const dir = t * speed + i * step, x = w * .5 + Math.cos(dir) * w * .25,
+            const dir = angle + i * step, x = w * .5 + Math.cos(dir) * w * .25,
                   y = h * .5 + Math.sin(dir) * h * .2, size = math.clamp(Math.sin(dir) * cfg.grid, cfg.grid * .25, cfg.grid);
             gr.circle(x, y, size, 0, Math.PI * 2, colors[i % colors.length]);
           }
