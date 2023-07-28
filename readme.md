@@ -6,5 +6,5 @@
 
 ## Ссылки
 * [Документация](https://42eng.wmgcat.net/wiki)
-* [Примеры использования движка и модулей](./examples)
+* [Примеры](./examples)
 * [Сборщик проектов](https://github.com/wmgcat/builder)
