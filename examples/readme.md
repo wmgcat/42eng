@@ -11,9 +11,9 @@ index.html
       }
       body { overflow: hidden; }
     </style>
-    <script src = './42eng/eng.js' type = 'text/javascript'></script>
   </head>
   <body>
+    <script src = './42eng/eng.js' type = 'text/javascript'></script>
     <script src = './game.js' type = 'text/javascript'></script>
   </body>
 </html>
@@ -22,9 +22,14 @@ index.html
 game.js
 ```js
 cfg.debug = true;
-const canvas = Add.canvas('canvas', async () => {
-  Add.debug('Hello world!');
-}, () => {});
+const canvas = Add.canvas('canvas',
+  async function() {
+    Add.debug('Hello world!');
+  },
+  function() {
+    // update функция
+  }
+);
 
 canvas.init();
 canvas.update();
