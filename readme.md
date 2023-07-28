@@ -34,11 +34,4 @@ canvas.update();
 ```
 
 ### Другие примеры
-| Пример | Описание |
-| --- | --- |
-| [examples/simple-project](./examples/simple-project) | Простой проект, показывает как использовать модуль graphics и math |
-| [examples/mouse-and-keyboard](./examples/mouse-and-keyboard) | Работа с клавиатурой и мышкой |
-| [examples/image](./examples/image) | Работа с изображениями и анимациями |
-| [examples/audio](./examples/audio) | Работа с модулем audio и звуком |
-| [examples/language](./examples/language) | Работа с модулем language и локализацией проекта |
-| [examples/ads](./examples/ads) | Работа с различными SDK прощадок (Yandex.Games, VK, CrazyGames) |
+
