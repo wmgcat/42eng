@@ -7,7 +7,7 @@
 * Mozilla Firefox
 * Safari
 * Opera
-* Браузеры с поддержкой Javascript(ES6) и Canvas API
+* Браузеры с поддержкой **Javascript(ES6)** и **Canvas API**
 
 ## Лицензия
 Движок использует лицензию [MIT](./LICENSE.txt), что дает вам полную свободу действий. Единственное требование — наличие файла LICENSE.txt в папке с данным проектом.
