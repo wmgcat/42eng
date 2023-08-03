@@ -28,12 +28,11 @@ search.distance = (name, x, y, distance, offset=0) => {
  * @return {array}
 */
 search.id = (...args) => {
-  let arr = [];
-  for (const id of args)
-    if (objects[id])
-      arr.push(objects[id]);
-
-  return arr;
+  return objects.filter(obj => {
+    for (const id of args)
+      if (obj.id == id) return true;
+    return false;
+  });
 }
 
 /**
@@ -43,12 +42,12 @@ search.id = (...args) => {
  * @return {array}
 */
 search.search = (...args) => (
-  Object.keys(objects).filter(x => {
+  objects.filter(x => {
     for (const name of args) {
-      if (name == 'all' || objects[x].name == name)
+      if (name == 'all' || x.name == name)
         return true;
     }
-  }).map(x => objects[x])
+  })
 );
 
 /**

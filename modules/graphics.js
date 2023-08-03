@@ -77,7 +77,12 @@ graphics.round = function(x, y, w, h, range, color='#000',
                           alpha=1, type=types.fill, linewidth=1) {
   this.save(e => {
     e.cvs.beginPath();
-      e.cvs.roundRect(x, y, w, h, range);
+      try {
+        e.cvs.roundRect(x, y, w, h, range);
+      }
+      catch(err) {
+        e.cvs.rect(x, y, w, h);
+      }
       e.cvs[type]();
     e.cvs.closePath();
   }, color, alpha, type, linewidth);

@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+  <head>
+    <title>image</title>
+    <meta charset = 'utf-8'>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+      body { overflow: hidden; }
+    </style>
+    <script type = 'text/javascript' src = './../../eng.js'></script>
+  </head>
+  <body>
+    <script type = 'text/javascript'>
+      
+      cfg.debug = true;
+      cfg.modulepath = './../../modules/';
+      cfg.grid = 64;
+      cfg.window.fps = 60;
+
+      let gr;
+
+      const canvas = Add.canvas(
+
+        async function() { // загрузчик:
+
+          // загрузка модулей:
+          await Add.module('graphics', 'math', 'image');
+
+
+          // загрузка изображения:
+          await Add.image('./example.png');
+
+          logo = image.create('example', 0, 0, 128, 128, 64, 64);
+          angle = 0;
+          speed = 4;
+
+          gr = graphics.create(canvas.cvs);
+
+          Add.debug('Загрузка завершена!');
+        },
+
+        function(t) { // игровой процесс:
+          if (!gr) return;
+
+          const w = canvas.id.width,
+                h = canvas.id.height;
+
+          gr.rect(0, 0, w, h, '#000');
+
+          let size = w;
+          if (w > h) size = h;
+
+          const scale = size / logo.w;
+
+          angle += speed * deltaTime;
+
+          logo.draw(gr.cvs, w * .5, h * .5, undefined, undefined, 1, scale, scale, angle);
+          
+          
+        }
+
+      );
+
+      canvas.init();
+      canvas.update();
+
+    </script>
+  </body>
+</html>

@@ -32,18 +32,22 @@ const ERROR = {
  * @property {number} [window.width=800] Ширина
  * @property {number} [window.height=600] Высота
  * @property {bool} [window.fullscreen=true] Полноэкранный режим
+ * @property {number} [window.fps=60] Максимальное кол-во кадров в секунду, если -1, то ограничений нет
  * @property {string} [modulepath=./modules/] Путь до папки с модулями
  * @property {string} datapath Обрезание путей, для сокращения названий
  * @property {bool} [sort=true] Режим сортировки
  * @property {bool} [smooth=false] Режим сглаживания
  * @property {number} [pixel=window.devicePixelRatio] Пиксель
+ * @property {object} loading Экран загрузки
+ * @property {string} [loading.background=#1e0528] Цвет фона
+ * @property {string} [loading.color=#9664e6] Цвет полоски загрузки
 */
 let cfg = {
   title: '42eng.js',
   author: 'wmgcat',
   debug: false,
   build: {
-    v: '1.7.5.2',
+    v: '1.7.5.5',
     href: 'github.com/wmgcat/42eng'
   },
   grid: 32,
@@ -52,13 +56,18 @@ let cfg = {
     id: 'game',
     width: 800,
     height: 600,
-    fullscreen: true
+    fullscreen: true,
+    fps: 60
   },
   modulepath: './modules/',
   datapath: '',
   sort: true,
   smooth: false,
-  pixel: window.devicePixelRatio
+  pixel: window.devicePixelRatio,
+  loading: {
+    background: '#1e0528',
+    color: '#9664e6'
+  }
 };
 
 /**
@@ -96,14 +105,30 @@ const Eng = {
       `ссылка: ${cfg.build.href}`
     ];
     console.log(img.join('\n'));
+  },
+
+  /**
+   * Проверяет есть ли модули в проекте
+   * 
+   * @param  {...string} args Названия модулей
+   * @return {bool}
+  */
+  exist(...args) {
+    for (const module of args)
+      if (typeof(modules[module]) === 'undefined')
+        return false;
+
+    return true;
   }
 };
 
-let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0;
+let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, delta = -1,
+    deltaTime = 0;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
-let keylocks = {}, grid = {}, levelMemory = {}, objects = {}, templates = {}, images = {};
-let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}}, bind = false;
+let keylocks = {}, grid = {}, levelMemory = {}, objects = [], templates = {}, images = {};
+let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}, display_x: 0, display_y: 0}, bind = false;
+let lastFrame = window.performance.now();
 
 /**
  * Добавление функционала
@@ -176,11 +201,17 @@ let Add = {
    * 
    * @param  {string} msg Текст ошибки
    * @param  {number} [code=0] Код ошибки
+   * @return {string}
    *
    * @example
    * Add.error("Файл не найден!", ERROR.NOFILE);
   */
-  error: (msg, code=0) => console.error('ERROR!', msg, code),
+  error: (msg, code=0) => {
+    const str = `[CODE ${code}]: ${msg}`;
+    
+    console.error(str);
+    return str;
+  },
 
   /**
    * @param  {function} init Выполняется только один раз
@@ -205,7 +236,7 @@ let Add = {
   */
   canvas: (init, update, loading) => {
     let canvas = document.getElementById(cfg.window.id);
-    
+    const fpsPerSec = 1000 / cfg.window.fps;
 
     /**
      * Возвращает ширину и высоту в соответствии с настройками в cfg
@@ -219,7 +250,6 @@ let Add = {
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
         [width, height] = [width * cfg.pixel, height * cfg.pixel];
-        //cfg.zoom = cfg.pixel;
       }
       return [width, height];
     }
@@ -259,6 +289,8 @@ let Add = {
 
       mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
       mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
+      mouse.display_x = xoff;
+      mouse.display_y = yoff;
       if (isTouch) {
         is_touch = true;
         mouse.touch = {
@@ -317,6 +349,7 @@ let Add = {
       addEventListener('keyup', funcKeyChecker, false);
       addEventListener('contextmenu', e => e.preventDefault(), false);
       addEventListener('resize', funcResize, false);
+      addEventListener('wheel', e => e.preventDefault(), { passive: false });
 
       for (const event of ['mousedown', 'mouseup', 'mousemove'])
         window[`on${event}`] = funcMouseChecker;
@@ -325,6 +358,7 @@ let Add = {
         canvas[`on${event}`] = funcMouseChecker;
 
       if (modules.audio) Eng.focus(true);
+      funcResize();
     }
 
     /**
@@ -333,43 +367,89 @@ let Add = {
      * @param  {number} t Кол-во секунд с запуска
     */
     const funcUpdate = t => {
-      current_time = t;
-      if (loaded == mloaded) {
+      window.requestAnimationFrame(funcUpdate);
+
+      current_time++;
+
+      const now = Date.now();
+      if (delta == -1) delta = Date.now();
+      deltaTime = (now - delta) / cfg.window.fps;
+      delta = now;
+
+      // обработка нажатий (требуется модуль byte):
+      if (modules.byte && keylocks) {
+        if (!bind) {
+          const arr = [];
+          for (const key in keylocks)
+            arr.push(keylocks[key]);
+          arr.push('uclick', 'dclick', 'hover', 'textbox');
+
+          bind = new Byte(...arr);
+        }
+      }
+
+      // экран загрузки:
+      if (loaded < mloaded) {
+        if (!loading) {
+          cvs.fillStyle = cfg.loading.background;
+          cvs.fillRect(0, 0, canvas.width, canvas.height);
+
+          const percent = loaded / mloaded, w = canvas.width * .6;
+          const x = (canvas.width - w) * .5, y = (canvas.height - cfg.grid) * .5;
+
+          cvs.fillStyle = cvs.strokeStyle = cfg.loading.color;
+          
+          cvs.strokeRect(x, y, w, cfg.grid);
+          cvs.fillRect(x + 2, y + 2, (w - 4) * percent, cfg.grid - 4);
+        } else loading(loaded / mloaded, current_time);
+      } else {
         cvs.save();
           cvs.scale(cfg.zoom, cfg.zoom);
           cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
-          update(current_time);
-          for (const id of Object.keys(objects)
-            .sort((a, b) => (objects[a].yr || objects[a].y) - (objects[b].yr || objects[b].y))) {
-            
-            const obj = objects[id];
-            if (!obj) continue;
-            if (!editor && !obj.is_create && obj.create) {
-              obj.create();
-              obj.is_create = true;
-            }
-            if (!pause && obj.update) obj.update(current_time);
-            if (obj.draw) obj.draw(cvs);
-          }
-        cvs.restore();
-        gui.forEach(e => e(cvs));
-      } else loading(loaded / mloaded, current_time);
-      
-      //gui = [];
 
-      if (!bind) {
-        if (modules.byte) {
-          let arr = [];
-          for (key in keylocks) arr.push(keylocks[key]);
-          arr.push('uclick', 'dclick', 'hover', 'textbox');
-          bind = new Byte(...arr);
-        }
-      } else {
+          update(deltaTime);
+
+          // сортировка:
+          if (cfg.sort && objects)
+            objects = objects.filter(x => x != false).sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
+
+          // обработка всех объектов:
+          for (const obj of objects) {
+            if (!obj) continue;
+
+            // совместимость со старыми версиями:
+            if (obj.create && typeof(obj.create) == 'function') {
+              obj.__funcCreate = obj.create;
+              delete obj.create;
+            }
+            if (obj.update && typeof(obj.update) == 'function') {
+              obj.__funcUpdate = obj.update;
+              delete obj.update;
+            }
+            if (obj.draw && typeof(obj.draw) == 'function') {
+              obj.__funcDraw = obj.draw;
+              delete obj.draw;
+            }
+
+            if (!editor && !obj.__isCreate && obj.__funcCreate) {
+              obj.__funcCreate();
+              obj.__isCreate = true;
+            }
+            if (!pause && obj.__funcUpdate) obj.__funcUpdate(current_time);
+            if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
+          }
+
+        cvs.restore();
+        
+        // отрисовка интерфейсов:
+        gui.forEach(func => func(cvs));
+        if (modules.particle)
+          particle.draw(cvs);
+
+        if (!bind) return;
         canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
         bind.clear('hover', 'dclick', 'uclick');
       }
-
-      window.requestAnimationFrame(funcUpdate);
     }
 
     if (!canvas) {
@@ -380,14 +460,14 @@ let Add = {
     }
 
     let cvs;
-    funcResize();
-    
+
     Eng.console();
     funcReady();
     return {
       id: canvas, cvs: cvs,
       init: async () => {
-        loading(0);
+        if (loading)
+          loading(0);
         await init();
       }, update: funcUpdate,
     }
@@ -409,11 +489,22 @@ let Add = {
   object: (obj, x=0, y=0, nid=false) => {
     if (typeof(obj) == 'string') obj = templates[obj];
     let id = nid || Eng.id(); 
-    objects[id] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
-    objects[id].x = x;
-    objects[id].y = y;
-    objects[id].id = id;
-    return objects[id];
+    
+    let i = objects.findIndex(e => !e);
+    if (~i) {
+      objects[i] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
+      objects[i].x = x;
+      objects[i].y = y;
+      objects[i].id = id;
+    } else {
+      i = objects.push(Object.assign(Object.create(Object.getPrototypeOf(obj)), obj)) - 1;
+      objects[i].x = x;
+      objects[i].y = y;
+      objects[i].id = id;
+    }
+
+
+    return objects[i];
   },
 
   /**
@@ -433,11 +524,19 @@ let Add = {
    * Выводит в консоль информацию только при включенном cfg.debug
    * 
    * @param  {any} arg Информация, можно перечислять через запятую
+   * @return {string|undefined}
    *
    * @example
    * Add.debug("hello world", {x: 5, y: 10}, cfg.build.v);
   */
-	debug: function(arg) { if (cfg.debug) console.log('[DEBUG!]', ...arguments); },
+	debug: function(arg) {
+    if (cfg.debug) {
+      const str = `[DEBUG]: ${[...arguments].join(' ')}`;
+      
+      console.log(str);
+      return str;
+    }
+  },
 
   /**
    * Загружает модули из папки по умолчанию (cfg.modulepath)
@@ -466,33 +565,6 @@ let Add = {
         await promise;
       }
     } catch(err) { return this.error(err, ERROR.NOFILE); }
-  },
-
-  /**
-   * Функция для тестирования время работы функций
-   * 
-   * @param  {function} func Функция для теста
-   * @return {bool}
-   *
-   * @example
-   * Add.test(() => {
-   *  let sum = 0;
-   *  for (let i = 0; i < 100000; i++) sum += i ** 2;
-   *  Add.debug('result', sum);
-   * });
-  */
-  test: async func => {
-    let date = Date.now();
-    try {
-      await func();
-      Add.debug('function is done!', `${(Date.now() - date) / 1000}s`);
-      return true;
-    }
-    catch (err) {
-      Add.error(err, 0);
-      Add.debug('timeout', `${(Date.now() - date) / 1000}s`);
-      return false;
-    }
   }
 }
 
@@ -511,9 +583,10 @@ class Obj {
   constructor(name='undefined', create, update, draw) {
     this.name = name;
     this.x = this.y = this.image_index = 0;
-    this.create = create;
-    this.update = update;
-    this.draw = draw;
+    this.__funcCreate = create;
+    this.__funcUpdate = update;
+    this.__funcDraw = draw;
+
     templates[name] = this;
   }
 
@@ -523,12 +596,18 @@ class Obj {
    * @return {bool}
   */
   destroy() {
+    const i = objects.findIndex(e => e == this);
+    
     if (this.delete) {
-      while(!this.delete());
-      delete objects[this.id];
+      while(!this.delete());      
+      if (~i)
+        objects[i] = false;
+
       return true;
     } else {
-      delete objects[this.id];
+      if (~i)
+        objects[i] = false;
+
       return true;
     }
   }

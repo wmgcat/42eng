@@ -171,5 +171,5 @@ Eng.focus = value => {
 }
 
 // событие фокуса и блюра:
-window.onblur = Eng.focus(false);
-window.onfocus = () => audio.context.suspend().then(() => Eng.focus(true));
+window.onblur = function() { Eng.focus(false); }
+window.onfocus = () => audio.context.suspend().then(() => { Eng.focus(true); });

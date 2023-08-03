@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+  <head>
+    <title>simple-project</title>
+    <meta charset = 'utf-8'>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+      body { overflow: hidden; }
+    </style>
+    <script type = 'text/javascript' src = './../../eng.js'></script>
+  </head>
+  <body>
+    <script type = 'text/javascript'>
+      
+      cfg.debug = true;
+      cfg.modulepath = './../../modules/';
+      cfg.grid = 64;
+      cfg.window.fps = 60;
+
+      let gr;
+
+      const canvas = Add.canvas(
+
+        async function() { // загрузчик:
+
+          // загрузка модулей:
+          await Add.module('graphics', 'math');
+
+          gr = graphics.create(canvas.cvs);
+
+          colors = [
+            '#c846c8', '#fff096', '#78e6b4',
+            '#f05064', '#ff8c64', '#6eb4ff'
+          ];
+          angle = 0;
+
+          Add.debug('Загрузка завершена!');
+        },
+
+        function() { // игровой процесс:
+          if (!gr) return;
+
+          const w = canvas.id.width,
+                h = canvas.id.height;
+
+          gr.rect(0, 0, w, h, '#000');
+          
+          const speed = .1 * deltaTime,
+                step = math.torad(45);
+
+          angle += speed;
+
+          for (let i = 0; i < 360 / math.todeg(step); i++) {
+            const dir = angle + i * step, x = w * .5 + Math.cos(dir) * w * .25,
+                  y = h * .5 + Math.sin(dir) * h * .2, size = math.clamp(Math.sin(dir) * cfg.grid, cfg.grid * .25, cfg.grid);
+            gr.circle(x, y, size, 0, Math.PI * 2, colors[i % colors.length]);
+          }
+
+          gr.text.draw('hello world!', w * .5, h * .5, '#fff', 1, cfg.grid, undefined, 'center-middle');
+        }
+
+      );
+
+      canvas.init();
+      canvas.update();
+
+    </script>
+  </body>
+</html>

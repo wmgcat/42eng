@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+  <head>
+    <title>image</title>
+    <meta charset = 'utf-8'>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+      }
+      body { overflow: hidden; }
+    </style>
+    <script type = 'text/javascript' src = './../../../42eng/eng.js'></script>
+  </head>
+  <body>
+    <script type = 'text/javascript'>
+      
+      cfg.debug = true;
+      cfg.modulepath = './../../../42eng/modules/';
+      cfg.grid = 64;
+      cfg.window.fps = 60;
+
+      let gr;
+
+      Add.rule({
+        'space': 'active'
+      });
+
+      const canvas = Add.canvas(
+
+        async function() { // загрузчик:
+
+          // загрузка модулей:
+          await Add.module('graphics', 'audio', 'byte');
+
+          audio.volume('music', .5);
+
+          await Add.audio({
+            './test.mp3': 'music'
+          });
+
+          isPlay = false;
+
+          gr = graphics.create(canvas.cvs);
+
+          Add.debug('Загрузка завершена!');
+        },
+
+        function(t) { // игровой процесс:
+          if (!gr) return;
+
+          const w = canvas.id.width,
+                h = canvas.id.height;
+
+          gr.rect(0, 0, w, h, '#000');
+
+          let size = w;
+          if (w > h) size = h;
+
+
+          gr.text.drawMultiLine(
+            'Зажми пробел чтобы заиграла музыка',
+            w * .5, h * .5, w * .5,
+            isPlay ? '#0f0' : '#fff', 1,
+            size * .05, undefined,
+            'center-middle'
+          );
+          
+          if (bind.check('active')) {
+            if (!isPlay)
+              audio.play('test', true);
+            isPlay = true;
+          } else {
+            audio.stop('test');
+            isPlay = false;
+          }
+        }
+
+      );
+
+      canvas.init();
+      canvas.update();
+
+    </script>
+  </body>
+</html>

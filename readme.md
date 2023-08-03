@@ -1,32 +1,18 @@
 # О проекте
 Игровой движок, написанные на чистом Javascript (ES6). Использует систему модулей, не обязательно использовать абсолютно все модули, которые есть, можно ограничиться лишь тем функционалом, который вам необходим.
 
-# Пример
-index.html
-```html
-<!doctype html>
-<html>
-  <head>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-    <script src = './42eng/eng.js' type = 'text/javascript'></script>
-    <script src = './game.js' type = 'text/javascript'></script>
-  </head>
-  <body></body>
-</html>
-```
+## Поддержка
+На данный момент движок работает стабильно на следующих браузерах:
+* Google Chrome
+* Mozilla Firefox
+* Safari
+* Opera
+* Браузеры с поддержкой **Javascript(ES6)** и **Canvas API**
 
-game.js
-```js
-cfg.debug = true;
-const canvas = Add.canvas('canvas', async () => {
-  Add.debug('Hello world!');
-}, () => {});
+## Лицензия
+Движок использует лицензию [MIT](./LICENSE.txt), что дает вам полную свободу действий. Единственное требование — наличие файла LICENSE.txt в папке с данным проектом.
 
-canvas.init();
-canvas.update();
-```
+## Ссылки
+* [Документация](https://42eng.wmgcat.net/wiki)
+* [Примеры](./examples)
+* [Сборщик проектов](https://github.com/wmgcat/builder)
