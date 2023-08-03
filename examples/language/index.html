@@ -10,32 +10,31 @@
       }
       body { overflow: hidden; }
     </style>
-    <script type = 'text/javascript' src = './../../eng.js'></script>
+    <script type = 'text/javascript' src = './../../../42eng/eng.js'></script>
   </head>
   <body>
     <script type = 'text/javascript'>
       
       cfg.debug = true;
-      cfg.modulepath = './../../modules/';
+      cfg.modulepath = './../../../42eng/modules/';
       cfg.grid = 64;
       cfg.window.fps = 60;
 
       let gr;
+
+      Add.rule({
+        'space': 'active'
+      });
 
       const canvas = Add.canvas(
 
         async function() { // загрузчик:
 
           // загрузка модулей:
-          await Add.module('graphics', 'math', 'image');
+          await Add.module('graphics', 'language', 'byte');
 
-
-          // загрузка изображения:
-          await Add.image('./example.png');
-
-          logo = image.create('example', 0, 0, 128, 128, 64, 64);
-          angle = 0;
-          speed = 4;
+          await Add.language('./en.json', 'en', false);
+          await Add.language('./ru.json', 'ru', true);
 
           gr = graphics.create(canvas.cvs);
 
@@ -53,13 +52,21 @@
           let size = w;
           if (w > h) size = h;
 
-          const scale = size / logo.w;
 
-          angle += speed * deltaTime;
-
-          logo.draw(gr.cvs, w * .5, h * .5, undefined, undefined, 1, scale, scale, angle);
+          gr.text.drawMultiLine(
+            language.use('test') + ' ' + language.use('select', language.select),
+            w * .5, h * .5, w * .5,
+            isPlay ? '#0f0' : '#fff', 1,
+            size * .05, undefined,
+            'center-middle'
+          );
           
-          
+          if (bind.check('active')) {
+            const langs = Object.keys(language.table),
+                  current = langs.indexOf(language.select);
+            language.select = langs[(current + 1) % langs.length];
+            bind.clear('active');
+          }
         }
 
       );

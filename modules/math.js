@@ -118,7 +118,7 @@ math.collision.rect = (px, py, x, y, w, h) => (
  *
  * @return {bool}
 */
-math.collision.circle = (px, py, x, y, range) => math.distance(px, py, x, y) <= range;
+math.collision.circle = (px, py, x, y, range) => (math.distance(px, py, x, y) <= range);
 
 /**
  * Проверка столкновений с мышкой
@@ -172,7 +172,7 @@ math.collision.mouse.circle = (x, y, range) => math.collision.circle(mouse.x, mo
  * @return {bool}
 */
 math.collision.mouse.gcircle = (x, y, range) => math.collision.circle(
-  mouse.x - cameraes[current_camera].x, mouse.y - cameraes[current_camera].y,
+  mouse.display_x, mouse.display_y,
   x, y,
   range
 );

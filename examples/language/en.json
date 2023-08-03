@@ -1,0 +1,4 @@
+Lang = {
+	'test': "Localization test, press space to change lang",
+	'select': "Select: %s"
+}

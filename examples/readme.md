@@ -43,4 +43,3 @@ canvas.update();
 | [examples/image](./image) | Работа с изображениями и анимациями |
 | [examples/audio](./audio) | Работа с модулем audio и звуком |
 | [examples/language](./language) | Работа с модулем language и локализацией проекта |
-| [examples/ads](./ads) | Работа с различными SDK прощадок (Yandex.Games, VK, CrazyGames) |

@@ -122,12 +122,12 @@ const Eng = {
   }
 };
 
-let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, delta = Date.now(),
+let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, delta = -1,
     deltaTime = 0;
 let pause = false, editor = false, levelChange = false, is_touch = false;
 let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
 let keylocks = {}, grid = {}, levelMemory = {}, objects = [], templates = {}, images = {};
-let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}}, bind = false;
+let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}, display_x: 0, display_y: 0}, bind = false;
 let lastFrame = window.performance.now();
 
 /**
@@ -290,6 +290,8 @@ let Add = {
 
       mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
       mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
+      mouse.display_x = xoff;
+      mouse.display_y = yoff;
       if (isTouch) {
         is_touch = true;
         mouse.touch = {
@@ -373,10 +375,9 @@ let Add = {
       current_time++;
 
       const now = Date.now();
-      
-
-      //if (cfg.window.fps != -1 && passed < fpsPerSec) return;
-      
+      if (delta == -1) delta = Date.now();
+      deltaTime = (now - delta) / cfg.window.fps;
+      delta = now;
 
       // обработка нажатий (требуется модуль byte):
       if (modules.byte && keylocks) {
@@ -410,7 +411,7 @@ let Add = {
           cvs.scale(cfg.zoom, cfg.zoom);
           cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
 
-          deltaTime = (now - delta) / cfg.window.fps;
+          
           update(deltaTime);
 
 
@@ -452,7 +453,7 @@ let Add = {
           particle.draw(cvs);
         }
 
-        delta = now;
+        
 
         if (!bind) return;
         canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
@@ -460,6 +461,7 @@ let Add = {
 
 
       }
+
     }
 
     if (!canvas) {
