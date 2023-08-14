@@ -61,7 +61,10 @@ audio.play = function(id, loop=false) {
 audio.volume = function(id, value=1) {
   if (!this.context) return;
 
-  if (!(id in this.volumes)) this.volumes[id] = this.context.createGain();
+  if (!(id in this.volumes)) {
+    this.volumes[id] = this.context.createGain();
+    this.volumes[id].save = value;
+  }
   this.volumes[id].gain.value = value;
 }
 
@@ -164,12 +167,12 @@ Eng.focus = value => {
   cfg.setting.focus = value;
 
   for (const volume of Object.keys(audio.volumes)) {
-    if (!value) audio.volumes[volume].save = audio.volumes[volume].gain.value;
-    audio.volume(volume, value ? (audio.volumes[volume].save || 1) : 0);
+    //if (!value) audio.volumes[volume].save = audio.volumes[volume].gain.value;
+    audio.volume(volume, value ? audio.volumes[volume].save : 0);
   }
   window[value ? 'focus' : 'blur']();
 }
 
 // событие фокуса и блюра:
 window.onblur = function() { Eng.focus(false); }
-window.onfocus = () => audio.context.suspend().then(() => { Eng.focus(true); });
+window.onfocus = () => { audio.context.suspend().then(() => { Eng.focus(true); }); }

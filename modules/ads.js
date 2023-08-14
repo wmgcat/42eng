@@ -12,7 +12,7 @@ ERROR.FEEDBACK = 6; // ошибка, которая указывает что н
 ads.sdk = ''; // SDK
 ads.main = false;
 ads.auth = false; // авторизация на площадке
-ads.ad_timer = timer.create(60); // ограничитель на показ рекламы раз в 5 секунд
+ads.ad_timer = timer.create(90); // ограничитель на показ рекламы раз в 5 секунд
 ads.ad_timer.reset(999);
 
 /**
@@ -111,13 +111,15 @@ ads.fullscreen = async function() {
       break;
     }
   });
+  modules.ads.ad_timer.reset();
   try {
     const state = await promise;
-    this.ad_timer.reset();
     if (modules.audio) Eng.focus(true);
     return state;
   }
-  catch(err) { return Add.error(err, ERROR.ADS); }
+  catch(err) {
+    return Add.error(err, ERROR.ADS);
+  }
 }
 
 /**
@@ -210,7 +212,7 @@ ads.leaderboard.get = async function() {
         return result.score;
       }
       catch(err) {
-        if (err.code != 'LEADERBOARD_PLAYER_NOT_PRESENT') return Add.error(err, ERROR.ADS);
+        if (err.code != 'LEADERBOARD_PLAYER_NOT_PRESENT') return 0;
         return 0;
       }
     break;
@@ -288,12 +290,13 @@ ads.pay.init = async function() {
 */
 ads.pay.set = async function(id) {
   if (!ads.main || !ads.pay.main) return;
+  if (modules.audio) Eng.focus(false);
 
   const promise = new Promise((res, rej) => {
     switch(ads.sdk) {
       case 'yandex':
-        ads.pay.main.purchase({id: id}).then(() => {
-          res(true);
+        ads.pay.main.purchase({id: id}).then((item) => {
+          res(item.purchaseToken);
         }).catch(e => res(false));
       break;
       default:
@@ -304,9 +307,11 @@ ads.pay.set = async function(id) {
 
   try {
     const state = await promise;
+    if (modules.audio) Eng.focus(true);
     return state;
   }
   catch(err) {
+    if (modules.audio) Eng.focus(true);
     return Add.error(err, ERROR.ADS);
   }
 }

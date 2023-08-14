@@ -32,6 +32,7 @@ class Timer {
     this.point = 0;
     this.max = x * multi;
     this.save_max = x;
+    this.isPause = false;
     this.reset();
   }
 
@@ -42,6 +43,7 @@ class Timer {
    * @return {bool}
   */
   check(loop=false) {
+    if (this.isPause) return false;
     if ((this.point - Date.now()) > 0) return false;
 
     if (loop) this.reset();
@@ -55,6 +57,8 @@ class Timer {
   */
   delta() {
     if (!modules.math) return 0;
+    if (this.isPause)
+      return modules.math.clamp(this.save_point / this.max, 0, 1);
     return modules.math.clamp(Math.max(this.point - Date.now(), 0) / this.max, 0, 1);
   }
   
@@ -75,5 +79,22 @@ class Timer {
   reset(x=0) {
     if (!x) this.point = Date.now() + this.max;
     else this.point = x;
+  }
+
+  /**
+   * Ставит таймер на паузу
+  */
+  pause() {
+    this.isPause = true;
+    this.save_point = this.point - Date.now();
+  }
+
+  /**
+   * Восстанавливает таймер
+  */
+  resume() {
+    this.isPause = false;
+    this.point = Date.now() + this.save_point;
+    delete this.save_point;
   }
 }
