@@ -284,8 +284,9 @@ let Add = {
     const funcMouseChecker = e => {
       const isTouch = ~['touchstart', 'touchend', 'touchmove'].indexOf(e.type);
 
-      const xoff = isTouch ? e.changedTouches[0].clientX : e.offsetX,
-            yoff = isTouch ? e.changedTouches[0].clientY : e.offsetY;
+      const rect = canvas.getBoundingClientRect();
+      const xoff = (isTouch ? e.changedTouches[0].clientX : e.clientX) - rect.left,
+            yoff = (isTouch ? e.changedTouches[0].clientY : e.clientY) - rect.top;
 
       mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
       mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
