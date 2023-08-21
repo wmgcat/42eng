@@ -161,6 +161,8 @@ const templateParticle = new Obj('$part',
       });*/
       return;
     }
+    if (this.data.islive)
+      this.data.image.current_frame = (1 - this.data.life.delta()) * this.data.image.frames;
     this.data.image.draw(cvs,
       this.x, this.y,
       undefined, undefined,

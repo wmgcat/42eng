@@ -14,6 +14,7 @@ ads.main = false;
 ads.auth = false; // авторизация на площадке
 ads.ad_timer = timer.create(90); // ограничитель на показ рекламы раз в 5 секунд
 ads.ad_timer.reset(999);
+ads.feed = false; // оставлен ли отзыв
 
 /**
  * Загружает файл SDK в игру
@@ -223,17 +224,19 @@ ads.leaderboard.get = async function() {
  * Оставить отзыв
 */
 ads.feedback = async function() {
-  if (!this.main) return;
+  if (!this.main || ads.feed) return;
 
   if (modules.audio) Eng.focus(false);
 
   const promise = new Promise((res, rej) => {
     switch(this.sdk) {
       case 'yandex':
-        this.main.feedback.canReview().then(status => {
+        this.isFeedback().then(status => {
           if (!status || !status.value) rej(ERROR.FEEDBACK);
 
-          this.main.feedback.requestReview().then(data => res(data.feedbackSent));
+          this.main.feedback.requestReview()
+          .then(data => res(data.feedbackSent))
+          .finally(() => { ads.feed = true; });
         });
       break;
     }
@@ -242,9 +245,44 @@ ads.feedback = async function() {
   try {
     const state = await promise;
     if (modules.audio) Eng.focus(true);
+    ads.feed = true;
     return state;
   }
   catch(err) {
+    ads.feed = true;
+    if (err != ERROR.FEEDBACK)
+      return Add.error(err, ERROR.ADS);
+    return err;
+  }
+}
+
+/**
+ * Проверка на доступность оставления отзыва
+ * 
+ * @return {bool}
+*/
+ads.isFeedback = async function() {
+  if (!this.main) return;
+  const promise = new Promise((res, rej) => {
+    switch(this.sdk) {
+      case 'yandex':
+        this.main.feedback.canReview().then(status => {
+          if (!status || !status.value) rej(ERROR.FEEDBACK);
+          res(true);
+        }).catch(e => {
+          res(false);
+        })
+      break;
+    }
+  });
+
+  try {
+    const state = await promise;
+    ads.feed = !state;
+    return state;
+  }
+  catch(err) {
+    ads.feed = true;
     if (err != ERROR.FEEDBACK)
       return Add.error(err, ERROR.ADS);
     return err;
@@ -359,6 +397,48 @@ ads.pay.getAll = async function() {
       break;
       default:
         rej([]);
+      break;
+    }
+  });
+
+  try {
+    const state = await promise;
+    return state;
+  }
+  catch(err) {
+    return Add.error(err, ERROR.ADS);
+  }
+}
+
+ads.pay.success = async function(token) {
+  if (!ads.main || !ads.pay.main) return;
+
+  const promise = new Promise((res, rej) => {
+    switch(ads.sdk) {
+      case 'yandex':
+        ads.pay.main.consumePurchase(token).then(e => {
+          res(true);
+        });
+
+        /*const pays = await ads.pay.get();
+        for (const pay of (pays || [])) {
+          switch(pay.productID) {
+            case 'all':
+              allShopYABuy();
+            break;
+            case 'quest':
+              questYABuy();
+            break;
+          }
+          ads.pay.main.consumePurchase(pay.purchaseToken);
+          funcSave();
+        }
+      }*/
+
+        //ads.pay.main.getCatalog().then(list => res(list)).catch(e => res([]));
+      break;
+      default:
+        rej(false);
       break;
     }
   });

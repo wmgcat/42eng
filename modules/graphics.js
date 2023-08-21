@@ -26,6 +26,32 @@ graphics.create = function(ctx) {
 }
 
 /**
+ * Переводит HEX в RGB
+ * 
+ * @param  {string} HEX Цвет
+ * @return {Array} [R, G, B]
+*/
+graphics.rgb = function(HEX) {
+  let code = `0x${HEX.substring(1)}`;
+  return [(code >> 16) & 255, (code >> 8) & 255, code & 255];
+}
+
+/**
+ * Переводит RGB в HEX
+ *
+ * @param {number} R Красный
+ * @param {number} G Зеленый
+ * @param {number} B Синий
+ * @return {string} HEX
+*/
+graphics.hex = function(r, g, b) {
+  return `#${[r, g, b].map(x => {
+    const hex = x.toString(16);
+    return hex.length == 1 ? `0${hex}` : hex;
+  }).join('')}`;
+}
+
+/**
  * Метод для отрисовки фигур с альфой и шириной линии
  * 
  * @param {function} func Функция для отрисовки фигуры

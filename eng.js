@@ -370,12 +370,15 @@ let Add = {
     const funcUpdate = t => {
       window.requestAnimationFrame(funcUpdate);
 
-      current_time++;
+      
 
       const now = Date.now();
       if (delta == -1) delta = Date.now();
       deltaTime = (now - delta) / cfg.window.fps;
       delta = now;
+
+
+      current_time += deltaTime;
 
       // обработка нажатий (требуется модуль byte):
       if (modules.byte && keylocks) {
