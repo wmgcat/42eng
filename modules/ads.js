@@ -29,6 +29,7 @@ ads.set = async function(sdk) {
       case 'yandex': path = 'https://yandex.ru/games/sdk/v2'; break;
       case 'vk': path = 'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js'; break;
       case 'crazygames': path = 'https://sdk.crazygames.com/crazygames-sdk-v2.js'; break;
+      case 'gamepix': path = 'https://integration.gamepix.com/sdk/v3/gamepix.sdk.js'; break;
     }
 
     try {
@@ -47,7 +48,7 @@ ads.init = async function() {
   if (!this.sdk) return;
 
   switch(this.sdk) {
-    case 'yandex':
+    case 'yandex': {
       this.main = await YaGames.init();
 
       const safeStorage = await this.main.getStorage();
@@ -60,7 +61,7 @@ ads.init = async function() {
       // проверка авторизации:
       const player = await this.main.getPlayer();
       this.auth = player.getMode() !== 'lite';
-    break;
+    } break;
     case 'vk':
       await vkBridge.send("VKWebAppInit", {});
       ads.main = true;
@@ -69,6 +70,14 @@ ads.init = async function() {
     case 'crazygames':
       ads.main = window.CrazyGames.SDK;
     break;
+    case 'gamepix': {
+      ads.main = GamePix;
+      localStorage = ads.main.localStorage;
+      
+      /*await Object.defineProperty(window, 'localStorage', {
+        get: () => ads.main.localStorage
+      });*/
+    } break;
   }
 }
 
@@ -108,6 +117,12 @@ ads.fullscreen = async function() {
         this.main.ad.requestAd('midgame', {
           adError: err => rej(err),
           adFinished: () => res(true)
+        });
+      break;
+      case 'gamepix':
+        this.main.interstitialAd().then(res => {
+          if (res.success) res(true);
+          else rej('Ошибка фуллскрин рекламы!');
         });
       break;
     }
@@ -157,6 +172,12 @@ ads.reward = async function() {
           adFinished: () => res(true)
         });
       break;
+      case 'gamepix':
+        this.main.rewardAd().then(e => {
+          if (e.success) res(true);
+          else res(false);
+        });
+      break;
     }
   });
   try {
@@ -185,6 +206,9 @@ ads.leaderboard.set = async function(id) {
     case 'yandex':
       ads.main.board = await ads.main.getLeaderboards();
     break;
+    case 'gamepix':
+      ads.main.board = true;
+    break;
   }
 }
 
@@ -199,6 +223,9 @@ ads.leaderboard.score = async function(score) {
   switch(ads.sdk) {
     case 'yandex':
       await ads.main.board.setLeaderboardScore(this.board, score);
+    break;
+    case 'gamepix':
+      ads.main.updateScore(score);
     break;
   }
 }

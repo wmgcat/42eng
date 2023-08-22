@@ -290,8 +290,8 @@ let Add = {
 
       mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
       mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
-      mouse.display_x = xoff;
-      mouse.display_y = yoff;
+      mouse.display_x = xoff * cfg.pixel;
+      mouse.display_y = yoff * cfg.pixel;
       if (isTouch) {
         is_touch = true;
         mouse.touch = {
