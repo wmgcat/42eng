@@ -20,8 +20,9 @@ ads.feed = false; // оставлен ли отзыв
  * Загружает файл SDK в игру
  * 
  * @param {string} sdk SDK площадки 
+ * @param {number} id ID игры, требуется в некоторых SDK
 */
-ads.set = async function(sdk) {
+ads.set = async function(sdk, id) {
   this.sdk = sdk;
   if (sdk) {
     let path = '';
@@ -30,6 +31,10 @@ ads.set = async function(sdk) {
       case 'vk': path = 'https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js'; break;
       case 'crazygames': path = 'https://sdk.crazygames.com/crazygames-sdk-v2.js'; break;
       case 'gamepix': path = 'https://integration.gamepix.com/sdk/v3/gamepix.sdk.js'; break;
+      case 'vkplay':
+        ads.id = id;
+        path = `https://vkplay.ru/app/${ads.id}/static/mailru.core.js`;
+      break;
     }
 
     try {
@@ -73,10 +78,16 @@ ads.init = async function() {
     case 'gamepix': {
       ads.main = GamePix;
       localStorage = ads.main.localStorage;
-      
-      /*await Object.defineProperty(window, 'localStorage', {
-        get: () => ads.main.localStorage
-      });*/
+    } break;
+    case 'vkplay': {
+      if (typeof(iframeApi) === 'undefined') {
+          Add.error('Игра находится не внутри iframe!', ERROR.ADS);
+          return;
+      }
+      ads.main = await iframeApi({
+        appid: ads.id,
+        adsCallback: function(data) { ads.main.adData = data; }
+      });
     } break;
   }
 }
@@ -120,11 +131,23 @@ ads.fullscreen = async function() {
         });
       break;
       case 'gamepix':
-        this.main.interstitialAd().then(res => {
-          if (res.success) res(true);
+        this.main.interstitialAd().then(e => {
+          if (e.success) res(true);
           else rej('Ошибка фуллскрин рекламы!');
         });
       break;
+      case 'vkplay': {
+        this.main.showAds({ interstitial: true });
+        res(new Promise(async (su, er) => {
+          const _set = setInterval(() => {
+            if (!ads.main.adData) return;
+            clearInterval(_set);
+            const data = ads.main.adData;
+            delete ads.main.adData;
+            su(true);
+          }, 1);
+        }));
+      } break;
     }
   });
   modules.ads.ad_timer.reset();
@@ -178,6 +201,20 @@ ads.reward = async function() {
           else res(false);
         });
       break;
+      case 'vkplay': {
+        this.main.showAds();
+        res(new Promise(async (su, er) => {
+          const _set = setInterval(() => {
+            if (!ads.main.adData) return;
+            clearInterval(_set);
+            const data = ads.main.adData;
+            delete ads.main.adData;
+            if (data.type != 'adDismissed' && data.type != 'adError')
+              su(true);
+            else su(false);
+          }, 1);
+        }));
+      } break;
     }
   });
   try {
@@ -362,7 +399,10 @@ ads.pay.set = async function(id) {
       case 'yandex':
         ads.pay.main.purchase({id: id}).then((item) => {
           res(item.purchaseToken);
-        }).catch(e => res(false));
+        }).catch(e => {
+          Add.debug(e);
+          res(false);
+        });
       break;
       default:
         res(false);

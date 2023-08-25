@@ -45,7 +45,7 @@ particle.create = (props, x, y) => {
         if (!props[key].random)
           part.setProperty(key, props[key].start, props[key].end, props[key].step);
         else {
-          const value = ~~(Math.random() * props[key].random);
+          const value = props[key].start + Math.random() * (props[key].end - props[key].start);
           part.setProperty(key, value, value, 0);
         }
       break;
@@ -130,7 +130,7 @@ const templateParticle = new Obj('$part',
 
     if (!'angle' in this.data) return;
     this.x += Math.cos(math.torad(this.data.angle.start)) * this.data.speed * deltaTime;
-    this.y += Math.sin(math.torad(this.data.angle.start)) * this.data.speed * deltaTime + (this.data.gravity || 0) * deltaTime;
+    this.y -= Math.sin(math.torad(this.data.angle.start)) * this.data.speed * deltaTime + (this.data.gravity || 0) * deltaTime;
 
     if (!'gravity' in this.data) return;
     this.data.gravity = math.lerp(this.data.gravity, -this.data.save_gravity, cfg.particle.gravity * deltaTime);
