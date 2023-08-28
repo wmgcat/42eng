@@ -432,7 +432,12 @@ ads.pay.get = async function() {
   const promise = new Promise((res, rej) => {
     switch(ads.sdk) {
       case 'yandex':
-        ads.pay.main.getPurchases().then(list => res(list)).catch(e => res([]));
+        ads.pay.main.getPurchases()
+          .then(list => res(list))
+          .catch(e => {
+            Add.error(e, ERROR.ADS);
+            res([]);
+          });
       break;
       default:
         rej([]);
@@ -486,23 +491,6 @@ ads.pay.success = async function(token) {
         ads.pay.main.consumePurchase(token).then(e => {
           res(true);
         });
-
-        /*const pays = await ads.pay.get();
-        for (const pay of (pays || [])) {
-          switch(pay.productID) {
-            case 'all':
-              allShopYABuy();
-            break;
-            case 'quest':
-              questYABuy();
-            break;
-          }
-          ads.pay.main.consumePurchase(pay.purchaseToken);
-          funcSave();
-        }
-      }*/
-
-        //ads.pay.main.getCatalog().then(list => res(list)).catch(e => res([]));
       break;
       default:
         rej(false);

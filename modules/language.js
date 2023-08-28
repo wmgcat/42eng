@@ -8,7 +8,7 @@
  * Модуль локализации
  * @namespace
 */
-const language = new Module('language', '1.2');
+const language = new Module('language', '1.3');
 
 language.table = {};
 language.select = '';
@@ -21,18 +21,8 @@ language.select = '';
 */
 language.use = function(...args) {
   if (!args[0]) return false;
-
-  let text = args[0], pos = 0,
-      arr = this.table[this.select] || {};
-  const path = text.split('.')
-
-  while(arr[path[pos]]) {
-    if (typeof(arr[path[pos]]) == 'string') {
-      text = arr[path[pos]];
-      break;
-    }
-    arr = arr[path[pos++]];
-  }
+  
+  let text = ((this.table[this.select] || {})[args[0]]) || args[0];
   for (const param of args.splice(1, args.length - 1))
     text = text.replace('%s', `${this.use(param)}`);
 
@@ -54,7 +44,30 @@ Add.language = async function(path, short, primary=false) {
       const local = document.createElement('script');
 
       local.onload = () => {
-        modules.language.table[short] = Eng.copy(Lang);
+
+        /**
+         * Рекурсивная функция для возвращения ключей
+         * 
+         * @param {object} obj Объект с ключами
+         * @param {string|bool} [param=false] Параметр, который добавляется к ключам в новом объекте
+         * @return {object}
+        */
+        function recursiveTableMove(obj, param=false) {
+          const nparam = param ? `${param}.` : '';
+          let nobj = {};
+
+          for (const key of Object.keys(obj)) {
+            if (typeof(obj[key]) == 'object') {
+              nobj = Object.assign({}, recursiveTableMove(obj[key], `${nparam}${key}`), nobj);
+            } else
+            nobj[`${nparam}${key}`] = obj[key];
+          }
+
+          return nobj;
+        }
+
+        modules.language.table[short] = recursiveTableMove(Eng.copy(Lang));
+
         if (primary) modules.language.select = short;
         loaded++;
         res(true);

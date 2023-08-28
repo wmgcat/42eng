@@ -47,8 +47,8 @@ let cfg = {
   author: 'wmgcat',
   debug: false,
   build: {
-    v: '1.7.5.5',
-    href: 'github.com/wmgcat/42eng'
+    v: '1.7.5.6',
+    href: 'https://github.com/wmgcat/42eng'
   },
   grid: 32,
   zoom: 1,
@@ -98,13 +98,30 @@ const Eng = {
 
   /** Выводит информацию о проекте */
   console: () => {
-    let img = [
-      `информация о проекте:`,
-      `${cfg.title} автор: ${cfg.author}`,
+    const style = [
+      `background: ${cfg.loading.background};`,
+      `color: ${cfg.loading.color};`,
+      `padding: 1rem;`,
+      'font: 1rem/3 Consolas;'
+    ].join('');
+
+    const info = [
+      `${cfg.title}`,
       `версия: ${cfg.build.v}`,
       `ссылка: ${cfg.build.href}`
     ];
-    console.log(img.join('\n'));
+
+    // добавление отступов:
+    const maxWidth = info.sort((a, b) => b.length - a.length)[0];
+    for (let i = 0; i < info.length; i++) {
+      const range = ~~((maxWidth.length - info[i].length));
+      let str = '';
+      for (let j = 0; j < range; j++)
+        str += ' ';
+      info[i] = `${str}${info[i]}${str}`;
+    }
+
+    console.log(`%c%s`, style, info.sort((a, b) => b.length - a.length).join('\n'));
   },
 
   /**
