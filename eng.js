@@ -304,7 +304,7 @@ let Add = {
       const rect = canvas.getBoundingClientRect();
       const xoff = (isTouch ? e.changedTouches[0].clientX : e.clientX) - rect.left,
             yoff = (isTouch ? e.changedTouches[0].clientY : e.clientY) - rect.top;
-
+      
       mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
       mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
       mouse.display_x = xoff * cfg.pixel;
@@ -312,8 +312,8 @@ let Add = {
       if (isTouch) {
         is_touch = true;
         mouse.touch = {
-          x: xoff,
-          y: yoff
+          x: xoff * cfg.pixel,
+          y: yoff * cfg.pixel
         }
       }
       if (!bind) return false;
