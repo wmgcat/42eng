@@ -1,0 +1,46 @@
+<snippet>
+  <content><![CDATA[
+// параметры проекта:
+
+cfg.modulepath = '${1:../42eng/modules/}';
+cfg.datapath = '${2:data}';
+
+cfg.sort = ${3:false};
+cfg.grid = 32;
+cfg.window.fps = 120;
+
+cfg.smooth = false;
+cfg.pixel = 1;
+
+
+cfg.gamename = '${4:game_dev}';
+cfg.v = '${5:0.0.1}';
+
+
+cfg.debug = true;
+
+
+const canvas = Add.canvas(
+  
+  // загрузка ресурсов:
+  async function() {
+
+    Add.debug('Приложение загрузилось!');
+  },
+
+  // игра:
+  function() {
+
+  },
+
+  // экран загрузки:
+  function(percent) {
+
+  }
+)
+
+canvas.init();
+canvas.update();
+]]></content>
+  <tabTrigger>42eng.app</tabTrigger>
+</snippet>
