@@ -12,7 +12,7 @@ ERROR.FEEDBACK = 6; // ошибка, которая указывает что н
 ads.sdk = ''; // SDK
 ads.main = false;
 ads.auth = false; // авторизация на площадке
-ads.ad_timer = timer.create(90); // ограничитель на показ рекламы раз в 5 секунд
+ads.ad_timer = timer.create(90); // ограничитель на показ рекламы раз в 1,5 минуты
 ads.ad_timer.reset(999);
 ads.feed = false; // оставлен ли отзыв
 
