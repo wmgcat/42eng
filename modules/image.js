@@ -166,43 +166,54 @@ class _Image {
    * @param  {number} [yscale=1] Увеличение по Y
    * @param  {number} [rotate=0] Поворот
   */
-  draw(cvs, x, y, w, h, alpha=1, xscale=1, yscale=1, rotate=0) {
-    if (!this.image || !xscale || !yscale || !alpha || !cvs) return;
+  draw(cvs, x, y, w=this.w, h=this.h, alpha=1, xscale=1, yscale=1, rotate=0) {
+    if (!this.image) return;
 
-    const nw = w || this.w, nh = h || this.h,
-          xoff = nw / this.w * this.xoff, yoff = nh / this.h * this.yoff;
+    let left = 0, top = 0, img = this.image,
+        source_w = this.image.width;
 
-    cvs.save();
-      if (alpha != 1) cvs.globalAlpha = alpha;
+    if (this.reference) {
+      img = images[this.path];
+      left = this.image.left;
+      top = this.image.top;
+      source_w = this.image.w;
+    }
 
-      cvs.translate(x - xoff * xscale, y - yoff * yscale);
+    left += (this.left + this.w * ~~this.current_frame) % source_w;
+    top += this.top + ~~((this.left + this.w * ~~this.current_frame) / source_w) * this.h;
+
+    const xoff = w / this.w * this.xoff, yoff = h / this.h * this.yoff;
+
+    
+
+    cvs.translate(x - xoff * xscale, y - yoff * yscale);
+
+
+    if (xscale != 1 || yscale != 1) {
+      cvs.save();
       cvs.scale(xscale, yscale);
+    }
 
-      if (rotate && modules.math) {
-        cvs.translate(xoff, yoff);
-        cvs.rotate(math.torad(rotate));
-        cvs.translate(-xoff, -yoff);
-      }
+    if (rotate && modules.math) {
+      cvs.translate(xoff, yoff);
+      cvs.rotate(math.torad(rotate));
+      cvs.translate(-xoff, -yoff);
+    }
 
-      let left = 0, top = 0, img = this.image,
-          source_w = this.image.width;
+    if (alpha != 1) cvs.globalAlpha = alpha;
 
-      if (this.reference) {
-        img = images[this.path];
-        left = this.image.left;
-        top = this.image.top;
-        source_w = this.image.w;
-      }
+    cvs.drawImage(img, left, top, this.w, this.h, 0, 0, w, h);
 
-      left += (this.left + this.w * ~~this.current_frame) % source_w;
-      top += this.top + ~~((this.left + this.w * ~~this.current_frame) / source_w) * this.h;
+    if (rotate && modules.math) {
+      cvs.translate(xoff, yoff);
+      cvs.rotate(-math.torad(rotate));
+      cvs.translate(-xoff, -yoff);
+    }
 
-      cvs.drawImage(img, left, top, this.w, this.h, 0, 0, nw, nh);
+    if (xscale != 1 || yscale != 1) cvs.restore();
 
-      if (alpha != 1) cvs.globalAlpha = 1;
-    cvs.restore();
-
-    if (this.frames > 1) this.current_frame = (this.current_frame + this.speed * deltaTime) % this.frames;
+    cvs.translate(-x + xoff * xscale, -y + yoff * yscale);
+    if (alpha != 1) cvs.globalAlpha = 1;
   }
 
   /**
