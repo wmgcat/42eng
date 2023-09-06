@@ -213,6 +213,8 @@ class _Image {
     if (xscale != 1 || yscale != 1) cvs.restore();
 
     cvs.translate(-x + xoff * xscale, -y + yoff * yscale);
+    if (this.frames > 1 && this.speed)
+      this.current_frame = (this.current_frame + this.speed * deltaTime) % this.frames;
     if (alpha != 1) cvs.globalAlpha = 1;
   }
 

@@ -152,11 +152,14 @@ ads.fullscreen = async function() {
   });
   modules.ads.ad_timer.reset();
   try {
+    pause = true;
     const state = await promise;
     if (modules.audio) Eng.focus(true);
+    pause = false;
     return state;
   }
   catch(err) {
+    pause = false;
     return Add.error(err, ERROR.ADS);
   }
 }
@@ -218,11 +221,16 @@ ads.reward = async function() {
     }
   });
   try {
+    pause = true;
     const state = await promise;
     if (modules.audio) Eng.focus(true);
+    pause = false;
     return state;
   }
-  catch(err) { return Add.error(err, ERROR.ADS); }
+  catch(err) {
+    pause = false;
+    return Add.error(err, ERROR.ADS);
+  }
 }
 
 /**
