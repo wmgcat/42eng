@@ -285,12 +285,11 @@ let Add = {
       if (bind.check('textbox')) return false;
 
       const code = e.code.toLowerCase().replace('key', '');
+      if (code in keylocks)
+        bind[e.type == 'keydown' ? 'add' : 'clear'](keylocks[code]);
 
       e.preventDefault();
       e.stopImmediatePropagation();
-
-      if (code in keylocks)
-        bind[e.type == 'keydown' ? 'add' : 'clear'](keylocks[code]);
     }
 
     /**
@@ -363,19 +362,21 @@ let Add = {
 
     /** Устанавливает события и отключает аудиоплеер */
     const funcReady = () => {
-      addEventListener('keydown', funcKeyChecker, false);
-      addEventListener('keyup', funcKeyChecker, false);
-      addEventListener('contextmenu', e => e.preventDefault(), false);
-      addEventListener('resize', funcResize, false);
-      addEventListener('wheel', e => e.preventDefault(), { passive: false });
+      window.onkeydown = funcKeyChecker;
+      window.onkeyup = funcKeyChecker;
+      window.onresize = funcResize;
+
+      canvas.onwheel = e => e.preventDefault();
+      canvas.oncontextmenu = e => e.preventDefault();
 
       for (const event of ['mousedown', 'mouseup', 'mousemove'])
-        window[`on${event}`] = funcMouseChecker;
+        canvas[`on${event}`] = funcMouseChecker;
 
       for (const event of ['touchstart', 'touchend', 'touchmove'])
         canvas[`on${event}`] = funcMouseChecker;
 
-      if (modules.audio) Eng.focus(true);
+      if (modules.audio)
+        Eng.focus(true);
       funcResize();
     }
 
@@ -424,44 +425,42 @@ let Add = {
           cvs.fillRect(x + 2, y + 2, (w - 4) * percent, cfg.grid - 4);
         } else loading(loaded / mloaded, current_time);
       } else {
-        cvs.save();
-          cvs.scale(cfg.zoom, cfg.zoom);
-          cvs.translate(-cameraes[current_camera].x / cfg.zoom, -cameraes[current_camera].y / cfg.zoom);
+        cvs.translate(-cameraes[current_camera].x, -cameraes[current_camera].y);
+        cvs.scale(cfg.zoom, cfg.zoom);
 
-          update(deltaTime);
+        update(deltaTime);
 
-          // сортировка:
-          if (cfg.sort && objects)
-            objects = objects.filter(x => x != false).sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
+        // сортировка:
+        if (cfg.sort && objects)
+          objects = objects.filter(x => x != false).sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
 
-          // обработка всех объектов:
-          for (const obj of objects) {
-            if (!obj) continue;
+        // обработка всех объектов:
+        for (const obj of objects) {
+          if (!obj) continue;
 
-            // совместимость со старыми версиями:
-            if (obj.create && typeof(obj.create) == 'function') {
-              obj.__funcCreate = obj.create;
-              delete obj.create;
-            }
-            if (obj.update && typeof(obj.update) == 'function') {
-              obj.__funcUpdate = obj.update;
-              delete obj.update;
-            }
-            if (obj.draw && typeof(obj.draw) == 'function') {
-              obj.__funcDraw = obj.draw;
-              delete obj.draw;
-            }
-
-            if (!editor && !obj.__isCreate && obj.__funcCreate) {
-              obj.__funcCreate();
-              obj.__isCreate = true;
-            }
-            if (!pause && obj.__funcUpdate) obj.__funcUpdate(current_time);
-            if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
+          // совместимость со старыми версиями:
+          if (obj.create && typeof(obj.create) == 'function') {
+            obj.__funcCreate = obj.create;
+            delete obj.create;
+          }
+          if (obj.update && typeof(obj.update) == 'function') {
+            obj.__funcUpdate = obj.update;
+            delete obj.update;
+          }
+          if (obj.draw && typeof(obj.draw) == 'function') {
+            obj.__funcDraw = obj.draw;
+            delete obj.draw;
           }
 
-        cvs.restore();
-        
+          if (!editor && !obj.__isCreate && obj.__funcCreate) {
+            obj.__funcCreate();
+            obj.__isCreate = true;
+          }
+          if (!pause && obj.__funcUpdate) obj.__funcUpdate(current_time);
+          if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
+        }
+        cvs.resetTransform();
+
         // отрисовка интерфейсов:
         gui.forEach(func => func(cvs));
         if (modules.particle)
