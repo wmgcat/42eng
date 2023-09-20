@@ -366,7 +366,12 @@ let Add = {
       window.onkeyup = funcKeyChecker;
       window.onresize = funcResize;
 
-      canvas.onwheel = e => e.preventDefault();
+      canvas.onwheel = e => {
+        if (bind) {
+          bind.add('wheel' + (e.deltaY > 0 ? 'up' : 'down'));
+        }
+        e.preventDefault();
+      }
       canvas.oncontextmenu = e => e.preventDefault();
 
       for (const event of ['mousedown', 'mouseup', 'mousemove'])
@@ -404,7 +409,7 @@ let Add = {
           const arr = [];
           for (const key in keylocks)
             arr.push(keylocks[key]);
-          arr.push('uclick', 'dclick', 'hover', 'textbox');
+          arr.push('uclick', 'dclick', 'hover', 'textbox', 'wheelup', 'wheeldown');
 
           bind = new Byte(...arr);
         }
@@ -468,7 +473,7 @@ let Add = {
 
         if (!bind) return;
         canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
-        bind.clear('hover', 'dclick', 'uclick');
+        bind.clear('hover', 'dclick', 'uclick', 'wheelup', 'wheeldown');
       }
     }
 

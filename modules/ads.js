@@ -66,6 +66,7 @@ ads.init = async function() {
       // проверка авторизации:
       const player = await this.main.getPlayer();
       this.auth = player.getMode() !== 'lite';
+      this.player = player;
     } break;
     case 'vk':
       await vkBridge.send("VKWebAppInit", {});
@@ -582,4 +583,17 @@ ads.cloud.set = async function(data) {
     Add.error(err, ERROR.ADS);
     return false;
   }
+}
+
+/**
+ * Открытие ссылки
+ * 
+ * @param  {string} url Адрес
+*/
+ads.open = function(url) {
+  if (typeof(window.open) == 'function') {
+    window.open(url, '_blank');
+    return;
+  }
+  window.location.href = url;
 }
