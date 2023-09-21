@@ -1,10 +1,10 @@
 /**
  * @file Модуль таймеров
  * @author wmgcat
- * @version 1.1
+ * @version 1.2
 */
 
-const timer = new Module('timer', '1.1');
+const timer = new Module('timer', '1.2');
 
 /**
  * Возвращает объект класса Timer
@@ -56,10 +56,9 @@ class Timer {
    * @return {number}
   */
   delta() {
-    if (!modules.math) return 0;
     if (this.isPause)
-      return modules.math.clamp(this.save_point / this.max, 0, 1);
-    return modules.math.clamp(Math.max(this.point - Date.now(), 0) / this.max, 0, 1);
+      return Math.min(Math.max(this.save_point / this.max, 0), 1);
+    return Math.min(Math.max(Math.max(this.point - Date.now(), 0) / this.max, 0), 1);
   }
   
   /**

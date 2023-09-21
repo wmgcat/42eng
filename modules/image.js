@@ -194,9 +194,9 @@ class _Image {
       cvs.scale(xscale, yscale);
     }
 
-    if (rotate && modules.math) {
+    if (rotate) {
       cvs.translate(xoff, yoff);
-      cvs.rotate(math.torad(rotate));
+      cvs.rotate(rotate * Math.PI / 180);
       cvs.translate(-xoff, -yoff);
     }
 
@@ -204,9 +204,9 @@ class _Image {
 
     cvs.drawImage(img, left, top, this.w, this.h, 0, 0, w, h);
 
-    if (rotate && modules.math) {
+    if (rotate) {
       cvs.translate(xoff, yoff);
-      cvs.rotate(-math.torad(rotate));
+      cvs.rotate(-(rotate * Math.PI / 180));
       cvs.translate(-xoff, -yoff);
     }
 

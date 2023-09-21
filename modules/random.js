@@ -39,7 +39,7 @@ random.seed = Date.now();
 */
 random.rand = function() {
   let numb = Math.sin(this._seed++) * 1000;
-  return math.clamp(numb - Math.floor(numb), 0, 1);
+  return Math.min(Math.max(numb - ~~numb, 0), 1);
 }
 
 

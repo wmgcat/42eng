@@ -17,8 +17,9 @@ const search = new Module('search', '1.2');
  * @return {array}
 */
 search.distance = (name, x, y, distance, offset=0) => {
-  if (!modules.math) return false;
-  return modules.search.search(name).filter(obj => (modules.math.distance(x, y, obj.x + offset, obj.y + offset) <= distance));
+  return modules.search.search(name).filter(
+    obj => (Math.sqrt((((obj.y + offset) - y) ** 2) + (((obj.x + offset) - x) ** 2)) <= distance)
+  );
 }
 
 /**
