@@ -5,13 +5,11 @@
 > Движок использует лицензию [MIT](./LICENSE.txt), что дает вам полную свободу действий. Единственное требование — наличие файла LICENSE.txt в папке с данным проектом.
 
 ## Поддержка
-| Браузер |
-| --- |
-| Google Chrome |
-| Mozilla Firefox |
-| Safari |
-| Opera |
 
+- Google Chrome
+- Mozilla Firefox
+- Safari
+- Opera
 Другие браузеры с поддержкой Canvas API и ES6
 
 ## Дополнительно
