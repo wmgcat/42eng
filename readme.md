@@ -10,9 +10,11 @@
 - Mozilla Firefox
 - Safari
 - Opera
+- Edge
 
 Другие браузеры с поддержкой Canvas API и ES6
 
 ## Дополнительно
-* [Примеры](./examples)
-* [Сборщик проектов](https://github.com/wmgcat/builder)
+- Ссылки
+-- [Примеры](./examples)
+-- [Сборщик проектов](https://github.com/wmgcat/builder)
