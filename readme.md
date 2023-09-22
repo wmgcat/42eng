@@ -15,6 +15,5 @@
 Другие браузеры с поддержкой Canvas API и ES6
 
 ## Дополнительно
-* Ссылки
-** [Примеры](./examples)
-** [Сборщик проектов](https://github.com/wmgcat/builder)
+- [Примеры](./examples)
+- [Сборщик проектов](https://github.com/wmgcat/builder)
