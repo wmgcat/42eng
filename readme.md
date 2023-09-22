@@ -10,6 +10,7 @@
 - Mozilla Firefox
 - Safari
 - Opera
+
 Другие браузеры с поддержкой Canvas API и ES6
 
 ## Дополнительно
