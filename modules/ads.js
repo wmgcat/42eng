@@ -60,9 +60,6 @@ ads.init = async function() {
       await Object.defineProperty(window, 'localStorage', {
         get: () => safeStorage
       });
-
-      this.main.features.LoadingAPI.ready();
-
       // проверка авторизации:
       const player = await this.main.getPlayer();
       this.auth = player.getMode() !== 'lite';

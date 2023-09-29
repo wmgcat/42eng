@@ -87,6 +87,45 @@ Add.image = async function(...args) {
 }
 
 /**
+ * Добавляет изображения в объект image
+ * Примечание: Приставка "a" в начале метода означает, что метод не добавляет значение в загрузчик
+ * а загружается в фоновом режиме, не прерывая игровой процесс.
+ * 
+ * @param  {string|array} path Путь к файлу изображения, можно указывать несколько
+ * @return {string}
+*/
+Add.aImage = async function(...args) {
+  try {
+    let id;
+    for (const path of args) {
+      const promise = new Promise((res, rej) => {
+        const img = new Image();
+        img.src = path;
+
+        img.onload = () => {
+          let id = path.split('/');
+
+          if (id[0] == '.') id = id.splice(1, id.length - 1);
+          if (id[0] == cfg.datapath) id = id.splice(1, id.length - 1);
+
+          for (const ext of ['png', 'jpeg', 'jpg', 'gif'])
+            id[id.length - 1] = id[id.length - 1].replace(`.${ext}`, '');
+
+          id = id.join('.');
+          
+          images[id] = img;
+          res(id);
+        }
+        img.onerror = err => rej(err);
+
+      });
+      id = await promise;
+    }
+    return id;
+  } catch(err) { return this.error(err, ERROR.NOFILE); }
+}
+
+/**
  * Загружает изображение по URL
  * 
  * @param  {string} id Ключ по которому будет храниться изображение
