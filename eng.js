@@ -488,13 +488,21 @@ let Add = {
 
     Eng.console();
     funcReady();
+
+    const initGame = async function() {
+      if (loading) loading(0);
+      await init();
+    }
+
+
     return {
       id: canvas, cvs: cvs,
-      init: async () => {
-        if (loading)
-          loading(0);
-        await init();
-      }, update: funcUpdate,
+      init: initGame,
+      update: funcUpdate,
+      run: function() {
+        initGame();
+        funcUpdate();
+      }
     }
   },
 
