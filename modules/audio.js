@@ -4,19 +4,14 @@
  * @version 1.1
 */
 
-const audio = new Module('audio', '1.1');
+export const audio = {}
 
 audio.stack = {};
 audio.listener = [];
 audio.volumes = {};
 
-if (!cfg) cfg = {}; 
 
-cfg.setting = { // настройки звуков и музыки:
-  mute: false, // отключение всех звуков и музыки в игре
-  focus: false, // фокус окна (музыка играет только при фокусе)
-  listener: 10 // максимальное кол-во
-}
+const MAX_LISTENER = 10;
 
 
 
@@ -47,7 +42,7 @@ if (audio.context)
  * @param  {bool} [loop=false] Зацикливание
 */
 audio.play = function(id, loop=false) {
-  if (!this.context || cfg.setting.mute || !cfg.setting.focus || !this.stack[id]) return;
+  if (!this.context || !this.stack[id]) return;
 
   this.stack[id].play(loop);
 }
@@ -100,7 +95,7 @@ class Sound {
    * @param  {bool} loop Зацикливание
   */
   play(loop) {
-    if (audio.listener.length > cfg.setting.listener) return;
+    if (audio.listener.length > MAX_LISTENER) return;
 
     audio.listener.push(audio.context.createBufferSource());
     
@@ -132,47 +127,32 @@ class Sound {
  * 
  * @param  {object} obj Объект с путями к файлам, тип-дорожки: путь к файлу
 */
-Add.audio = function(obj) {
-  for (const [path, type] of Object.entries(obj)) {
-    mloaded++;
-    const req = new XMLHttpRequest();
-    req.open('GET', path, true);
-    req.responseType = 'arraybuffer';
+export async function add(game, path, type='sounds') {
+  
+
+  const req = new XMLHttpRequest();
+  req.open('GET', path, true);
+  req.responseType = 'arraybuffer';
+  game.loading = game._loading + 1;
+  return new Promise((res, rej) => {
+
     req.onload = () => {
       audio.context.decodeAudioData(req.response, buffer => {
-        loaded++;
+        game._loading++;
         if (!audio.stack) return;
 
         let npath = path.split('/');
         if (npath[0] == '.') npath = npath.splice(1, npath.length - 1);
-        if (npath[0] == cfg.datapath) npath = npath.splice(1, npath.length - 1);
+        if (npath[0] == 'data') npath = npath.splice(1, npath.length - 1);
         for (const ext of ['.wav', '.ogg', '.mp3'])
           npath[npath.length - 1] = npath[npath.length - 1].replace(ext, '');
 
         npath = npath.join('.');
         audio.stack[npath] = new Sound(buffer, type);
+        res(true);
       });
     }
-    req.onerror = () => { loaded++; }
+    req.onerror = err => { rej(err); }
     req.send();
-  }
+  });
 }
-
-/**
- * Фокусирование и изменение громкости при фокусе
- * 
- * @param  {bool} value Значение фокуса
-*/
-Eng.focus = value => {
-  cfg.setting.focus = value;
-
-  for (const volume of Object.keys(audio.volumes)) {
-    //if (!value) audio.volumes[volume].save = audio.volumes[volume].gain.value;
-    audio.volume(volume, value ? audio.volumes[volume].save : 0);
-  }
-  window[value ? 'focus' : 'blur']();
-}
-
-// событие фокуса и блюра:
-window.onblur = function() { Eng.focus(false); }
-window.onfocus = () => { audio.context.suspend().then(() => { Eng.focus(true); }); }

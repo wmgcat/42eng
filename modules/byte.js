@@ -4,16 +4,14 @@
  * @version 1.2
 */
 
-const byte = new Module('byte', '1.2');
-
-ERROR.NOKEY = 3; // Добавляет ошибку неизвестного ключа
+const ERRORNOKEY = 3; // Добавляет ошибку неизвестного ключа
 
 /**
  * Проверка значений
  * 
  * @constructor
 */
-class Byte {
+export class Byte {
   /**
    * @param  {string} key Ключ, можно указать несколько
   */
@@ -78,6 +76,6 @@ class Byte {
         if (func(key) == -1) return false;
       }
       return true;
-    } catch(err) { return Add.error(err, ERROR.NOKEY); }
+    } catch(err) { return Add.error(err, ERRORNOKEY); }
   }
 }

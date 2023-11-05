@@ -3,661 +3,169 @@
  * @author wmgcat
 */
 
-/**
- * Коды ошибок
- * @readonly
- * @enum {number}
-*/
-const ERROR = { 
-  /** Отсутствует файл */
-  NOFILE: 1,
-  /** Не поддерживается */
-  NOSUPPORT: 2 
-};
+import { Byte } from './modules/byte.js';
+import { Graphics } from './modules/graphics/main.js';
 
-/**
- * Конфигурация
- * 
- * @type {Object}
- * @property {string} [title=42eng.js] Название проекта
- * @property {string} [author=wmgcat] Автор проекта
- * @property {bool} [debug=false] Режим тестирования
- * @property {object} build Данные о движке
- * @property {string} build.v Версия движка
- * @property {string} [build.href=github.com/wmgcat/42eng] Ссылка на репозиторий
- * @property {number} [grid=32] Размер сетки
- * @property {number} [zoom=1] Увеличение
- * @property {object} window Параметры окна
- * @property {string} [window.id=game] ID холста
- * @property {number} [window.width=800] Ширина
- * @property {number} [window.height=600] Высота
- * @property {bool} [window.fullscreen=true] Полноэкранный режим
- * @property {number} [window.fps=60] Максимальное кол-во кадров в секунду, если -1, то ограничений нет
- * @property {string} [modulepath=./modules/] Путь до папки с модулями
- * @property {string} datapath Обрезание путей, для сокращения названий
- * @property {bool} [sort=true] Режим сортировки
- * @property {bool} [smooth=false] Режим сглаживания
- * @property {number} [pixel=window.devicePixelRatio] Пиксель
- * @property {object} loading Экран загрузки
- * @property {string} [loading.background=#1e0528] Цвет фона
- * @property {string} [loading.color=#9664e6] Цвет полоски загрузки
-*/
-let cfg = {
-  title: '42eng.js',
-  author: 'wmgcat',
-  debug: false,
-  build: {
-    v: '1.7.5.6',
-    href: 'https://github.com/wmgcat/42eng'
-  },
-  grid: 32,
-  zoom: 1,
-  window: {
-    id: 'game',
-    width: 800,
-    height: 600,
-    fullscreen: true,
-    fps: 60
-  },
-  modulepath: './modules/',
-  datapath: '',
-  sort: true,
-  smooth: false,
-  pixel: window.devicePixelRatio,
-  loading: {
-    background: '#1e0528',
-    color: '#9664e6'
+export class Game {
+  constructor(id, params={}) {
+    this.config = {
+      title: params.title || '42eng', author: params.author || 'wmgcat',
+      debug: params.debug || false,
+      build: {
+        v: '1.8',
+        href: 'https://github.com/wmgcat/42eng'
+      },
+      window: {
+        id: id,
+        width: params.width || 800, height: params.height || 600,
+        fullscreen: params.fullscreen || false,
+        fps: params.fps || 60
+      },
+      smooth: params.smooth || false
+    }
+    
+    this._loading = 0;
+    this._maxloading = 0;
+    this.current_time = 0;
+    this.delta = Date.now();
+    this.deltatime = 0;
+    this.pause = false;
+    this.focus = false;
+    this.resized = false;
+    this.canvasID = document.getElementById(id);
+    this.mouse = {
+      x: 0, y: 0,
+      event: new Byte('uclick', 'dclick', 'hover', 'wheelup', 'wheeldown')
+    }
+
+    if (!this.canvasID) throw Error(`Канвас ${id} не найден!`);
+    
+    window.onload = () => {
+      this.resize();
+      this.graphics = new Graphics(this.canvasID, this.config.smooth);
+    }
+    this.resize();
+    this.graphics = new Graphics(this.canvasID, this.config.smooth);
+
+    this.events = [];
+    this.listenEvents();
+    this.canvasID.focus();
   }
-};
 
-/**
- * Основной функционал движка
- * @namespace
-*/
-const Eng = {
-  /**
-   * Генерирует уникальный ID
-   * @return {string}
-  */
-  id: () => {
-    const gen4 = () => ((1 + Math.random()) * 0x10000).toString(16).substring(1);
-    return `${gen4()}_${gen4()}.${gen4()}`;
-  },
-
-  /**
-   * Копирует объект
-   * 
-   * @param  {object} source Объект
-   * @return {object}
-  */
-  copy: source => {
-    let arr = {};
-    Object.keys(source).forEach(function(e) { arr[e] = source[e]; });
-    return arr;
-  },
+  get loading() { return this._loading / this._maxloading; }
+  set loading(x) { this._maxloading += x; }
 
   /** Выводит информацию о проекте */
-  console: () => {
-    const style = [
-      `background: ${cfg.loading.background};`,
-      `color: ${cfg.loading.color};`,
-      `padding: 1rem;`,
-      'font: 1rem/3 Consolas;'
-    ].join('');
-
-    const info = [
-      `${cfg.title}`,
-      `версия: ${cfg.build.v}`,
-      `ссылка: ${cfg.build.href}`
-    ];
-
-    // добавление отступов:
-    const maxWidth = info.sort((a, b) => b.length - a.length)[0];
-    for (let i = 0; i < info.length; i++) {
-      const range = ~~((maxWidth.length - info[i].length));
-      let str = '';
-      for (let j = 0; j < range; j++)
-        str += ' ';
-      info[i] = `${str}${info[i]}${str}`;
-    }
-
-    console.log(`%c%s`, style, info.sort((a, b) => b.length - a.length).join('\n'));
-  },
-
-  /**
-   * Проверяет есть ли модули в проекте
-   * 
-   * @param  {...string} args Названия модулей
-   * @return {bool}
-  */
-  exist(...args) {
-    for (const module of args)
-      if (typeof(modules[module]) === 'undefined')
-        return false;
-
-    return true;
+  info() {
+    console.info(`Движок: 42eng (v${this.config.build.v})\n${this.config.build.href}`);
   }
-};
 
-let loaded = 0, mloaded = 0, current_time = 0, current_level = 0, current_camera = 0, delta = -1,
-    deltaTime = 0;
-let pause = false, editor = false, levelChange = false, is_touch = false;
-let render = [], gui = [], cameraes = [{'x': 0, 'y': 0}], modules = {};
-let keylocks = {}, grid = {}, levelMemory = {}, objects = [], templates = {}, images = {};
-let mouse = {x: 0, y: 0, touch: {x: 0, y: 0}, display_x: 0, display_y: 0}, bind = false;
-let lastFrame = window.performance.now();
+  resize() {
+    this.resized = true;
+    const pixel = window.devicePixelRatio;
 
-/**
- * Добавление функционала
- * @namespace
-*/
-let Add = {
-  /**
-   * Настраивает управление с клавиатуры, работает с модулем byte
-   * 
-   * @param  {string|object} char Символ клавиатуры или объект с значениями
-   * @param  {string} key Ключ, который будет присвоен
-   *
-   * @example
-   * Add.rule('w', 'up')
-   *
-   * @example
-   * Add.rule({
-   *  w: 'up', s: 'down',
-   *  a: 'left', d: 'right'
-   * })
-  */
-  rule: function(char, key) {
-    if (typeof(char) == 'object') { Object.keys(char).forEach(function(k) { keylocks[k] = char[k]; });
-    } else {
-      if (arguments.length > 2) for (let i = 0; i < arguments.length; i += 2) keylocks[arguments[i]] = arguments[i + 1];
-      else keylocks[char] = key;
+    if (this.config.window.fullscreen) {
+      this.canvasID.style.width = `${window.innerWidth}px`;
+      this.canvasID.style.height = `${window.innerHeight}px`;
+      this.canvasID.width = window.innerWidth * pixel;
+      this.canvasID.height = window.innerHeight * pixel;
+      return;
     }
-  },
+    this.canvasID.width = this.config.window.width * pixel;
+    this.canvasID.height = this.config.window.height * pixel;
+    this.canvasID.style.width = `${this.config.window.width}px`;
+    this.canvasID.style.height = `${this.config.window.height}px`;
+  }
 
-  /**
-   * Добавление скриптов
-   * 
-   * @param  {string} source Путь к файлу
-   * @return {bool}
-   *
-   * @example
-   * Add.script('./function.js').then(() => {
-   *  Add.debug("Файл загружен!");
-   * });
-  */
-  script: async function(...args) {
-    try {
-      for (const path of Object.values(args)) {
-        mloaded++;
-        const promise = new Promise((res, rej) => {
-          const script = document.createElement('script');
-          script.onload = () => {
-            loaded++;
-            res(true);
-          }
-          script.onerror = () => rej(path);
-          script.type = 'text/javascript';
-          script.src = path;
+  addEvent(control) {
+    this.events.push(control);
+    this.listenEvents();
+  }
 
-          document.head.appendChild(script);
-        });
-
-        await promise;
-        Add.debug(`скрипт ${path} загружен!`);
-      }
+  listenEvents() {
+    for (const control of this.events)
+      control.event();
+    window.onresize = () => {
+      this.resize();
+      this.graphics.reset();
     }
-    catch(err) {
-      return this.error(err, ERROR.NOFILE);
-    }
-    return true;
-  },
-
-  /**
-   * Выводит ошибку в консоли
-   * 
-   * @param  {string} msg Текст ошибки
-   * @param  {number} [code=0] Код ошибки
-   * @return {string}
-   *
-   * @example
-   * Add.error("Файл не найден!", ERROR.NOFILE);
-  */
-  error: (msg, code=0) => {
-    const str = `[CODE ${code}]: ${msg}`;
     
-    console.error(str);
-    return str;
-  },
-
-  /**
-   * @param  {function} init Выполняется только один раз
-   * @param  {function} update Выполняется после init каждый тик
-   * @param  {function} loading Функция экрана загрузки
-   * @return {object}
-   *
-   * @example
-   * const canvas = Add.canvas(
-   * async () => {
-   *  Add.debug('init');
-   * },
-   * 
-   * t => {
-   *  Add.debug('current time:', t);
-   * },
-   * 
-   * (procent, t) => {
-   *  Add.debug('loading...', procent);
-   * });
-   * canvas.init().then(() => canvas.update());
-  */
-  canvas: (init, update, loading) => {
-    let canvas = document.getElementById(cfg.window.id);
-    const fpsPerSec = 1000 / cfg.window.fps;
-
-    /**
-     * Возвращает ширину и высоту в соответствии с настройками в cfg
-     * 
-     * @return {array} [width, height]
-    */
-    const funcGetCanvasSize = () => {
-      let {width, height} = cfg.window;
-      if (cfg.window.fullscreen) [width, height] = [window.innerWidth, window.innerHeight];
-      if (cfg.pixel > 1) {
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
-        [width, height] = [width * cfg.pixel, height * cfg.pixel];
-      }
-      return [width, height];
+    const getMousePosition = event => {
+      const pixel = window.devicePixelRatio;
+      const rect = this.canvasID.getBoundingClientRect();
+      this.mouse.x = event.clientX * pixel - rect.left;
+      this.mouse.y = event.clientY * pixel - rect.top;
+    }, getTouchPosition = event => {
+      const pixel = window.devicePixelRatio;
+      const rect = this.canvasID.getBoundingClientRect();
+      this.mouse.x = event.changedTouches[0].clientX * pixel - rect.left;
+      this.mouse.y = event.changedTouches[0].clientY * pixel - rect.top;
     }
 
-    /**
-     * Проверяет нажатие клавиш
-     * 
-     * @param  {object} e Объект события
-    */
-    const funcKeyChecker = e => {
-      if (modules.audio) {
-        audio.context.resume();
-        Eng.focus(true);
-      }
-      if (!bind) return false;
-      if (bind.check('textbox')) return false;
-
-      const code = e.code.toLowerCase().replace('key', '');
-      if (code in keylocks)
-        bind[e.type == 'keydown' ? 'add' : 'clear'](keylocks[code]);
-
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-
-    /**
-     * Проверяет события мышки или тачскрина
-     * 
-     * @param  {object} e Объект события
-    */
-    const funcMouseChecker = e => {
-      const isTouch = ~['touchstart', 'touchend', 'touchmove'].indexOf(e.type);
-
-      const rect = canvas.getBoundingClientRect();
-      const xoff = (isTouch ? e.changedTouches[0].clientX : e.clientX) - rect.left,
-            yoff = (isTouch ? e.changedTouches[0].clientY : e.clientY) - rect.top;
-      
-      mouse.x = cameraes[current_camera].x + xoff * cfg.pixel;
-      mouse.y = cameraes[current_camera].y + yoff * cfg.pixel;
-      mouse.display_x = xoff * cfg.pixel;
-      mouse.display_y = yoff * cfg.pixel;
-      if (isTouch) {
-        is_touch = true;
-        mouse.touch = {
-          x: xoff * cfg.pixel,
-          y: yoff * cfg.pixel
-        }
-      }
-      if (!bind) return false;
-
-      if (modules.audio && !~['touchmove', 'mousemove'].indexOf(e.type)) {
-        modules.audio.context.resume();
-        Eng.focus(true);
-      }
-
-      switch(e.type) {
-        case 'mouseup':
-          case 'touchend':
-            is_touch = false;
-            bind.add('uclick');
-            canvas.focus();
-        break;
-        case 'mousedown':
-          case 'touchstart':
-            bind.add('dclick');
-        break;
-      }
-
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-
-    /** Функция выполняется при изменении окна */
-    const funcResize = () => {
-      funcRelease();
-      [canvas.width, canvas.height] = funcGetCanvasSize();
-
-      cvs = canvas.getContext('2d');
-
-      cvs.imageSmoothingEnabled = cfg.smooth || false;
-      if (cfg.smooth)
-        canvas.imageSmoothingQuality = 'high';
-      canvas.style['image-rendering'] = cfg.smooth ? 'smooth' : 'pixelated';
-      canvas.style['font-smooth'] = cfg.smooth ? 'always' : 'never';
-    }
-
-    /** Очистка кеша канваса */
-    const funcRelease = () => {
-      [canvas.width, canvas.height] = [1, 1];
-      cvs = canvas.getContext('2d');
-      cvs && cvs.clearRect(0, 0, 1, 1);
-    }
-
-    /** Устанавливает события и отключает аудиоплеер */
-    const funcReady = () => {
-      window.onkeydown = funcKeyChecker;
-      window.onkeyup = funcKeyChecker;
-      window.onresize = funcResize;
-
-      canvas.onwheel = e => {
-        if (bind) {
-          bind.add('wheel' + (e.deltaY > 0 ? 'up' : 'down'));
-        }
-        e.preventDefault();
-      }
-      canvas.oncontextmenu = e => e.preventDefault();
-
-      for (const event of ['mousedown', 'mouseup', 'mousemove'])
-        canvas[`on${event}`] = funcMouseChecker;
-
-      for (const event of ['touchstart', 'touchend', 'touchmove'])
-        canvas[`on${event}`] = funcMouseChecker;
-
-      if (modules.audio)
-        Eng.focus(true);
-      funcResize();
-    }
-
-    /**
-     * Функция которая обрабатывает все объекты и GUI
-     * 
-     * @param  {number} t Кол-во секунд с запуска
-    */
-    const funcUpdate = t => {
-      window.requestAnimationFrame(funcUpdate);
-
-      
-
-      const now = Date.now();
-      if (delta == -1) delta = Date.now();
-      deltaTime = (now - delta) / cfg.window.fps;
-      delta = now;
-
-
-      current_time += deltaTime;
-
-      // обработка нажатий (требуется модуль byte):
-      if (modules.byte && keylocks) {
-        if (!bind) {
-          const arr = [];
-          for (const key in keylocks)
-            arr.push(keylocks[key]);
-          arr.push('uclick', 'dclick', 'hover', 'textbox', 'wheelup', 'wheeldown');
-
-          bind = new Byte(...arr);
-        }
-      }
-
-      // экран загрузки:
-      if (loaded < mloaded) {
-        if (!loading) {
-          cvs.fillStyle = cfg.loading.background;
-          cvs.fillRect(0, 0, canvas.width, canvas.height);
-
-          const percent = loaded / mloaded, w = canvas.width * .6;
-          const x = (canvas.width - w) * .5, y = (canvas.height - cfg.grid) * .5;
-
-          cvs.fillStyle = cvs.strokeStyle = cfg.loading.color;
-          
-          cvs.strokeRect(x, y, w, cfg.grid);
-          cvs.fillRect(x + 2, y + 2, (w - 4) * percent, cfg.grid - 4);
-        } else loading(loaded / mloaded, current_time);
+    window.onmouseup = window.onmousedown = window.ontouchstart = window.ontouchend = e => {
+      if (e.type == 'touchstart' || e.type == 'touchend') {
+        getTouchPosition(e);
+        this.mouse.event.add((e.type == 'touchend') ? 'uclick' : 'dclick');
+        this.canvasID.focus();
       } else {
-        cvs.translate(-cameraes[current_camera].x, -cameraes[current_camera].y);
-        cvs.scale(cfg.zoom, cfg.zoom);
-
-        update(deltaTime);
-
-        // сортировка:
-        if (cfg.sort && objects)
-          objects = objects.filter(x => x != false).sort((a, b) => (a.yr || a.y) - (b.yr || b.y));
-
-        // обработка всех объектов:
-        for (const obj of objects) {
-          if (!obj) continue;
-
-          // совместимость со старыми версиями:
-          if (obj.create && typeof(obj.create) == 'function') {
-            obj.__funcCreate = obj.create;
-            delete obj.create;
-          }
-          if (obj.update && typeof(obj.update) == 'function') {
-            obj.__funcUpdate = obj.update;
-            delete obj.update;
-          }
-          if (obj.draw && typeof(obj.draw) == 'function') {
-            obj.__funcDraw = obj.draw;
-            delete obj.draw;
-          }
-
-          if (!editor && !obj.__isCreate && obj.__funcCreate) {
-            obj.__funcCreate();
-            obj.__isCreate = true;
-          }
-          if (!pause && obj.__funcUpdate) obj.__funcUpdate(current_time);
-          if (obj.__funcDraw) obj.__funcDraw(cvs, current_time);
+        if (e.button == 0) {
+          getMousePosition(e);
+          this.mouse.event.add((e.type == 'mouseup') ? 'uclick' : 'dclick');
         }
-        cvs.resetTransform();
-
-        // отрисовка интерфейсов:
-        gui.forEach(func => func(cvs));
-        if (modules.particle)
-          particle.draw(cvs);
-
-        if (!bind) return;
-        canvas.style.cursor = bind.check('hover') ? 'pointer' : 'default';
-        bind.clear('hover', 'dclick', 'uclick', 'wheelup', 'wheeldown');
       }
+      e.preventDefault();
+      e.stopImmediatePropagation();
     }
-
-    if (!canvas) {
-      canvas = document.createElement('canvas');
-      canvas.id = cfg.window.id;
-      [canvas.width, canvas.height] = funcGetCanvasSize();
-      document.body.appendChild(canvas);
-    }
-
-    let cvs;
-
-    Eng.console();
-    funcReady();
-
-    const initGame = async function() {
-      if (loading) loading(0);
-      await init();
-    }
-
-
-    return {
-      id: canvas, cvs: cvs,
-      init: initGame,
-      update: funcUpdate,
-      run: function() {
-        initGame();
-        funcUpdate();
-      }
-    }
-  },
-
-  /**
-   * Добавляет объект
-   * 
-   * @param  {string|object} obj Шаблон объекта или сам объект
-   * @param  {number} [x=0] X
-   * @param  {number} [y=0] Y
-   * @param  {number} [nid=false] ID объекта, по умолчанию генерируется через End.id()
-   * @return {Obj}
-   *
-   * @example
-   * let obj = Add.object('player', 50, 50);
-   * obj.yr += 8;
-  */
-  object: (obj, x=0, y=0, nid=false) => {
-    if (typeof(obj) == 'string') obj = templates[obj];
-    let id = nid || Eng.id(); 
     
-    let i = objects.findIndex(e => !e);
-    if (~i) {
-      objects[i] = Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
-      objects[i].x = x;
-      objects[i].y = y;
-      objects[i].id = id;
-    } else {
-      i = objects.push(Object.assign(Object.create(Object.getPrototypeOf(obj)), obj)) - 1;
-      objects[i].x = x;
-      objects[i].y = y;
-      objects[i].id = id;
+    window.onmousemove = getMousePosition;
+    window.ontouchmove = getTouchPosition;
+
+    this.canvasID.onwheel = e => e.preventDefault();
+    this.canvasID.oncontextmenu = e => e.preventDefault();
+
+    this.canvasID.onclick = e => {
+      this.canvasID.focus();
+      e.preventDefault();
+      e.stopImmediatePropagation();
     }
+  }
 
+  update(draw) {
+    const _update = () => {
+      const timenow = Date.now(),
+            deltatime = (timenow - this.delta) / this.config.window.fps;
+      this.deltatime = deltatime;
 
-    return objects[i];
-  },
+      if (this.graphics) {
+        let ratio = this.graphics.w;
+        if (ratio > this.graphics.h) ratio = this.graphics.h;
 
-  /**
-   * Добавляет функционал для отрисовки поверх всех игровых объектов
-   * 
-   * @param  {function} func Функция для отрисовки
-   *
-   * @example
-   * Add.gui(cvs => {
-   *  cvs.fillStyle = '#fff';
-   *  cvs.fillText("Hello world", 10, 10);
-   * });
-  */
-  gui: func => gui.push(func),
-
-  /**
-   * Выводит в консоль информацию только при включенном cfg.debug
-   * 
-   * @param  {any} arg Информация, можно перечислять через запятую
-   * @return {string|undefined}
-   *
-   * @example
-   * Add.debug("hello world", {x: 5, y: 10}, cfg.build.v);
-  */
-	debug: function(arg) {
-    if (cfg.debug) {
-      const str = `[DEBUG]: ${[...arguments].join(' ')}`;
-      
-      console.log(str);
-      return str;
-    }
-  },
-
-  /**
-   * Загружает модули из папки по умолчанию (cfg.modulepath)
-   * @param {string[]} arguments Название модуля, можно без .js
-   *
-   * @example
-   * Add.module('byte', 'search.js');
-  */
-  module: async function() {
-    try {
-      for (let i = 0; i < arguments.length; i++) {
-        mloaded++;
-        let name = arguments[i], script = document.createElement('script'), promise = new Promise((res, rej) => {
-          script.onload = function() {
-            let source = name.split('.js')[0].split('/').slice(-1)[0];
-            loaded++;
-            window[source] = modules[source];
-            Add.debug(`added: ${source} module!`);
-            res(true);
-          }
-          script.onerror = function() { rej(name); }
-        });
-        script.type = 'text/javascript';
-        script.src = `${cfg.modulepath}${name}.js`;
-        document.head.appendChild(script);
-        await promise;
+        if (this.loading < 1) {
+          this.graphics.rect(0, 0, this.graphics.w, this.graphics.h, '#000');
+          this.graphics.text._size = ratio * (.1 + Math.sin(this.current_time * .25) * .025);
+          this.graphics.text.draw(`${~~(this.loading * 100)}%`, this.graphics.w * .5, this.graphics.h * .5, '#fff', 'fill', 'cm');
+          this.graphics.round((this.graphics.w - ratio * .5) * .5, this.graphics.h * .5 + ratio * .15, ratio * .5 * this.loading, ratio * .025, ratio * .01, '#fff');
+        } else
+          draw(deltatime, this.graphics, ratio);
       }
-    } catch(err) { return this.error(err, ERROR.NOFILE); }
-  }
-}
 
-/**
- * Класс для объектов
- * @constructor
-*/
-class Obj {
-  /**
-   * @param  {string} [name=undefined] Название для объектов
-   * @param  {function} create Функция при создании объекта
-   * @param  {update} update Функция для обработки данных (зависит от pause)
-   * @param  {draw} draw Функция рисования
-   * @return {Obj}
-  */
-  constructor(name='undefined', create, update, draw) {
-    this.name = name;
-    this.x = this.y = this.image_index = 0;
-    this.__funcCreate = create;
-    this.__funcUpdate = update;
-    this.__funcDraw = draw;
+      this.delta = timenow;
+      this.current_time += deltatime;
 
-    templates[name] = this;
-  }
+      this.canvasID.style.cursor = this.mouse.event.check('hover') ? 'pointer' : 'none';
+      if (this.mouse.event.key)
+        this.mouse.event.clear();
 
-  /**
-   * Функция уничтожения объекта
-   * 
-   * @return {bool}
-  */
-  destroy() {
-    const i = objects.findIndex(e => e == this);
-    
-    if (this.delete) {
-      while(!this.delete());      
-      if (~i)
-        objects[i] = false;
-
-      return true;
-    } else {
-      if (~i)
-        objects[i] = false;
-
-      return true;
+      this.requestAnimationFrame(_update);
     }
+    _update();
   }
-}
 
-/**
- * Класс для модулей
- * @constructor
-*/
-class Module {
-  /**
-   * @param  {string} id Название модуля
-   * @param  {string} [v=1.0] Версия модуля
-  */
-  constructor(id, v='1.0') {
-    this.id = id;
-    this.v = v;
-    modules[this.id] = this;
+  requestAnimationFrame(func) {
+    (window.requestAnimationFrame || window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame || window.oRequestAnimationFrame ||
+    window.msRequestAnimationFrame || function(res) {
+      window.setTimeout(res, 1000 / this.config.window.fps);
+    })(func);
   }
 }

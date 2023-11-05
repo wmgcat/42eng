@@ -4,40 +4,7 @@
  * @version 1.2
 */
 
-const math = new Module('math', '1.2');
-
-math.memory = {
-  sin: {},
-  cos: {}
-};
-
-/**
- * Синус для записи в память значений
- * 
- * @param {number} x X
- * @return {number}
-*/
-math.sin = function(x) {
-  if (typeof(this.memory.sin[x]) !== 'undefined')
-    return this.memory.sin[x];
-
-  this.memory.sin[x] = Math.sin(x);
-  return this.memory.sin[x];
-}
-
-/**
- * Косинус для записи в память значений
- * 
- * @param {number} x X
- * @return {number}
-*/
-math.cos = function(x) {
-  if (typeof(this.memory.cos[x]) !== 'undefined')
-    return this.memory.cos[x];
-
-  this.memory.cos[x] = Math.cos(x);
-  return this.memory.cos[x];
-}
+export const math = {};
 
 /**
  * Дистанция от A до B

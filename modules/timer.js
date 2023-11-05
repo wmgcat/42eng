@@ -1,29 +1,15 @@
 /**
  * @file Модуль таймеров
  * @author wmgcat
- * @version 1.2
+ * @version 2.0
 */
-
-const timer = new Module('timer', '1.2');
-
-/**
- * Возвращает объект класса Timer
- * 
- * @param  {number} x Кол-во секунд, минут, часов
- * @param  {number} [multi=1000] Счетчик, по умолчанию установлен на секунды
- * @return {Timer}
-*/
-timer.create = (x, multi=1000) => {
-  const _timer = new Timer(x, multi);
-  return _timer;
-}
 
 /**
  * Класс для таймеров
  * 
  * @contructor 
 */
-class Timer {
+export class Timer {
   /**
    * @param  {number} x Кол-во секунд, минут, часов
    * @param  {number} [multi=1000] Счетчик, по умолчанию установлен на секунды
