@@ -8,6 +8,8 @@ import { Text } from './text.js';
 import { Pattern } from './pattern.js';
 import { _Image } from './image.js';
 
+//require('./canvas-webgl/canvas-webgl.js');
+
 class Graphics {
   constructor(canvasID, smooth=false) {
     this.link = canvasID;

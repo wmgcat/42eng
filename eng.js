@@ -133,7 +133,7 @@ export class Game {
   update(draw) {
     const _update = () => {
       const timenow = Date.now(),
-            deltatime = (timenow - this.delta) / this.config.window.fps;
+            deltatime = (timenow - this.delta) / 1000;
       this.deltatime = deltatime;
 
       if (this.graphics) {
@@ -152,7 +152,7 @@ export class Game {
       this.delta = timenow;
       this.current_time += deltatime;
 
-      this.canvasID.style.cursor = this.mouse.event.check('hover') ? 'pointer' : 'none';
+      this.canvasID.style.cursor = this.mouse.event.check('hover') ? 'pointer' : 'default';
       if (this.mouse.event.key)
         this.mouse.event.clear();
 

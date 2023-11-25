@@ -148,6 +148,7 @@ export async function add(game, path, type='sounds') {
           npath[npath.length - 1] = npath[npath.length - 1].replace(ext, '');
 
         npath = npath.join('.');
+        console.log(npath);
         audio.stack[npath] = new Sound(buffer, type);
         res(true);
       });

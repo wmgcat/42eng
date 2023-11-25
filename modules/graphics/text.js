@@ -30,6 +30,7 @@ export class Text {
       throw Error('Не найден класс Graphics!');
     this._font = font;
     this._size = size;
+    this.type = ' ';
   }
 
   get source() {
@@ -37,7 +38,7 @@ export class Text {
   }
 
   get font() {
-    return `${this._size}px ${this._font}`;
+    return `${this.type}${this._size}px ${this._font}`;
   }
 
   /**

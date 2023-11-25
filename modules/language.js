@@ -57,7 +57,14 @@ function recursiveTableMove(obj, param=false) {
   return nobj;
 }
 
+function change(lang) {
+  if (table[lang]) {
+    select = lang;
+  }
+}
+
 export {
   Language, table, select,
-  use, recursiveTableMove
+  use, recursiveTableMove,
+  change
 }
