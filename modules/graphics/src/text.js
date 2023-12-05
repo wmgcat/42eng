@@ -75,7 +75,7 @@ export class Text {
     if (typeof(str) == 'string')
       return this.source.measureText(str).width;
     
-    return str.map(line => this.width(line)).sort()[0];
+    return str.map(line => this.width(line)).sort((a, b) => b - a)[0];
   }
 
   /**

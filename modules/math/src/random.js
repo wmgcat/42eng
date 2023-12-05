@@ -4,7 +4,7 @@
  * @version 1.0
 */
 
-const random = new Module('random', '1.0');
+export const random = {};
 
 Object.defineProperty(random, 'seed', {
   
@@ -21,11 +21,11 @@ Object.defineProperty(random, 'seed', {
         _seed += seed.charCodeAt(i);
 
       this._seed = (_seed - 0) % 32000;
-      Add.debug('Установлен random.seed:', _seed);
+      //Add.debug('Установлен random.seed:', _seed);
       return this._seed;
     }
     this._seed = seed;
-    Add.debug('Установлен random.seed:', seed);
+    //Add.debug('Установлен random.seed:', seed);
     return this._seed;
   }
 });

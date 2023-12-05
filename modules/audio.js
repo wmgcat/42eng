@@ -11,7 +11,7 @@ audio.listener = [];
 audio.volumes = {};
 
 
-const MAX_LISTENER = 10;
+const MAX_LISTENER = 25;
 
 
 
@@ -115,7 +115,8 @@ class Sound {
     if (this.index == -1) return;
 
     if (this.index.stop) this.index.stop();
-    const index = audio.listener.indexOf(this.index);
+    
+    let index = audio.listener.indexOf(this.index);
     if (~index)
       audio.listener = audio.listener.splice(index, 1);
     this.index = -1;
@@ -148,7 +149,6 @@ export async function add(game, path, type='sounds') {
           npath[npath.length - 1] = npath[npath.length - 1].replace(ext, '');
 
         npath = npath.join('.');
-        console.log(npath);
         audio.stack[npath] = new Sound(buffer, type);
         res(true);
       });

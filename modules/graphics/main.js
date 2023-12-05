@@ -4,11 +4,9 @@
  * @version 1.1
 */
 
-import { Text } from './text.js';
-import { Pattern } from './pattern.js';
-import { _Image } from './image.js';
-
-//require('./canvas-webgl/canvas-webgl.js');
+import { Text } from './src/text.js';
+import { Pattern } from './src/pattern.js';
+import { _Image } from './src/image.js';
 
 class Graphics {
   constructor(canvasID, smooth=false) {
@@ -33,6 +31,7 @@ class Graphics {
       this.link.imageSmoothingQuality = 'high';
     this.link.style['image-rendering'] = this.smooth ? 'smooth' : 'pixelated';
     this.link.style['font-smooth'] = this.smooth ? 'always' : 'never';
+    
   }
 
   /**

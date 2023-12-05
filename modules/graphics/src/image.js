@@ -5,7 +5,7 @@
 */
 
 export class _Image {
-  constructor(game, path, left, top, w, h, xoff, yoff, frames, speed=1) {
+  constructor(game, path, left, top, w, h, xoff, yoff, frames, speed=1, noloaded=false) {
     this.game = game;
     this.path = path;
     
@@ -18,17 +18,20 @@ export class _Image {
     this.frames = frames;
     this.speed = speed;
     this.current_frame = 0;
+    this.noloaded = noloaded;
   }
 
   async load() {
-    this.game.loading = this.game._loading + 1;
+    if (!this.noloaded)
+      this.game.loading = this.game._loading + 1;
     const img = new Image();
     img.src = this.path;
     return new Promise((res, rej) => {
       img.onload = () => {
         this.source = img;
         this.loaded = true;
-        this.game._loading++;
+        if (!this.noloaded)
+          this.game._loading++;
         res(true);
       }
       img.onerror = err => rej(err);

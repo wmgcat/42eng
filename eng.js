@@ -62,19 +62,15 @@ export class Game {
 
   resize() {
     this.resized = true;
-    const pixel = window.devicePixelRatio;
+    const pixel = window.devicePixelRatio || 1;
 
-    if (this.config.window.fullscreen) {
-      this.canvasID.style.width = `${window.innerWidth}px`;
-      this.canvasID.style.height = `${window.innerHeight}px`;
-      this.canvasID.width = window.innerWidth * pixel;
-      this.canvasID.height = window.innerHeight * pixel;
-      return;
-    }
-    this.canvasID.width = this.config.window.width * pixel;
-    this.canvasID.height = this.config.window.height * pixel;
-    this.canvasID.style.width = `${this.config.window.width}px`;
-    this.canvasID.style.height = `${this.config.window.height}px`;
+    this.canvasID.width = window.innerWidth * pixel;
+    this.canvasID.height = window.innerHeight * pixel;
+
+    this.canvasID.style.width = `${window.innerWidth}px`;
+    this.canvasID.style.height = `${window.innerHeight}px`;
+    if (this.graphics)
+      this.graphics.reset();
   }
 
   addEvent(control) {
@@ -91,12 +87,12 @@ export class Game {
     }
     
     const getMousePosition = event => {
-      const pixel = window.devicePixelRatio;
+      const pixel = window.devicePixelRatio || 1;
       const rect = this.canvasID.getBoundingClientRect();
       this.mouse.x = event.clientX * pixel - rect.left;
       this.mouse.y = event.clientY * pixel - rect.top;
     }, getTouchPosition = event => {
-      const pixel = window.devicePixelRatio;
+      const pixel = window.devicePixelRatio || 1;
       const rect = this.canvasID.getBoundingClientRect();
       this.mouse.x = event.changedTouches[0].clientX * pixel - rect.left;
       this.mouse.y = event.changedTouches[0].clientY * pixel - rect.top;
@@ -142,7 +138,7 @@ export class Game {
 
         if (this.loading < 1) {
           this.graphics.rect(0, 0, this.graphics.w, this.graphics.h, '#000');
-          this.graphics.text._size = ratio * (.1 + Math.sin(this.current_time * .25) * .025);
+          this.graphics.text._size = ratio * (.1 + Math.sin(this.current_time) * .025);
           this.graphics.text.draw(`${~~(this.loading * 100)}%`, this.graphics.w * .5, this.graphics.h * .5, '#fff', 'fill', 'cm');
           this.graphics.round((this.graphics.w - ratio * .5) * .5, this.graphics.h * .5 + ratio * .15, ratio * .5 * this.loading, ratio * .025, ratio * .01, '#fff');
         } else
@@ -150,7 +146,7 @@ export class Game {
       }
 
       this.delta = timenow;
-      this.current_time += deltatime;
+      this.current_time = (this.current_time + deltatime * 4) % 1000;
 
       this.canvasID.style.cursor = this.mouse.event.check('hover') ? 'pointer' : 'default';
       if (this.mouse.event.key)

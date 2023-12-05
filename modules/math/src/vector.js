@@ -25,6 +25,10 @@ export class Vector {
     this.y += b.y;
   }
 
+  invert() {
+    return new Vector(-this.x, -this.y);
+  }
+
   copy() {
     return new Vector(this.x, this.y);
   }
