@@ -5,6 +5,7 @@
 
 import { Byte } from './modules/byte.js';
 import { Graphics } from './modules/graphics/main.js';
+import * as LoadingScreen from './src/loadingScreen.js';
 
 export class Game {
   constructor(id, params={}) {
@@ -18,8 +19,7 @@ export class Game {
       window: {
         id: id,
         width: params.width || 800, height: params.height || 600,
-        fullscreen: params.fullscreen || false,
-        fps: params.fps || 60
+        fullscreen: params.fullscreen || false
       },
       smooth: params.smooth || false
     }
@@ -136,13 +136,8 @@ export class Game {
         let ratio = this.graphics.w;
         if (ratio > this.graphics.h) ratio = this.graphics.h;
 
-        if (this.loading < 1) {
-          this.graphics.rect(0, 0, this.graphics.w, this.graphics.h, '#000');
-          this.graphics.text._size = ratio * (.1 + Math.sin(this.current_time) * .025);
-          this.graphics.text.draw(`${~~(this.loading * 100)}%`, this.graphics.w * .5, this.graphics.h * .5, '#fff', 'fill', 'cm');
-          this.graphics.round((this.graphics.w - ratio * .5) * .5, this.graphics.h * .5 + ratio * .15, ratio * .5 * this.loading, ratio * .025, ratio * .01, '#fff');
-        } else
-          draw(deltatime, this.graphics, ratio);
+        if (this.loading < 1) LoadingScreen.draw(this.graphics, this, ratio);
+        else draw(deltatime, this.graphics, ratio);
       }
 
       this.delta = timenow;
@@ -161,7 +156,7 @@ export class Game {
     (window.requestAnimationFrame || window.webkitRequestAnimationFrame ||
     window.mozRequestAnimationFrame || window.oRequestAnimationFrame ||
     window.msRequestAnimationFrame || function(res) {
-      window.setTimeout(res, 1000 / this.config.window.fps);
+      window.setTimeout(res, 1000 / 60);
     })(func);
   }
 }

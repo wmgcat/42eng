@@ -1,4 +1,4 @@
-import { Graphics } from './main.js';
+import { Graphics } from '../main.js';
 
 
 const ALIGN = {

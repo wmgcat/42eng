@@ -4,7 +4,7 @@
  * @version 1.1
 */
 
-const save = new Module('save', '1.1');
+export const save = {};
 
 /**
  * Сохраняет данные в localStorage, возвращает объект с данными, которые можно сохранить на сервере
