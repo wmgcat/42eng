@@ -78,4 +78,17 @@ export class Byte {
       return true;
     } catch(err) { return Add.error(err, ERRORNOKEY); }
   }
+
+  /** 
+    * Добавление нового ключа:
+    *
+    * @param {...string} args Новые ключи
+  */
+  addKey(...args) {
+    let offset = Object.keys(this.keys).length - 1;
+    for (const key of args) {
+      this.keys[key] = !offset + (2 << (offset - 1));
+      offset++;
+    }
+  }
 }

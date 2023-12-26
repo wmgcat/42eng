@@ -14,7 +14,6 @@ audio.volumes = {};
 const MAX_LISTENER = 25;
 
 
-
 const windowAudioContext = window.AudioContext || window.webkitAudioContext || false;
 audio.context = windowAudioContext ? (new windowAudioContext) : false;
 
@@ -43,7 +42,7 @@ if (audio.context)
 */
 audio.play = function(id, loop=false) {
   if (!this.context || !this.stack[id]) return;
-
+  
   this.stack[id].play(loop);
 }
 
@@ -150,6 +149,27 @@ export async function add(game, path, type='sounds') {
 
         npath = npath.join('.');
         audio.stack[npath] = new Sound(buffer, type);
+        res(true);
+      });
+    }
+    req.onerror = err => { rej(err); }
+    req.send();
+  });
+}
+
+export async function addPath(game, path, type, id) {
+  const req = new XMLHttpRequest();
+  req.open('GET', path, true);
+  req.responseType = 'arraybuffer';
+  game.loading = game._loading + 1;
+  return new Promise((res, rej) => {
+
+    req.onload = () => {
+      audio.context.decodeAudioData(req.response, buffer => {
+        game._loading++;
+        if (!audio.stack) return;
+
+        audio.stack[id] = new Sound(buffer, type);
         res(true);
       });
     }

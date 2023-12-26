@@ -18,8 +18,10 @@ export class Game {
       },
       window: {
         id: id,
-        width: params.width || 800, height: params.height || 600,
-        fullscreen: params.fullscreen || false
+        percent: params.percent || 1,
+        hideCursor: params.hideCursor || false,
+        nopixel: params.pixel || false,
+        hdrmax: params.hdrmax || 2
       },
       smooth: params.smooth || false
     }
@@ -33,6 +35,7 @@ export class Game {
     this.focus = false;
     this.resized = false;
     this.canvasID = document.getElementById(id);
+    this.loaded = false;
     this.mouse = {
       x: 0, y: 0,
       event: new Byte('uclick', 'dclick', 'hover', 'wheelup', 'wheeldown')
@@ -62,13 +65,14 @@ export class Game {
 
   resize() {
     this.resized = true;
-    const pixel = window.devicePixelRatio || 1;
-
-    this.canvasID.width = window.innerWidth * pixel;
-    this.canvasID.height = window.innerHeight * pixel;
-
+    const pixel = this.config.window.nopixel ? 1 : (Math.min(this.config.window.hdrmax, window.devicePixelRatio) || 1);
+    
     this.canvasID.style.width = `${window.innerWidth}px`;
     this.canvasID.style.height = `${window.innerHeight}px`;
+    
+    this.canvasID.width = window.innerWidth * this.config.window.percent * pixel;
+    this.canvasID.height = window.innerHeight * this.config.window.percent * pixel;
+    
     if (this.graphics)
       this.graphics.reset();
   }
@@ -78,33 +82,46 @@ export class Game {
     this.listenEvents();
   }
 
+  event(type, ...params) {
+    console.log(type, params);
+  }
+
   listenEvents() {
-    for (const control of this.events)
-      control.event();
+    window.onkeyup = window.onkeydown = e => {
+      for (const control of this.events)
+        if (!control.event(e))
+          return;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
     window.onresize = () => {
       this.resize();
       this.graphics.reset();
+      this.event('resize');
     }
     
     const getMousePosition = event => {
-      const pixel = window.devicePixelRatio || 1;
+      const pixel = this.config.window.nopixel ? 1 : (Math.min(this.config.window.hdrmax, window.devicePixelRatio) || 1);
       const rect = this.canvasID.getBoundingClientRect();
-      this.mouse.x = event.clientX * pixel - rect.left;
-      this.mouse.y = event.clientY * pixel - rect.top;
+      this.mouse.x = event.clientX * this.config.window.percent * pixel - rect.left;
+      this.mouse.y = event.clientY * this.config.window.percent * pixel - rect.top;
     }, getTouchPosition = event => {
-      const pixel = window.devicePixelRatio || 1;
+      const pixel = this.config.window.nopixel ? 1 : (Math.min(this.config.window.hdrmax, window.devicePixelRatio) || 1);
       const rect = this.canvasID.getBoundingClientRect();
-      this.mouse.x = event.changedTouches[0].clientX * pixel - rect.left;
-      this.mouse.y = event.changedTouches[0].clientY * pixel - rect.top;
+      this.mouse.x = event.changedTouches[0].clientX * this.config.window.percent * pixel - rect.left;
+      this.mouse.y = event.changedTouches[0].clientY * this.config.window.percent * pixel - rect.top;
     }
 
     window.onmouseup = window.onmousedown = window.ontouchstart = window.ontouchend = e => {
+      this.event('focus');
       if (e.type == 'touchstart' || e.type == 'touchend') {
+        this.mouse.isTouch = true;
         getTouchPosition(e);
         this.mouse.event.add((e.type == 'touchend') ? 'uclick' : 'dclick');
-        this.canvasID.focus();
       } else {
         if (e.button == 0) {
+          this.mouse.isTouch = false;
           getMousePosition(e);
           this.mouse.event.add((e.type == 'mouseup') ? 'uclick' : 'dclick');
         }
@@ -119,31 +136,34 @@ export class Game {
     this.canvasID.onwheel = e => e.preventDefault();
     this.canvasID.oncontextmenu = e => e.preventDefault();
 
-    this.canvasID.onclick = e => {
-      this.canvasID.focus();
-      e.preventDefault();
-      e.stopImmediatePropagation();
+    window.onfocus = () => {
+      this.event('focus');
+    }
+    window.onblur = () => {
+      this.event('blur');
     }
   }
 
   update(draw) {
     const _update = () => {
       const timenow = Date.now(),
-            deltatime = (timenow - this.delta) / 1000;
+            deltatime = (timenow - this.delta) * .001;
       this.deltatime = deltatime;
 
       if (this.graphics) {
         let ratio = this.graphics.w;
         if (ratio > this.graphics.h) ratio = this.graphics.h;
 
-        if (this.loading < 1) LoadingScreen.draw(this.graphics, this, ratio);
+        if (this.loading < 1 || !this.loaded) LoadingScreen.draw(this.graphics, this, ratio);
         else draw(deltatime, this.graphics, ratio);
       }
 
       this.delta = timenow;
       this.current_time = (this.current_time + deltatime * 4) % 1000;
 
-      this.canvasID.style.cursor = this.mouse.event.check('hover') ? 'pointer' : 'default';
+      if (!this.config.window.hideCursor)
+        this.canvasID.style.cursor = this.mouse.event.check('hover') ? 'pointer' : 'default';
+      else this.canvasID.style.cursor = 'none';
       if (this.mouse.event.key)
         this.mouse.event.clear();
 

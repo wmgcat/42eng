@@ -5,7 +5,6 @@
 */
 
 import { Text } from './src/text.js';
-import { Pattern } from './src/pattern.js';
 import { _Image } from './src/image.js';
 
 class Graphics {
@@ -135,5 +134,5 @@ class Graphics {
 }
 
 export {
-  Graphics, Text, Pattern, _Image
+  Graphics, Text, _Image
 }

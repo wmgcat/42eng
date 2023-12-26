@@ -1,10 +1,9 @@
-# 42eng
-Игровой движок, написанные на чистом Javascript (ES6). Использует систему модулей, не обязательно использовать абсолютно все модули, которые есть, можно ограничиться лишь тем функционалом, который вам необходим.
+Game engine using vanilla Javascript and Canvas API for graphics rendering. It does not have a graphical user interface, and any well-known project bundler can be used for project assembly!
 
-> [!NOTE]
-> Движок использует лицензию [MIT](./LICENSE.txt), что дает вам полную свободу действий. Единственное требование — наличие файла LICENSE.txt в папке с данным проектом.
+> !NOTE
+> The engine uses the [MIT](./LICENSE.txt) license, which gives you complete freedom. The only requirement is to have a LICENSE.txt file in the project folder.
 
-## Поддержка
+## Supported Browsers
 
 - Google Chrome
 - Mozilla Firefox
@@ -12,8 +11,9 @@
 - Opera
 - Edge
 
-Другие браузеры с поддержкой Canvas API и ES6
+Other browsers with Canvas API support
 
-## Дополнительно
-- [Примеры](./examples)
-- [Сборщик проектов](https://github.com/wmgcat/builder)
+## Translations:
+- [English](./readme.md)
+- [Русский](./src/langs/readme.ru.md)
+- [Français](./src/langs/readme.fr.md)

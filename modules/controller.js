@@ -8,18 +8,20 @@ export class Controller {
       arr.push(this.rule[code]);
     this.key = new Byte(...arr);
     game.addEvent(this);
+    this.game = game;
   }
 
-  event() {
-    window.onkeyup = window.onkeydown = e => {
-      if (!this.key) return false;
+  event(e) {
+    if (!this.key) return false;
 
-      const code = e.code.toLowerCase().replace('key', '');
-      if (code in this.rule)
-        this.key[e.type == 'keydown' ? 'add' : 'clear'](this.rule[code]);
-
-      e.preventDefault();
-      e.stopImmediatePropagation();
+    const code = e.code.toLowerCase().replace('key', '');
+    if (code == 'escape') {
+      this.game.event('pause');
+      return false;
     }
+    if (code in this.rule)
+      this.key[e.type == 'keydown' ? 'add' : 'clear'](this.rule[code]);
+    
+    return true;
   }
 }
