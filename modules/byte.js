@@ -85,7 +85,7 @@ export class Byte {
     * @param {...string} args Новые ключи
   */
   addKey(...args) {
-    let offset = Object.keys(this.keys).length - 1;
+    let offset = Object.keys(this.keys).length;
     for (const key of args) {
       this.keys[key] = !offset + (2 << (offset - 1));
       offset++;

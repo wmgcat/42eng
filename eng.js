@@ -25,9 +25,7 @@ export class Game {
       },
       smooth: params.smooth || false
     }
-    
-    this._loading = 0;
-    this._maxloading = 0;
+
     this.current_time = 0;
     this.delta = Date.now();
     this.deltatime = 0;
@@ -54,9 +52,6 @@ export class Game {
     this.listenEvents();
     this.canvasID.focus();
   }
-
-  get loading() { return this._loading / this._maxloading; }
-  set loading(x) { this._maxloading += x; }
 
   /** Выводит информацию о проекте */
   info() {
@@ -130,18 +125,21 @@ export class Game {
       e.stopImmediatePropagation();
     }
     
-    window.onmousemove = getMousePosition;
-    window.ontouchmove = getTouchPosition;
+    window.onmousemove = window.ontouchmove = e => {
+      if (e.type == 'mousemove') {
+        getMousePosition(e);
+        this.mouse.isTouch = false;
+      } else {
+        getTouchPosition(e);
+        this.mouse.isTouch = true;
+      }
+    }
 
     this.canvasID.onwheel = e => e.preventDefault();
     this.canvasID.oncontextmenu = e => e.preventDefault();
 
-    window.onfocus = () => {
-      this.event('focus');
-    }
-    window.onblur = () => {
-      this.event('blur');
-    }
+    window.onfocus = () => { this.event('focus'); }
+    window.onblur = () => { this.event('blur'); }
   }
 
   update(draw) {
@@ -154,7 +152,7 @@ export class Game {
         let ratio = this.graphics.w;
         if (ratio > this.graphics.h) ratio = this.graphics.h;
 
-        if (this.loading < 1 || !this.loaded) LoadingScreen.draw(this.graphics, this, ratio);
+        if (!this.loaded) LoadingScreen.draw(this.graphics, this, ratio);
         else draw(deltatime, this.graphics, ratio);
       }
 
@@ -165,7 +163,7 @@ export class Game {
         this.canvasID.style.cursor = this.mouse.event.check('hover') ? 'pointer' : 'default';
       else this.canvasID.style.cursor = 'none';
       if (this.mouse.event.key)
-        this.mouse.event.clear();
+        this.mouse.event.clear('uclick', 'hover', 'dclick');
 
       this.requestAnimationFrame(_update);
     }

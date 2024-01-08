@@ -125,7 +125,9 @@ class Sound {
 /**
  * Добавление звуков и установка их дорожки
  * 
- * @param  {object} obj Объект с путями к файлам, тип-дорожки: путь к файлу
+ * @param  {Game} game Объект игры
+ * @param {string} path Путь до файла
+ * @param {string} [type=sounds] Тип аудиофайла
 */
 export async function add(game, path, type='sounds') {
   
@@ -133,12 +135,10 @@ export async function add(game, path, type='sounds') {
   const req = new XMLHttpRequest();
   req.open('GET', path, true);
   req.responseType = 'arraybuffer';
-  game.loading = game._loading + 1;
   return new Promise((res, rej) => {
 
     req.onload = () => {
       audio.context.decodeAudioData(req.response, buffer => {
-        game._loading++;
         if (!audio.stack) return;
 
         let npath = path.split('/');
@@ -146,7 +146,6 @@ export async function add(game, path, type='sounds') {
         if (npath[0] == 'data') npath = npath.splice(1, npath.length - 1);
         for (const ext of ['.wav', '.ogg', '.mp3'])
           npath[npath.length - 1] = npath[npath.length - 1].replace(ext, '');
-
         npath = npath.join('.');
         audio.stack[npath] = new Sound(buffer, type);
         res(true);
@@ -157,16 +156,22 @@ export async function add(game, path, type='sounds') {
   });
 }
 
+/**
+ * Добавление звука с помощью require
+ *
+ * @param  {Game} game Объект игры
+ * @param {string} path Путь до файла
+ * @param {string} [type=sounds] Тип аудиофайла
+ * @param {string} id ID звука
+*/
 export async function addPath(game, path, type, id) {
   const req = new XMLHttpRequest();
   req.open('GET', path, true);
   req.responseType = 'arraybuffer';
-  game.loading = game._loading + 1;
   return new Promise((res, rej) => {
 
     req.onload = () => {
       audio.context.decodeAudioData(req.response, buffer => {
-        game._loading++;
         if (!audio.stack) return;
 
         audio.stack[id] = new Sound(buffer, type);
