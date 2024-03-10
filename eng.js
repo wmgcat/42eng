@@ -6,9 +6,13 @@
 import { Byte } from './modules/byte.js';
 import { Graphics } from './modules/graphics/main.js';
 import * as LoadingScreen from './src/loadingScreen.js';
+import * as SiteLock from './src/sitelock/main.js';
 
 export class Game {
   constructor(id, params={}) {
+    if (SiteLock.check(params.blacklist))
+      params.locked = true;
+
     this.config = {
       title: params.title || '42eng', author: params.author || 'wmgcat',
       debug: params.debug || false,
@@ -23,7 +27,10 @@ export class Game {
         nopixel: params.pixel || false,
         hdrmax: params.hdrmax || 2
       },
-      smooth: params.smooth || false
+      smooth: params.smooth || false,
+      locked: params.locked,
+      redirect: params.redirect,
+      happytimer: params.happytimer || 15
     }
 
     this.current_time = 0;
@@ -83,6 +90,8 @@ export class Game {
 
   listenEvents() {
     window.onkeyup = window.onkeydown = e => {
+      if (e.type == 'keyup')
+        this.event('anykey');
       for (const control of this.events)
         if (!control.event(e))
           return;
@@ -121,6 +130,8 @@ export class Game {
           this.mouse.event.add((e.type == 'mouseup') ? 'uclick' : 'dclick');
         }
       }
+      if (e.type == 'touchend' || e.type == 'mouseup')
+        this.event('anykey');
       e.preventDefault();
       e.stopImmediatePropagation();
     }
@@ -144,7 +155,7 @@ export class Game {
 
   update(draw) {
     const _update = () => {
-      const timenow = Date.now(),
+      const timenow = performance.now(),
             deltatime = (timenow - this.delta) * .001;
       this.deltatime = deltatime;
 
@@ -154,6 +165,30 @@ export class Game {
 
         if (!this.loaded) LoadingScreen.draw(this.graphics, this, ratio);
         else draw(deltatime, this.graphics, ratio);
+        
+        if (this.config.locked) {
+          if (!this.config.lockedTimer) {
+            this.config.lockedTimer = new SiteLock.Timer(this.config.happytimer);
+          } else {
+            if (this.config.lockedTimer.check()) {
+              SiteLock.draw(this.graphics, this, ratio);
+              if (this.config.redirect) {
+                const a = document.createElement('a');
+                a.href = this.config.redirect;
+                a.target = '_blank';
+                a.style.position = 'fixed';
+                a.style.top = '0';
+                a.style.left = '0';
+                a.style.width = '100vw';
+                a.style.height = '100vh';
+                a.style.zIndex = '100';
+                document.body.appendChild(a);
+
+                delete this.config.redirect;
+              }
+            }
+          }
+        }
       }
 
       this.delta = timenow;

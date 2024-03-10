@@ -96,9 +96,35 @@ export class Text {
   }
 
   /**
+   * Рисует текст с обводкой
+   * 
+   * @param {string|array} str Текст
+   * @param {number} x X
+   * @param {number} y Y
+   * @param {string} [color=#fff] Цвет текста
+   * @param {string} [linecolor=#000] Цвет обводки
+   * @param {string} [align=lt] Положение текста
+   * @return {object} Возвращает объект с методами: one - для обычного текста, multi - для переноса строки
+  */
+  outline(str, x, y, color='#fff', linecolor='#000', align='lt') {
+    this.source.lineWidth = this._size * .05;
+
+    return {
+      one: () => {
+        this.draw(str, x, y, color, 'fill', align);
+        this.draw(str, x, y, linecolor, 'stroke', align);
+      },
+      multi: () => {
+        this.drawMultiLine(str, x, y, color, 'fill', align);
+        this.drawMultiLine(str, x, y, linecolor, 'stroke', align);
+      }
+    }
+  }
+
+  /**
    * Рисует текст с переносом строки
    * 
-   * @param {string} str Текст
+   * @param {array} str Текст
    * @param {number} x X
    * @param {number} y Y
    * @param {string|object} [color=#000] Цвет или Текстура

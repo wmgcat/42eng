@@ -16,10 +16,15 @@ export class Timer {
   */
   constructor(x, multi=1000) {
     this.point = 0;
-    this.max = x * multi;
+    this._max = x * multi;
     this.save_max = x;
     this.isPause = false;
+    this.multi = multi;
     this.reset();
+  }
+
+  set max(x) {
+    this._max = x * this.multi;
   }
 
   /**
@@ -43,8 +48,8 @@ export class Timer {
   */
   delta() {
     if (this.isPause)
-      return Math.min(Math.max(this.save_point / this.max, 0), 1);
-    return Math.min(Math.max(Math.max(this.point - Date.now(), 0) / this.max, 0), 1);
+      return Math.min(Math.max(this.save_point / this._max, 0), 1);
+    return Math.min(Math.max(Math.max(this.point - Date.now(), 0) / this._max, 0), 1);
   }
   
   /**
@@ -53,7 +58,7 @@ export class Timer {
    * @return {number}
   */
   count() {
-    return ~~(Math.abs(this.point - Date.now()) / this.max);
+    return ~~(Math.abs(this.point - Date.now()) / this._max);
   }
 
   /**
@@ -62,7 +67,7 @@ export class Timer {
    * @param  {number} [x=0] Значение счетчика
   */
   reset(x=0) {
-    if (!x) this.point = Date.now() + this.max;
+    if (!x) this.point = Date.now() + this._max;
     else this.point = x;
   }
 
