@@ -355,6 +355,46 @@ class Graphics {
       ...params
     }, 'TRIANGLE_FAN');
   }
+
+  /**
+   * Рисует треугольник
+   *
+   * @param {number} x1 X координата первой вершины
+   * @param {number} y1 Y координата первой вершины
+   * @param {number} x2 X координата второй вершины
+   * @param {number} y2 Y координата второй вершины
+   * @param {number} x3 X координата третьей вершины
+   * @param {number} y3 Y координата третьей вершины
+   * @param {string|object} color='#000' Цвет или Текстура
+   * @param {number} alpha=1 Прозрачность
+   */
+  triangle(x1, y1, x2, y2, x3, y3, color = '#000', alpha = 1, program = this.programList.default, params = {}) {
+    this.setProgram(program);
+
+    // Нормализация координат
+    const nx1 = x1 / this.w * 2;
+    const ny1 = y1 / this.h * 2;
+    const nx2 = x2 / this.w * 2;
+    const ny2 = y2 / this.h * 2;
+    const nx3 = x3 / this.w * 2;
+    const ny3 = y3 / this.h * 2;
+
+    program.update(program, this.source, 3, (_program, gl) => {
+      gl.bindBuffer(gl.ARRAY_BUFFER, _program.buffPosition);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([
+          nx1, ny1,
+          nx2, ny2,
+          nx3, ny3
+        ]),
+        gl.STATIC_DRAW
+      );
+    }, {
+      cLocation: [...this.rgb(color), alpha],
+      params
+    }, 'TRIANGLES');
+  }
 }
 
 export {

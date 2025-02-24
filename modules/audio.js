@@ -13,6 +13,59 @@ audio.volumes = {};
 
 const MAX_LISTENER = 25;
 
+export function echo(context, delayTime = 0.5, feedback = 0.5, wetLevel = 0.5) {
+  const delayNode = context.createDelay();
+  const gainNode = context.createGain();
+
+  delayNode.delayTime.value = delayTime; // Время задержки (секунды)
+  gainNode.gain.value = wetLevel; // Уровень смешивания
+
+  delayNode.connect(gainNode);
+  gainNode.connect(context.destination);
+
+  // Создаем цикл обратной связи
+  delayNode.connect(gainNode);
+  gainNode.connect(delayNode);
+  gainNode.gain.value = feedback;
+
+  return delayNode; // Возвращаем узел эффекта
+}
+/**
+ * Создает эффект реверберации
+ * @param {AudioContext} context - Аудиоконтекст
+ * @param {number} decayTime - Время затухания (секунды)
+ * @param {number} density - Плотность реверберации (0..1)
+ * @returns {ConvolverNode|BiquadFilterNode} - Узел реверберации
+ */
+export function reverb(context, decayTime = 5, density = 0.8) {
+  if (!context.createConvolver) {
+    // Если ConvolverNode недоступен, используем BiquadFilterNode для имитации
+    const filter = context.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.Q.value = density * 10; // Настройка плотности через Q-фактор
+    filter.frequency.value = 2000; // Ограничиваем высокие частоты
+    return filter;
+  }
+
+  // Создаем реверберацию с использованием ConvolverNode
+  const reverb = context.createConvolver();
+
+  // Генерируем импульсный отклик для реверберации
+  const impulseResponseLength = decayTime * context.sampleRate;
+  const impulseResponse = context.createBuffer(2, impulseResponseLength, context.sampleRate);
+  const dataL = impulseResponse.getChannelData(0);
+  const dataR = impulseResponse.getChannelData(1);
+
+  for (let i = 0; i < impulseResponseLength; i++) {
+    const value = Math.pow(Math.random() * 2 - 1, 5) * Math.exp(-i / (decayTime * context.sampleRate));
+    dataL[i] = value;
+    dataR[i] = value * (Math.random() * 0.5 + 0.5); // Немного отличаем левый и правый каналы
+  }
+
+  reverb.buffer = impulseResponse;
+  return reverb;
+};
+
 
 const windowAudioContext = window.AudioContext || window.webkitAudioContext || false;
 audio.context = windowAudioContext ? (new windowAudioContext) : false;
@@ -28,11 +81,16 @@ if ('mediaSession' in navigator) {
 }
 
 // перезагрузка аудио при переключении вкладок:
-if (audio.context)
+if (audio.context) {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && audio.context.state == 'suspended')
+      audio.context.resume();
+  });
   audio.context.onstatechange = () => {
-    if (audio.context.state != 'interrupted') return;
-    audio.context.resume();
+    if (audio.context.state == 'interrupted' || audio.context.state == 'suspended')
+      audio.context.resume();
   }
+}
 
 /**
  * Проигрывает звук/музыку
@@ -45,6 +103,18 @@ audio.play = function(id, loop=false, track=false) {
   
   this.stack[id].play(loop, track);
 }
+
+audio.synth = function(frequency, duration, type = 'sine', volume = 0.5, effect = null) {
+  if (!audio.context) return;
+
+  const synth = new Synth(audio.context);
+  synth.start(frequency, type, effect); // Передаем эффект
+  synth.setVolume(volume);
+
+  setTimeout(() => {
+    synth.stop();
+  }, duration * 1000); // Продолжительность в секундах
+};
 
 /**
  * Изменяет громкость дорожки, если ее нет - создает новую
@@ -119,6 +189,38 @@ class Sound {
     if (~index)
       audio.listener = audio.listener.splice(index, 1);
     this.index = -1;
+  }
+}
+
+export class Synth {
+  constructor(context) {
+    this.context = context;
+    this.oscillator = this.context.createOscillator();
+    this.gainNode = this.context.createGain();
+    this.oscillator.connect(this.gainNode);
+    this.gainNode.connect(this.context.destination);
+  }
+
+  start(frequency, type = 'sine', effect = null) {
+    this.oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
+    this.oscillator.type = type;
+
+    // Если указан эффект, подключаем его
+    if (effect) {
+      this.gainNode.disconnect(this.context.destination); // Отключаем прямое соединение
+      effect.connect(this.context.destination); // Подключаем эффект к выходу
+      this.gainNode.connect(effect); // Подключаем генератор к эффекту
+    }
+
+    this.oscillator.start();
+  }
+
+  stop() {
+    this.oscillator.stop();
+  }
+
+  setVolume(volume) {
+    this.gainNode.gain.value = volume;
   }
 }
 

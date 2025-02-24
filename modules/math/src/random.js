@@ -1,44 +1,25 @@
-/**
- * @file Модуль псевдо-генерации
- * @author wmgcat
- * @version 1.0
-*/
+import WASM from '../../wasm.js';
+const clWASM = new WASM(require('./wasm/math.wasm'));
 
-export const random = {};
+const RandomFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => clWASM.wasm.__wbg_random_free(ptr >>> 0, 1));
 
-Object.defineProperty(random, 'seed', {
-  
-  /**
-   * Установка сида для псевдо-генерации
-   * 
-   * @param {number|string} seed Значение псевдо-генератора
-   * @return {number}
-  */
-  set: function(seed) {
-    if (typeof(seed) == 'string') {
-      let _seed = '';
-      for (let i = 0; i < seed.length; i++)
-        _seed += seed.charCodeAt(i);
-
-      this._seed = (_seed - 0) % 32000;
-      //Add.debug('Установлен random.seed:', _seed);
-      return this._seed;
+export class random {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        RandomFinalization.unregister(this);
+        return ptr;
     }
-    this._seed = seed;
-    //Add.debug('Установлен random.seed:', seed);
-    this.strSeed = seed;
-    return this._seed;
-  }
-});
 
-random.seed = Date.now();
-
-/**
- * Выдает псевдо-случайное число
- *
- * @return {number} Число от 0 до 1
-*/
-random.rand = function() {
-  let numb = Math.sin(this._seed++) * 1000;
-  return Math.min(Math.max(numb - ~~numb, 0), 1);
+    free() { clWASM.wasm.__wbg_random_free(this.__destroy_into_raw(), 0); }
+    constructor(seed) {
+        const ret = clWASM.wasm.random_new(!isLikeNone(seed), isLikeNone(seed) ? 0 : seed);
+        this.__wbg_ptr = ret >>> 0;
+        RandomFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    setSeed(seed) { clWASM.wasm.random_setSeed(this.__wbg_ptr, seed); }
+    rand() { return clWASM.wasm.random_rand(this.__wbg_ptr); }
 }

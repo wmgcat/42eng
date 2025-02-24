@@ -144,7 +144,9 @@ export class _Image {
       alpha: alpha,
       angle: rotate,
       xoff: x1 + xoff / rw * 2,
-      yoff: y1 + yoff / rh * 2
+      yoff: y1 + yoff / rh * 2,
+      w: w,
+      h: h
     });
     
     if (this.frames > 1 && this.speed)

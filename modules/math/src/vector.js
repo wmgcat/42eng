@@ -1,4 +1,4 @@
-import { math } from './math.js';
+import math from './math.js';
 
 
 export const vector = {};

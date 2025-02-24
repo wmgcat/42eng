@@ -16,10 +16,6 @@ export class Controller {
     if (!this.key) return false;
 
     const code = e.code.toLowerCase().replace('key', '');
-    if (code == 'escape') {
-      //this.game.event('pause');
-      //return false;
-    }
     if (code in this.rule)
       this.key[e.type == this.type ? 'add' : 'clear'](this.rule[code]);
     

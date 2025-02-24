@@ -92,27 +92,33 @@ export class Text {
    * @param {string} [align=lt] Положение текста
   */
   async draw(str, x, y, color='#000', type='fill', align='lt', program=this.graphics.programList.image, params={}) {
-    const id = `${str}_${align}`
+    const id = `${str}_${align}_${x}${y}`
     if (!this.cache[id] || this.cache[id][1] != this._size || this.cache[id][2] != color) {
       const cid = document.createElement('canvas');
-      cid.height = this._size;
+      
       let cvs = cid.getContext('2d');
       cvs.font = this.font;
-      cid.width = cvs.measureText(str).width;
+      const measure = cvs.measureText(str);
+      cid.width = measure.width * 1.2;
+      cid.height = measure.actualBoundingBoxAscent * 1.2 + measure.actualBoundingBoxDescent * 1.2;
       cvs = cid.getContext('2d');
       cvs.font = this.font;
-      [cvs.textAlign, cvs.textBaseline] = ALIGN[align];
+      //cvs.fillStyle = '#f00';
+      //cvs.fillRect(0, 0, cid.width, cid.height);
+      const textAlign = ALIGN[align];
       cvs[type + 'Style'] = color;
 
-      let left = (cvs.textAlign == 'center') ? (cid.width * .5) : (cvs.textAlign == 'left' ? 0 : cid.width),
-          top = (cvs.textBaseline == 'middle') ? (cid.height * .5) : (cvs.textBaseline == 'top' ? 0 : cid.height);
-      cvs[type + 'Text'](str, left, top);
+      let left = (textAlign[0] == 'center') ? (cid.width * .5) : (textAlign[0] == 'left' ? 0 : cid.width),
+          top = (textAlign[1] == 'middle') ? (cid.height * .5) : (textAlign[1] == 'top' ? 0 : cid.height);
+      //[cvs.textAlign, cvs.textBaseline] = ALIGN['lb'];
+
+      cvs[type + 'Text'](str, measure.width * .1, measure.actualBoundingBoxAscent * 1.1);
 
       this.cache[id] = [new Image(this.graphics.game, cid.toDataURL('image/png'), 0, 0, cid.width, cid.height, left, top, 1), this._size, color];
       await this.cache[id][0].load();
     }
 
-    this.cache[id][0].draw(x, y, undefined, undefined, undefined, undefined, undefined, undefined, program, params);
+    this.cache[id][0].draw(x, y, undefined, undefined, undefined, undefined, undefined, params.alpha, program, params);
   }
 
   /**
