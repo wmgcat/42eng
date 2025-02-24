@@ -2,9 +2,25 @@ const cachedTextDecoder = (typeof TextDecoder !== 'undefined' ? new TextDecoder(
 if (typeof TextDecoder !== 'undefined') { cachedTextDecoder.decode(); };
 
 let cachedUint8ArrayMemory0 = null;
+let cachedDataViewMemory0 = null;
 export function isLikeNone(x) {
     return x === undefined || x === null;
 }
+const cachedTextEncoder = (typeof TextEncoder !== 'undefined' ? new TextEncoder('utf-8') : { encode: () => { throw Error('TextEncoder not available') } } );
+
+
+const encodeString = (typeof cachedTextEncoder.encodeInto === 'function'
+    ? function (arg, view) {
+    return cachedTextEncoder.encodeInto(arg, view);
+}
+    : function (arg, view) {
+    const buf = cachedTextEncoder.encode(arg);
+    view.set(buf);
+    return {
+        read: arg.length,
+        written: buf.length
+    };
+});
 
 
 class WASM {
@@ -16,6 +32,7 @@ class WASM {
         this.wasm = new WebAssembly.Module(bytes.buffer);
         const instance = new WebAssembly.Instance(this.wasm, _imports == undefined ? this.__wbg_get_imports() : _imports(this));
         this.__wbg_finalize_init(instance);
+        this.WASM_VECTOR_LEN = 0;
     }
 
     __wbg_get_imports() {
@@ -56,6 +73,58 @@ class WASM {
 
         return idx;
     }
+
+    passStringToWasm0(arg, malloc, realloc) {
+        if (realloc === undefined) {
+            const buf = cachedTextEncoder.encode(arg);
+            const ptr = malloc(buf.length, 1) >>> 0;
+            this.getUint8ArrayMemory0().subarray(ptr, ptr + buf.length).set(buf);
+            this.WASM_VECTOR_LEN = buf.length;
+            return ptr;
+        }
+
+        let len = arg.length;
+        let ptr = malloc(len, 1) >>> 0;
+
+        const mem = this.getUint8ArrayMemory0();
+
+        let offset = 0;
+
+        for (; offset < len; offset++) {
+            const code = arg.charCodeAt(offset);
+            if (code > 0x7F) break;
+            mem[ptr + offset] = code;
+        }
+
+        if (offset !== len) {
+            if (offset !== 0) {
+                arg = arg.slice(offset);
+            }
+            ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
+            const view = this.getUint8ArrayMemory0().subarray(ptr + offset, ptr + len);
+            const ret = encodeString(arg, view);
+
+            offset += ret.written;
+            ptr = realloc(ptr, len, offset, 1) >>> 0;
+        }
+
+        this.WASM_VECTOR_LEN = offset;
+        return ptr;
+    }
+
+    getDataViewMemory0() {
+        if (cachedDataViewMemory0 === null || cachedDataViewMemory0.buffer.detached === true || (cachedDataViewMemory0.buffer.detached === undefined && cachedDataViewMemory0.buffer !== this.wasm.memory.buffer)) {
+            cachedDataViewMemory0 = new DataView(this.wasm.memory.buffer);
+        }
+        return cachedDataViewMemory0;
+    }
+
+    takeFromExternrefTable0(idx) {
+        const value = this.wasm.__wbindgen_export_2.get(idx);
+        this.wasm.__externref_table_dealloc(idx);
+        return value;
+    }
+
     handleError(f, args) {
         try {
             return f.apply(this, args);
