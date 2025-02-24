@@ -1,0 +1,28 @@
+{
+  "name": "42eng",
+  "version": "1.9.1",
+  "description": "42eng is a game engine written in pure JavaScript using WebGL for high-performance graphics. This project is designed for developing games with fast rendering and flexible configuration.",
+  "main": "eng.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wmgcat/42eng.git"
+  },
+  "keywords": [
+    "webgl",
+    "js",
+    "wasm",
+    "rust",
+    "game-engine",
+    "engine",
+    "game"
+  ],
+  "author": "wmgcat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wmgcat/42eng/issues"
+  },
+  "homepage": "https://github.com/wmgcat/42eng#readme"
+}

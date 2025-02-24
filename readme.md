@@ -1,5 +1,9 @@
 # 42eng
 
+```sh
+  npm i 42eng -D
+```
+
 42eng is a game engine written in pure JavaScript using WebGL for high-performance graphics. This project is designed for developing games with fast rendering and flexible configuration.
 
 ## Features
