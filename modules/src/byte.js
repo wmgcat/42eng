@@ -145,7 +145,7 @@ const ByteFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => clWASM.wasm.__wbg_byte_free(ptr >>> 0, 1));
 
-export class Byte {
+class Byte {
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
         this.__wbg_ptr = 0;
@@ -198,3 +198,5 @@ export class Byte {
         return BigInt.asUintN(64, ret);
     }
 }
+
+export default Byte;

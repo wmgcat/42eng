@@ -1,5 +1,4 @@
-import { _Image as Image } from '../modules/graphics/main.js';
-import { Ease } from '../modules/math/main.js';
+import { Image, Ease } from '../modules/main.js';
 
 let logo = false, alpha = 0;
 export function draw(cvs, Game, ratio) {

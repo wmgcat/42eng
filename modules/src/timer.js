@@ -45,7 +45,7 @@ const TimerFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => clWASM.wasm.__wbg_timer_free(ptr >>> 0, 1));
 
-export class Timer {
+class Timer {
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
         this.__wbg_ptr = 0;
@@ -71,3 +71,5 @@ export class Timer {
     pause() { clWASM.wasm.timer_pause(this.__wbg_ptr); }
     resume() { clWASM.wasm.timer_resume(this.__wbg_ptr); }
 }
+
+export default Timer;

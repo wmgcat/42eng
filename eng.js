@@ -3,8 +3,8 @@
  * @author wmgcat
 */
 
-import { Byte } from './modules/byte.js';
-import { Graphics } from './modules/graphics/main.js';
+import * as Modules from './modules/main.js';
+import { Byte, Graphics } from './modules/main.js';
 import * as LoadingScreen from './src/loadingScreen.js';
 
 export class Game {
@@ -224,4 +224,8 @@ export class Game {
     }
     _update();
   }
+}
+
+export {
+  Modules
 }

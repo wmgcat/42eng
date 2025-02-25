@@ -1,6 +1,6 @@
-import { Byte } from './byte.js';
+import Byte from './byte.js';
 
-export class Controller {
+class Controller {
   constructor(game, rule, type='keydown') {
     this.rule = rule;
     const arr = [];
@@ -22,3 +22,5 @@ export class Controller {
     return true;
   }
 }
+
+export default Controller;
