@@ -5,7 +5,7 @@ const clWASM = new WASM(require('./wasm/timer.wasm'), (oWasm) => ({
     __wbg_call_672a4d21634d4a24: () => (oWasm.handleError((arg0, arg1) => arg0.call(arg1), arguments)),
     __wbg_instanceof_Window_def73ea0955fc569: arg0 => (arg0 instanceof Window),
     __wbg_newnoargs_105ed471475aaf50: (arg0, arg1) => new Function(oWasm.getStringFromWasm0(arg0, arg1)),
-    __wbg_now_807e54c39636c349: () => Date.now(),
+    __wbg_now_807e54c39636c349: () => performance.now(),
     __wbindgen_is_undefined: arg0 => arg0 == undefined,
     __wbg_static_accessor_GLOBAL_88a902d13a557d07: () => {
       const ret = typeof global === 'undefined' ? null : global;

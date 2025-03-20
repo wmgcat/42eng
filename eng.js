@@ -53,15 +53,14 @@ export class Game {
     this.events = [];
     this.graphics = new Graphics(this.canvasID, this.config.smooth, this);
     this.listenEvents();
+    this.canvasID.tabIndex = 0;
     this.canvasID.focus();
     this.resize()
     this.info();
   }
 
   /** Выводит информацию о проекте */
-  info() {
-    console.info(`42eng (v${this.config.build.v})\nrepository: ${this.config.build.href}`);
-  }
+  info() { console.info(`42eng (v${this.config.build.v})\nrepository: ${this.config.build.href}`); }
 
   style() {
     const all = document.querySelectorAll('html, body, canvas');
@@ -151,6 +150,8 @@ export class Game {
 
     const funcMouseHandler = e => {
       this.event('focus');
+      this.canvasID.tabIndex = 0;
+      this.canvasID.focus();
       const rect = this.canvasID.getBoundingClientRect();
       let client;
 
@@ -169,6 +170,7 @@ export class Game {
 
       this.mouse.x = client.clientX - rect.left;
       this.mouse.y = client.clientY - rect.top;
+
 
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -226,6 +228,4 @@ export class Game {
   }
 }
 
-export {
-  Modules
-}
+export { Modules }
