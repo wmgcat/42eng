@@ -263,9 +263,11 @@ class Graphics {
    * @param {number} w Ширина
    * @param {number} h Высота
    * @param {string|object} color='#000' Цвет или Текстура
-   * @param {string} type='fill' Заполнение, может быть fill или stroke
+   * @param {number} [alpha=1] Прозрачность
+   * @param {GLprogram} [program=programList.default] Шейдер
+   * @param {object} [params={}] Доп. Параметры для шейдера
   */
-  rect(x, y, w, h, color='#000', type='fill', alpha=1, program=this.programList.default, params={}) {
+  rect(x, y, w, h, color='#000', alpha=1, program=this.programList.default, params={}) {
     this.setProgram(program);
     
     const x1 = x / this.w * 2,
@@ -298,11 +300,13 @@ class Graphics {
    * @param {number} y Y
    * @param {number} range Радиус
    * @param {string|object} color='#000' Цвет или Текстура
-   * @param {string} type='fill' Заполнение, может быть fill или stroke
    * @param {number} start=0 Начало круга в радианах
    * @param {number} end=Math.PI*2 Конец круга в радианах
+   * @param {number} [alpha=1] Прозрачность
+   * @param {GLprogram} [program=programList.default] Шейдер
+   * @param {object} [params={}] Доп. Параметры для шейдера
   */
-  circle(x, y, range, color='#000', type='fill', start=0, end=Math.PI*2, alpha=1, program=this.programList.default, params={}) {
+  circle(x, y, range, color='#000', start=0, end=Math.PI*2, alpha=1, program=this.programList.default, params={}) {
     this.setProgram(program);
     const pos = [];
     for (let i = 0; i < 20; i++) {
@@ -332,7 +336,9 @@ class Graphics {
    * @param {number} w Ширина
    * @param {number} h Высота
    * @param {string|object} color='#000' Цвет или Текстура
-   * @param {string} type='fill' Заполнение, может быть fill или stroke
+   * @param {number} [alpha=1] Прозрачность
+   * @param {GLprogram} [program=programList.default] Шейдер
+   * @param {object} [params={}] Доп. Параметры для шейдера
   */
   ellipse(x, y, w, h, color='#000', alpha=1.0, program=this.programList.default, params={}) {
     this.setProgram(program);
@@ -366,8 +372,10 @@ class Graphics {
    * @param {number} x3 X координата третьей вершины
    * @param {number} y3 Y координата третьей вершины
    * @param {string|object} color='#000' Цвет или Текстура
-   * @param {number} alpha=1 Прозрачность
-   */
+   * @param {number} [alpha=1] Прозрачность
+   * @param {GLprogram} [program=programList.default] Шейдер
+   * @param {object} [params={}] Доп. Параметры для шейдера
+  */
   triangle(x1, y1, x2, y2, x3, y3, color = '#000', alpha = 1, program = this.programList.default, params = {}) {
     this.setProgram(program);
 

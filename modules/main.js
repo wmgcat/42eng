@@ -7,11 +7,13 @@ import Byte from './src/byte.js';
 import * as Audio from './src/audio.js';
 import { math, random, vector, Vector, Ease } from './src/math/main.js';
 import { Graphics, Text, _Image as Image } from './src/graphics/main.js';
+import * as SDK from './src/sdk.js';
 
 export {
   WASM, Timer, Language,
   Gamepad, Controller, Byte,
   Audio, math, random,
   vector, Vector, Ease,
-  Graphics, Text, Image
+  Graphics, Text, Image,
+  SDK
 }

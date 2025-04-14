@@ -28,6 +28,18 @@ export class Text {
     this.graphics = graphics;
     if (!(this.graphics instanceof Graphics))
       throw Error('Не найден класс Graphics!');
+
+    this.canvas = document.getElementById('text');
+    if (!this.canvas) {
+      this.canvas = document.createElement('canvas');
+      document.body.appendChild(this.canvas);
+    }
+    this.canvas.style.backgroundColor = 'transparent';
+    
+    this.cvs = this.canvas.getContext('2d');
+    this.canvas.width = this.graphics.w;
+    this.canvas.height = this.graphics.h;
+
     this._font = font;
     this._size = size;
     this.type = ' ';
@@ -35,12 +47,14 @@ export class Text {
     this.cache = {};
   }
 
-  get source() {
-    return this.graphics.source;
-  }
-
   get font() {
     return `${this.type}${this._size}px ${this._font}`;
+  }
+
+  reset() {
+    this.cvs = this.canvas.getContext('2d');
+    this.canvas.width = this.graphics.w;
+    this.canvas.height = this.graphics.h;
   }
 
   /**
@@ -54,7 +68,7 @@ export class Text {
     const lines = [], parseText = str.split(' ');
     let offset = 0;
 
-    this.source.font = this.font;
+    this.cvs.font = this.font;
     for (let i = 0; i < parseText.length; i++) {
       const line = parseText.slice(offset, i).join(' ');
       if (this.width(line) >= w) {
@@ -73,10 +87,9 @@ export class Text {
    * @return {number}
   */
   width(str) {
-    this.source.font = this.font;
+    this.cvs.font = this.font;
     if (typeof(str) == 'string')
-      return str.length * this._size;
-      //return this.source.measureText(str).width;
+      return this.cvs.measureText(str).width;
     
     return str.map(line => this.width(line)).sort((a, b) => b - a)[0];
   }
@@ -90,35 +103,16 @@ export class Text {
    * @param {string|object} [color=#000] Цвет или Текстура
    * @param {string} [type=fill] Заполнение, может быть fill или stroke
    * @param {string} [align=lt] Положение текста
+   * @param {number} [alpha=1] Прозрачность
   */
-  async draw(str, x, y, color='#000', type='fill', align='lt', program=this.graphics.programList.image, params={}) {
-    const id = `${str}_${align}_${x}${y}`
-    if (!this.cache[id] || this.cache[id][1] != this._size || this.cache[id][2] != color) {
-      const cid = document.createElement('canvas');
-      
-      let cvs = cid.getContext('2d');
-      cvs.font = this.font;
-      const measure = cvs.measureText(str);
-      cid.width = measure.width * 1.2;
-      cid.height = measure.actualBoundingBoxAscent * 1.2 + measure.actualBoundingBoxDescent * 1.2;
-      cvs = cid.getContext('2d');
-      cvs.font = this.font;
-      //cvs.fillStyle = '#f00';
-      //cvs.fillRect(0, 0, cid.width, cid.height);
-      const textAlign = ALIGN[align];
-      cvs[type + 'Style'] = color;
-
-      let left = (textAlign[0] == 'center') ? (cid.width * .5) : (textAlign[0] == 'left' ? 0 : cid.width),
-          top = (textAlign[1] == 'middle') ? (cid.height * .5) : (textAlign[1] == 'top' ? 0 : cid.height);
-      //[cvs.textAlign, cvs.textBaseline] = ALIGN['lb'];
-
-      cvs[type + 'Text'](str, measure.width * .1, measure.actualBoundingBoxAscent * 1.1);
-
-      this.cache[id] = [new Image(this.graphics.game, cid.toDataURL('image/png'), 0, 0, cid.width, cid.height, left, top, 1), this._size, color];
-      await this.cache[id][0].load();
-    }
-
-    this.cache[id][0].draw(x, y, undefined, undefined, undefined, undefined, undefined, params.alpha, program, params);
+  draw(str, x, y, color='#000', type='fill', align='lt', alpha=1) {
+    this.cvs.font = this.font;
+    const save = this.cvs.globalAlpha;
+    this.cvs.globalAlpha = alpha; 
+    [this.cvs.textAlign, this.cvs.textBaseline] = ALIGN[align];
+    this.cvs[type + 'Style'] = color;
+    this.cvs[type + 'Text'](str, x, y);
+    this.cvs.globalAlpha = save;
   }
 
   /**
@@ -133,7 +127,7 @@ export class Text {
    * @return {object} Возвращает объект с методами: one - для обычного текста, multi - для переноса строки
   */
   outline(str, x, y, color='#fff', linecolor='#000', align='lt') {
-    this.source.lineWidth = this._size * .05;
+    this.cvs.lineWidth = this._size * .05;
 
     return {
       one: () => {
@@ -156,20 +150,21 @@ export class Text {
    * @param {string|object} [color=#000] Цвет или Текстура
    * @param {string} [type=fill] Заполнение, может быть fill или stroke
    * @param {string} [align=left-top] Положение текста
+   * @param {number} [alpha=1] Прозрачность
   */
-  drawMultiLine(str, x, y, color='#000', type='fill', align='lt', program=this.graphics.programList.image, params={}) {
+  drawMultiLine(str, x, y, color='#000', type='fill', align='lt', alpha=1) {
     const [ textAling, textBaseline ] = ALIGN[align];
     if (textBaseline == 'bottom') y = y - (str.length - 1) * this._size;
     if (textBaseline == 'middle') y = y - (str.length - 1) * this._size * .5;
     for (let i = 0; i < str.length; i++)
-      this.draw(str[i], x, y + this._size * i, color, type, align, program, params);    
+      this.draw(str[i], x, y + this._size * i, color, type, align, alpha);    
   }
 
   /**
    * Добавляет шрифт
    * 
-   * @param  {string} path Путь к файлу
-   * @param  {string} name Название шрифта
+   * @param {string} path Путь к файлу
+   * @param {string} name Название шрифта
   */
   async add(path, name) {
     this.graphics.link.loading++;

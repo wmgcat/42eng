@@ -6,6 +6,7 @@
 
 const table = {};
 let select = '';
+const regex = /#\{([^}]+)\}/g;
 
 class Language {
   constructor(short, json, primary=false) {
@@ -19,21 +20,15 @@ class Language {
   }
 }
 
+
 /**
- * Перевод текста на выбранную локализацию
+ * Перевод текста на выбранную локализацию 
  * 
- * @param  {id} id Ключ (Пример: items -> apple = items.apple)
- * @param {...params} params Доп. параметры, которые подставляются в %s
+ * @param {string} [short=select] Короткое название для локализации
  * @return {string}
-*/
-function use(id, ...params) {
-  if (!id) throw Error('Не указан ни один аргумент!');
-
-  let text = ((table[select] || {}).data[id]) || id;
-  for (const param of params)
-    text = text.replace('%s', use(param));
-
-  return text;
+ */
+String.prototype.use = function(short=select) {
+  return this.replace(regex, (match, key) => (table[short].data.hasOwnProperty(key) ? table[short].data[key] : match));
 }
 
 /**
@@ -64,7 +59,5 @@ function change(lang) {
 }
 
 export {
-  Language, table, select,
-  use, recursiveTableMove,
-  change
+  Language, table, select, change
 }

@@ -41,19 +41,12 @@ export class Game {
       event: new Byte('uclick', 'dclick', 'hover', 'wheelup', 'wheeldown')
     }
 
-    if (this.config.multitab && typeof(BroadcastChannel) != 'undefined') {
-      this.multitab = new BroadcastChannel(`${this.config.title}-multitab`);
-      this.multitab.postMessage('new');
-      this.multitab.onmessage = _ => { this.event('newtab'); }
-    }
-
-
     if (!this.canvasID) throw Error(`Канвас ${id} не найден!`);
     this.style();
     this.events = [];
     this.graphics = new Graphics(this.canvasID, this.config.smooth, this);
     this.listenEvents();
-    this.canvasID.tabIndex = 0;
+    //this.canvasID.tabIndex = 0;
     this.canvasID.focus();
     this.resize()
     this.info();
@@ -100,8 +93,11 @@ export class Game {
     this.canvasID.style.width = `${window.innerWidth}px`;
     this.canvasID.style.height = `${window.innerHeight}px`;
     
-    if (this.graphics)
+    if (this.graphics) {
       this.graphics.reset();
+      if (this.graphics.text)
+        this.graphics.text.reset();
+    }    
   }
 
   addEvent(control) {
