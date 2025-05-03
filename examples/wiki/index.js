@@ -1,10 +1,6 @@
 import { Game, Modules } from '42eng';
 Modules.mMath.init();
 
-
-
-
-
 import Player from './player.js';
 import Coin from './coin.js';
 
@@ -27,8 +23,6 @@ async function init() {
 	Main.loaded = true; // Сообщаем игре, что мы загрузили все данные
 }
 init();
-
-
 
 const Control = new Modules.Controller(Main, {
 	'w': 'up',

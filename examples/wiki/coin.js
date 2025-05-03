@@ -19,8 +19,7 @@ export default class Coin {
         }
     }
 
-    draw(cvs, ratio, camera_x, camera_y) {
+    draw(camera_x, camera_y) {
         Images.coin.draw(-camera_x + this.x, -camera_y + this.y, this.size, this.size);
-        //cvs.circle(-camera_x + this.x, -camera_y + this.y, this.size, '#FFF68F');
     }
 }

@@ -11,7 +11,7 @@ export default class Player {
         this.x += hspd * dt * 100;
         this.y += vspd * dt * 100;
     }
-    draw = (cvs, ratio, camera_x=0, camera_y=0) => {
+    draw = (cvs, camera_x=0, camera_y=0) => {
         cvs.circle(-camera_x + this.x, -camera_y + this.y, this.size, '#000000');
     }
 }
