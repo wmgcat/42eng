@@ -3,8 +3,8 @@
   "version": "1.9.1a",
   "description": "42eng is a game engine written in pure JavaScript using WebGL for high-performance graphics. This project is designed for developing games with fast rendering and flexible configuration.",
   "main": "eng.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bin": {
+    "42eng": "./bin/cli.js"
   },
   "repository": {
     "type": "git",
@@ -24,5 +24,21 @@
   "bugs": {
     "url": "https://github.com/wmgcat/42eng/issues"
   },
-  "homepage": "https://github.com/wmgcat/42eng#readme"
+  "homepage": "https://github.com/wmgcat/42eng#readme",
+  "dependencies": {
+    "css-loader": "^7.1.2",
+    "fs": "^0.0.1-security",
+    "style-loader": "^4.0.0"
+  },
+  "devDependencies": {
+    "@rspack/cli": "^1.3.5",
+    "@rspack/core": "^1.3.5",
+    "@rspack/plugin-html": "^0.0.10",
+    "babel-loader": "^10.0.0",
+    "buffer": "^6.0.3",
+    "cookie-parser": "^1.4.7",
+    "crypto-browserify": "^3.12.1",
+    "csv-loader": "^3.0.5",
+    "stream-browserify": "^3.0.0"
+  }
 }

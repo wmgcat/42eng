@@ -1,0 +1,16 @@
+{
+  "name": "test_wiki",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "game": "42eng app",
+    "build": "42eng build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "42eng": "file:~/projects/42eng"
+  }
+}

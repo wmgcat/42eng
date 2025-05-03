@@ -24,8 +24,43 @@ class Graphics {
       this.shader('default', 'vertex', `
       attribute vec2 a_position;
       uniform mat4 u_matrix;
+      uniform float u_angle;
+      uniform vec2 v_ratio;
+      uniform vec2 v_offset;
+
+      mat4 rotate(float angle) {
+            float c = cos(angle);
+            float s = sin(angle);
+            return mat4(
+                c, -s, 0.0, 0.0,
+                s,  c, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0
+            );
+        }
+      mat4 translate(vec2 pos) {
+            return mat4(
+                1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                pos.x, pos.y, 0.0, 1.0
+            );
+        }
+
+        mat4 scale(float sx, float sy) {
+            return mat4(
+                sx, 0.0, 0.0, 0.0,
+                0.0, sy, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0
+            );
+        }
+
       void main() {
-          gl_Position = u_matrix * vec4(a_position, 0, 1);
+        float aspect = v_ratio.x / v_ratio.y;
+        mat4 aspectFix = scale(1.0, aspect);
+        gl_Position = u_matrix * translate(v_offset) * aspectFix * rotate(u_angle) * scale(1.0, 1.0 / aspect) * translate(-v_offset) * vec4(a_position, 0, 1);
+        //gl_Position = u_matrix * vec4(a_position, 0, 1);
       }
     `), this.shader('default', 'fragment', `
       precision mediump float;
@@ -40,6 +75,9 @@ class Graphics {
       program.cLocation = gl.getUniformLocation(program, 'u_color');
       program.tLocation = gl.getUniformLocation(program, 'u_time');
       program.mLocation = gl.getUniformLocation(program, 'u_matrix');
+      program.fAngle = gl.getUniformLocation(program, 'u_angle');
+      program.pOffset = gl.getUniformLocation(program, 'v_offset');
+      program.pRatio = gl.getUniformLocation(program, 'v_ratio');
 
       gl.uniformMatrix4fv(program.mLocation, false, [
         1, 0, 0, 0,
@@ -54,8 +92,12 @@ class Graphics {
     (program, gl, count=0, update, params={}, fill='TRIANGLE_STRIP') => {
       gl.uniform1f(program.tLocation, params.time || (performance.now() * .001));
       gl.uniform4f(program.cLocation, ...(params.cLocation || [0, 0, 0, 1]));
+      
 
       update(program, gl);
+      gl.uniform1f(program.fAngle, params.angle || 0);
+      gl.uniform2f(program.pOffset, params.xoff || 0, params.yoff || 0);
+      gl.uniform2f(program.pRatio, this.w, this.h);
 
       gl.vertexAttribPointer(program.buffPosition, 2, gl.FLOAT, false, 0, 0);
       gl.drawArrays(gl[fill], 0, count);
@@ -123,10 +165,11 @@ class Graphics {
         program.tcLocation = gl.getAttribLocation(program, 'a_texcoord');
         program.mLocation = gl.getUniformLocation(program, 'u_matrix');
         program.fAngle = gl.getUniformLocation(program, 'u_angle');
-        program.tLocation = gl.getUniformLocation(program, 'u_texture');
-        program.fAlpha = gl.getUniformLocation(program, 'u_alpha');
         program.pOffset = gl.getUniformLocation(program, 'v_offset');
         program.pRatio = gl.getUniformLocation(program, 'v_ratio');
+        program.tLocation = gl.getUniformLocation(program, 'u_texture');
+        program.fAlpha = gl.getUniformLocation(program, 'u_alpha');
+       
 
         gl.uniformMatrix4fv(program.mLocation, false, [
           1, 0, 0, 0,
@@ -267,7 +310,7 @@ class Graphics {
    * @param {GLprogram} [program=programList.default] Шейдер
    * @param {object} [params={}] Доп. Параметры для шейдера
   */
-  rect(x, y, w, h, color='#000', alpha=1, program=this.programList.default, params={}) {
+  rect(x, y, w, h, color='#000', alpha=1, angle=0, xoff=0, yoff=0, program=this.programList.default, params={}) {
     this.setProgram(program);
     
     const x1 = x / this.w * 2,
@@ -289,7 +332,10 @@ class Graphics {
       );
     }, {
       cLocation: [...this.rgb(color), alpha],
-      ...params
+      ...params,
+      angle: angle,
+      xoff: x1 + xoff / this.w * 2,
+      yoff: y1 + yoff / this.h * 2
     });
   }
 

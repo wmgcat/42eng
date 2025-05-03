@@ -13,7 +13,7 @@ export class Game {
       title: params.title || '42eng', author: params.author || 'wmgcat',
       debug: params.debug || false,
       build: {
-        v: '1.9.1',
+        v: '1.9.2',
         href: 'https://github.com/wmgcat/42eng'
       },
       window: {
@@ -200,6 +200,9 @@ export class Game {
         this.graphics.source.clear(this.graphics.source.COLOR_BUFFER_BIT);
         this.graphics.source.enable(this.graphics.source.BLEND);
         this.graphics.source.blendFunc(this.graphics.source.SRC_ALPHA, this.graphics.source.ONE_MINUS_SRC_ALPHA);
+        if (this.graphics.text.cvs) {
+          this.graphics.text.cvs.clearRect(0, 0, this.graphics.w, this.graphics.h);
+        }
 
         if (this.resized) {
           this.ratio = Math.min(this.graphics.w, this.graphics.h);

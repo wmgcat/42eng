@@ -1,14 +1,7 @@
-import math from './math.js';
+import * as _Math from './math.js';
 
 
-export const vector = {};
-
-vector.add = (a, b) => new Vector(a.x + b.x, a.y + b.y);
-vector.sub = (a, b) => new Vector(a.x - b.x, a.y - b.y);
-
-vector.dist = (a, b) => math.distance(a.x, a.y, b.x, b.y);
-
-export class Vector {
+export default class Vector {
   constructor(x, y) {
     this.x = x;
     this.y = y;
@@ -25,11 +18,19 @@ export class Vector {
     this.y += b.y;
   }
 
-  invert() {
-    return new Vector(-this.x, -this.y);
-  }
+  invert() { return new Vector(-this.x, -this.y); }
 
-  copy() {
-    return new Vector(this.x, this.y);
+  copy() { return new Vector(this.x, this.y); }
+}
+
+let is_init = false;
+export function init() {
+  if (is_init) return;
+  _Math.init();
+  Math.vector = {
+    add: (a, b) => new Vector(a.x + b.x, a.y + b.y),
+    sub: (a, b) => new Vector(a.x - b.x, a.y - b.y),
+    distance: (a, b) => Math.distance(a.x, a.y, b.x, b.y)
   }
+  is_init = true;
 }
