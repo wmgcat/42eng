@@ -6,6 +6,13 @@
 npm i -g 42eng
 ```
 
+### Commands:
+| Command | Description |
+| --- | --- |
+| app | Starts the game development server on port :81 |
+| build | Builds the project into the dist folder |
+| help | Shows information about available commands |
+
 ## Features
 
 - Fully written in JavaScript.
