@@ -28,6 +28,7 @@
   "dependencies": {
     "css-loader": "^7.1.2",
     "fs": "^0.0.1-security",
+    "nw-builder": "^4.13.14",
     "style-loader": "^4.0.0"
   },
   "devDependencies": {

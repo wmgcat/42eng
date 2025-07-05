@@ -7,7 +7,9 @@ import * as Modules from './modules/main.js';
 import { Byte, Graphics } from './modules/main.js';
 import * as LoadingScreen from './src/loadingScreen.js';
 
-export class Game {
+import * as ECS from './ecs/main.js';
+
+export default class Game {
   constructor(id, params={}) {
     this.config = {
       title: params.title || '42eng', author: params.author || 'wmgcat',
@@ -227,4 +229,4 @@ export class Game {
   }
 }
 
-export { Modules }
+export { Modules, ECS }

@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
 const dir = path.resolve(process.env.NODE_DIR),
-      port = process.env.PORT || 81,
+      port = process.env.PORT || 80,
       title = 'Test',
       description = 'Test description';
 
