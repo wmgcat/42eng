@@ -1,4 +1,6 @@
-import { Game, Modules } from '42eng';
+import Game, { Modules } from '42eng';
+import imgCoin from "./img/coin.png";
+import audioCoin from "./audio/coin.mp3";
 Modules.mMath.init();
 
 import Player from './player.js';
@@ -17,10 +19,10 @@ async function init() {
 
 	audio.volume('sounds', 1);
 	await Promise.all([
-		addImage('coin', require('./img/coin.png'), 0, 0, 16, 16, 8, 8, 3, .25),
-		addPath(Main, require('./audio/coin.mp3'), 'sounds', 'coin')
+		addImage('coin', imgCoin, 0, 0, 16, 16, 8, 8, 3, .25),
+		addPath(Main, audioCoin, 'sounds', 'coin')
 	])
-	Main.loaded = true; // Сообщаем игре, что мы загрузили все данные
+	//Main.loaded = true; // Сообщаем игре, что мы загрузили все данные
 }
 init();
 
@@ -40,7 +42,7 @@ const player = new Player(0, 0);
 const coins = [];
 for (let i = 0; i < 10; i++)
 	coins.push(new Coin(-300 + Math.random() * 600, -300 + Math.random() * 600, 10 + Math.random() * 32));
-console.log(coins);
+
 Main.update((deltatime, canvas, ratio) => {
 	const x = Camera.x,
 		  y = Camera.y;
@@ -51,10 +53,10 @@ Main.update((deltatime, canvas, ratio) => {
 	canvas.rect(0, 0, canvas.w, canvas.h, '#acc656');
 	canvas.circle(-x, -y, ratio * .25, '#000000', 0, Math.PI * 2, .1);
 	player.update(Control, deltatime);
-	player.draw(canvas, ratio, Camera.x, Camera.y);
+	player.draw(canvas, Camera.x, Camera.y);
 	coins.filter(x => !x.is_destroy).map(coin => {
 		coin.update(player);
-		coin.draw(canvas, ratio, Camera.x, Camera.y);
+		coin.draw(Camera.x, Camera.y);
 	})
 });
 

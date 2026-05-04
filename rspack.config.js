@@ -1,119 +1,103 @@
-import { defineConfig } from '@rspack/cli';
-import { rspack } from '@rspack/core';
-import { createRequire } from 'node:module';
+import { defineConfig } from "@rspack/cli";
+import rspack from "@rspack/core";
+import path from "path";
+import { fileURLToPath } from "url";
+
 const HtmlRspackPlugin = rspack.HtmlRspackPlugin;
 
-import path from 'path';
-import { fileURLToPath } from 'url';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
+const dir = path.resolve(process.env.NODE_DIR);
 
-const dir = __dirname,
-      port = process.env.PORT || 80,
-      title = 'Test',
-      description = 'Test description';
+const asset_regex = /\.(png|jpg|jpeg|svg|mp3|gif|wav|wasm|webp)$/i;
 
 export default defineConfig({
-  entry: './index.js',
-  
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'index.bundle.js',
-    publicPath: '/'
+  entry: path.resolve(dir, "index.js"),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src")
+    },
+    extensions: [ ".ts", ".js" ]
   },
   devServer: {
-    static: { directory: path.join(__dirname, 'dist') },
+    static: {
+      directory: path.resolve(dir, "dist")
+    },
     compress: false,
-    hot: false,
+    hot: true,
     liveReload: true,
-    port: port,
+    port: process.env.PORT || 80,
     client: {
       overlay: false,
       reconnect: 3,
       progress: true
     }
   },
+  output: {
+    path: path.resolve(dir, "dist"),
+    filename: "index.bundle.js",
+    publicPath: "/"
+  },
   module: {
     rules: [
       {
-        test: /\.js$/i,
-        use: {
-          loader: 'builtin:swc-loader',
-          options: {
-            jsc: {
-              parser: {
-                syntax: 'ecmascript',
-                jsx: true,
-              },
-            },
-          },
+        test: /\.(?:js|mjs|ts)$/i,
+        exclude: [ /node_modules/ ],
+        options: {
+          detectSyntax: "auto"
+        },
+        loader: "builtin:swc-loader",
+        type: "javascript/auto"
+      },
+      {
+        test: asset_regex,
+        type: "asset",
+        parser: {
+          dataUrlCondition: {
+            maxSize: Infinity
+          }
         }
-      },
-      {
-        test: /\.(png|jpg|svg|mp3|gif|wasm)$/i,
-        type: 'asset'
-      },
-      {
-        test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
-        type: 'javascript/auto',
       }
     ],
     parser: {
-        javascript: {
-            url: 'relative',
-        }
+      javascript: {
+        url: "relative"
+      }
     }
   },
   experiments: {
-    asyncWebAssembly: true,
-    css: true
-  },
-  resolve: {
-    fallback: {
-      buffer: require.resolve('buffer'),
-      crypto: require.resolve('crypto-browserify'),
-      stream: require.resolve('stream-browserify')
-    },
-    preferRelative: true
+    asyncWebAssembly: true
   },
   plugins: [
-    new rspack.CssExtractRspackPlugin({}),
     new HtmlRspackPlugin({
       inject: false,
-      filename: 'index.html',
+      filename: "index.html",
       templateContent: ({ compilation }) => {
-        const js = compilation.assets['index.bundle.js'].source();
+        const js = compilation.assets["index.bundle.js"].source();
         const assets = Object.entries(compilation.assets)
-          .filter(([name]) => /\.(png|jpg|svg|mp3|gif)$/i.test(name))
-          .map(([name, asset]) => ({
-            name,
-            content: asset.source()
+          .filter(([ key ]) => asset_regex.test(key))
+          .map(([ key, value ]) => ({
+            name: key,
+            content: value.source()
           }));
-
-        const resources = assets
-          .map(
-            (asset) =>
-              `<script>window['${asset.name}'] = '${Buffer.from(asset.content).toString(
-                'base64'
-              )}';</script>`
-          )
-          .join('');
-
+        
         return `
           <!doctype html>
           <html>
             <head>
-              <title>${title}</title>
-              <meta name = 'description' content = '${description}'>
-              <meta charset = 'utf-8'>
-              <meta name = 'viewport' content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no'>
+              <title>${process.env.TITLE || "42eng"}</title>
+              <meta name="description" content="${process.env.DESCRIPTION || "42eng.js"}">
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
             </head>
             <body>
-              <div id = 'app'></div>
-              ${resources}
-              <script type = 'text/javascript'>${js}</script>
+              <canvas id="game"></canvas>
+              <canvas id="text"></canvas>
+              ${assets?.map(
+                (asset) =>
+                  `<script>window['${asset.name}'] = '${Buffer.from(asset.content).toString("base64")}';</script>`
+              )
+              .join("")}
+              <script type="text/javascript">${js}</script>
             </body>
           </html>
         `;
@@ -124,5 +108,7 @@ export default defineConfig({
     maxEntrypointSize: 512000,
     maxAssetSize: 512000
   },
-  optimization: { minimize: true }
+  optimization: {
+    minimize: true
+  }
 });

@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 
+import { exec, execSync } from "child_process";
+import path from "path";
+import nwbuild from "nw-builder";
+import { fileURLToPath } from "url";
+import { readFileSync } from "fs";
+
 const args = process.argv.slice(2),
-      dir = process.cwd(),
-      { exec, execSync } = require('child_process'),
-      path = require('path'),
-      nwbuild = require('nw-builder').default;
+      dir = process.cwd();
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const packageRoot = path.resolve(__dirname, '..');
 process.chdir(packageRoot);
@@ -15,7 +20,7 @@ async function funcCompile(desc, type='osx', params={}) {
   execSync(`rm -rf ${dir}/${desc} && rm -rf ${dir}/dist`);
   console.log(`[start] ${desc} building!`);
   console.log(`rspack build to ${dir}/dist...`);
-  execSync(`NODE_DIR=${dir} npx rspack build --config game.config.js`);
+  execSync(`NODE_DIR=${dir} npx rspack build --config rspack.config.js`);
   console.log(`rspack build is done!`);
   console.log(`delete trash filtes ${dir}/dist`);
   execSync(`rm ${dir}/dist/{*.js,*.js.map}`);
@@ -68,7 +73,7 @@ switch(args[0]) {
   } break;
   case 'app': {
     console.log('server is run :80');
-    exec(`NODE_DIR=${dir} npx rspack serve --config game.config.js`, (error, stdout, stderr) => {
+    exec(`NODE_DIR=${dir} npx rspack serve --config rspack.config.js`, (error, stdout, stderr) => {
       if (error) {
         console.error(`Ошибка: ${error.message}`);
         return;
@@ -81,19 +86,21 @@ switch(args[0]) {
     })
   } break;
   case 'build': {
-    const package = require(path.resolve(dir, 'package.json'));
+    
 
     if (args[1]) {
-      console.log(`building:${args[1]} to ./${args[1]}`);
-      funcCompile(args[1], (args[1] == 'macos') ? 'osx' : args[1], {
-        title: package.name,
-        author: package.author,
-        copyright: package.copyright || ((new Date()).getFullYear() + ''),
-        description: package.description
-      });
+      // console.log(dir);
+      // const package = JSON.parse(fs.readFileSync(dir, 'utf-8'));
+      // console.log(`building:${args[1]} to ./${args[1]}`);
+      // funcCompile(args[1], (args[1] == 'macos') ? 'osx' : args[1], {
+      //   title: package.name,
+      //   author: package.author,
+      //   copyright: package.copyright || ((new Date()).getFullYear() + ''),
+      //   description: package.description
+      // });
     } else {
       console.log('building:web to ./dist/');
-      exec(`NODE_DIR=${dir} npx rspack build --config game.config.js`, (error, stdout, stderr) => {
+      exec(`NODE_DIR=${dir} npx rspack build --config rspack.config.js`, (error, stdout, stderr) => {
         if (error) {
           console.error(`Ошибка: ${error.message}`);
           return;
